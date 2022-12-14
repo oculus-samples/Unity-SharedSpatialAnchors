@@ -1,0 +1,10 @@
+{
+    "name": "PhotonUnityNetworking.Demos",
+    "references": [
+        "PhotonRealtime",
+        "PhotonUnityNetworking",
+        "PhotonUnityNetworking.Utilities"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

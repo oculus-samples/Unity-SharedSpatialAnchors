@@ -1,0 +1,10 @@
+{
+    "name": "PunDemos.DemoSlotcarEditor",
+    "references": [
+        "PhotonUnityNetworking.Demos"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

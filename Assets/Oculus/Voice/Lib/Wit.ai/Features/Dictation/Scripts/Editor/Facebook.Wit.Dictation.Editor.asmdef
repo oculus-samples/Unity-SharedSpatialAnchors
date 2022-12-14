@@ -1,0 +1,18 @@
+{
+    "name": "Facebook.Wit.Dictation.Editor",
+    "references": [
+        "GUID:fa958eb9f0171754fb207d563a15ddfa",
+        "GUID:910a956078d2ff4429c717211dcfaecb"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
