@@ -1,4 +1,5 @@
-﻿/*
+﻿using System.Collections;
+/*
 * Copyright (c) Meta Platforms, Inc. and affiliates.
 * All rights reserved.
 *
@@ -75,13 +76,26 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         }
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         SampleController.Instance.Log("System version: " + OVRPlugin.version);
-
         PhotonPun.PhotonNetwork.ConnectUsingSettings();
-
         Core.Initialize();
+
+        while(!Core.IsInitialized())
+        yield return null;
+
+        Oculus.Platform.Entitlements.IsUserEntitledToApplication().OnComplete(OnEntitlementCallback);
+    }
+
+    void OnEntitlementCallback(Message msg)
+    {
+        if(msg.IsError)
+        {
+            SampleController.Instance.Log("Entitlement Failed: failed with error: " + msg.GetError());
+            return;
+        }
+        
         Users.GetLoggedInUser().OnComplete(GetLoggedInUserCallback);
 
         Array.Resize(ref _fakePacket, 1 + UuidSize);
