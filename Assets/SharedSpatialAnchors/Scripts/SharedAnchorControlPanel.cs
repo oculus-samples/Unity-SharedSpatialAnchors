@@ -108,7 +108,11 @@ public class SharedAnchorControlPanel : MonoBehaviour
     {
         SampleController.Instance.Log("OnLoadAnchorsButtonPressed");
 
-        SharedAnchorLoader.Instance.LoadLocalAnchors();
+        if (SampleController.Instance.cachedAnchorSample) {
+            SharedAnchorLoader.Instance.LoadLastUsedCachedAnchor();
+        } else {
+            SharedAnchorLoader.Instance.LoadLocalAnchors();
+        }
     }
 
     public void OnSpawnCubeButtonPressed()

@@ -232,8 +232,11 @@ namespace Common
 
         private void DebugLogInitialPose(ulong space)
         {
-            var posef = OVRPlugin.LocateSpace(space, OVRPlugin.GetTrackingOriginType());
-            Debug.Log($"Initial posef for entity [{space}] = {posef.ToString()}");
+            OVRPlugin.Posef posef;
+            if (OVRPlugin.TryLocateSpace(space, OVRPlugin.GetTrackingOriginType(), out posef))
+            {
+                Debug.Log($"Initial posef for entity [{space}] = {posef.ToString()}");
+            }
         }
 
         /// <summary>
@@ -253,8 +256,14 @@ namespace Common
                 return;
             }
 
-            var posef = OVRPlugin.LocateSpace(space, OVRPlugin.GetTrackingOriginType());
-            var worldPose = OVRExtensions.ToWorldSpacePose(posef.ToOVRPose());
+            OVRPlugin.Posef posef;
+            if (OVRPlugin.TryLocateSpace(space, OVRPlugin.GetTrackingOriginType(), out posef) == false)
+            {
+                Debug.LogWarning($"TryLocateSpace failed [{space}]");
+                return;
+            }
+
+            var worldPose = OVRExtensions.ToWorldSpacePose(posef.ToOVRPose(), Camera.main);
 
             // Get the semantic labels
             OVRPlugin.GetSpaceSemanticLabels(space, out var labels);

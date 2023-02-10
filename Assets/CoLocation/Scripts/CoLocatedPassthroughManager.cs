@@ -98,16 +98,20 @@ public class CoLocatedPassthroughManager : MonoBehaviour
     {
         passthroughSphere.SetActive(false);
         localized = true;
+        for (int i = 0; i < localPassthroughCutouts.Count; i++)
+        {
+            localPassthroughCutouts[i].localized = true;
+        }
     }
 
     public void NextVisualization()
     {
-        int i = (int) visualization;
+        int i = (int)visualization;
         i++;
-        if(i > 2)
+        if (i > 2)
         {
             i = 0;
         }
-        visualization = (CoLocAvatarVisualization) i;
+        visualization = (CoLocAvatarVisualization)i;
     }
 }

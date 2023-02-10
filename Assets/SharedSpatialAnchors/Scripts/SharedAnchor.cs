@@ -54,8 +54,6 @@ public class SharedAnchor : MonoBehaviour
 
     private OVRSpatialAnchor _spatialAnchor;
 
-    int currentRecenterCalls = 0;
-    bool selectedForAlignment = false;
 
     public bool IsSavedLocally
     {
@@ -83,8 +81,6 @@ public class SharedAnchor : MonoBehaviour
     {
         set
         {
-            selectedForAlignment = value;
-
             if (alignIcon != null)
             {
                 alignIcon.color = value ? greenColor : grayColor;
@@ -118,19 +114,6 @@ public class SharedAnchor : MonoBehaviour
             for (int i = 0; i < transform.childCount; i++)
             {
                 transform.GetChild(i).gameObject.SetActive(false);
-            }
-        }
-    }
-
-    private void Update()
-    {
-        if (currentRecenterCalls < OVRPlugin.GetLocalTrackingSpaceRecenterCount())
-        {
-            currentRecenterCalls = OVRPlugin.GetLocalTrackingSpaceRecenterCount();
-
-            if (selectedForAlignment)
-            {
-                OnAlignButtonPressed();
             }
         }
     }
@@ -178,32 +161,35 @@ public class SharedAnchor : MonoBehaviour
         });
     }
 
-    public void OnShareButtonPressed()
-    {
-        SampleController.Instance.Log("OnShareButtonPressed: sharing anchor");
-
-        if (OVRPlugin.GetSystemHeadsetType() != OVRPlugin.SystemHeadset.Meta_Quest_Pro)
-        {
-            SampleController.Instance.Log("Local multiplayer is currently only supported on Meta Quest Pro. Local multiplayer features in this app are not available on Quest 1 & 2.");
-        }
-
+    private bool IsReadyToShare()
+    {        
         if (!Photon.Pun.PhotonNetwork.IsConnected)
         {
-            SampleController.Instance.Log("OnShareButtonPressed: can't share - no users to share with because you are no longer connected to the Photon network");
-            return;
+            SampleController.Instance.Log("Can't share - no users to share with because you are no longer connected to the Photon network");
+            return false;
         }
 
         var userIds = PhotonAnchorManager.GetUserList().Select(userId => userId.ToString()).ToArray();
-
         if (userIds.Length == 0)
         {
-            SampleController.Instance.Log("OnShareButtonPressed: can't share - no users to share with or can't get the user ids through photon custom properties");
-            return;
+            SampleController.Instance.Log("Can't share - no users to share with or can't get the user ids through photon custom properties");
+            return false;
         }
 
         if (_spatialAnchor == null)
         {
-            SampleController.Instance.Log("OnShareButtonPressed: can't share - no associated spatial anchor");
+            SampleController.Instance.Log("Can't share - no associated spatial anchor");
+            return false;
+        }
+        return true;
+    }
+
+    public void OnShareButtonPressed()
+    {
+        SampleController.Instance.Log(nameof(OnShareButtonPressed));
+
+        if (!IsReadyToShare())
+        {
             return;
         }
 
@@ -211,15 +197,15 @@ public class SharedAnchor : MonoBehaviour
 
         OVRSpatialAnchor.SaveOptions saveOptions;
         saveOptions.Storage = OVRSpace.StorageLocation.Cloud;
-
         _spatialAnchor.Save(saveOptions, (spatialAnchor, isSuccessful) =>
-        {
+        {            
             if (isSuccessful)
             {
-                SampleController.Instance.Log("OnShareButtonPressed: successfully saved anchors to cloud with user ids: " + userIds.Length);
+                SampleController.Instance.Log("Successfully saved anchor(s) to the cloud");
 
+                var userIds = PhotonAnchorManager.GetUserList().Select(userId => userId.ToString()).ToArray();
                 ICollection<OVRSpaceUser> spaceUserList = new List<OVRSpaceUser>();
-                foreach (string strUsername in PhotonAnchorManager.GetUsers())
+                foreach (string strUsername in userIds)
                 {
                     spaceUserList.Add(new OVRSpaceUser(ulong.Parse(strUsername)));
                 }
@@ -230,34 +216,19 @@ public class SharedAnchor : MonoBehaviour
             }
             else
             {
-                SampleController.Instance.Log("OnShareButtonPressed: failed to save anchors to cloud with user ids: " + userIds.Length);
+                SampleController.Instance.Log("Saving anchor(s) failed. Possible reasons include an unsupported device.");               
             }
         });
     }
 
     public void ReshareAnchor()
     {
-        SampleController.Instance.Log("ReshareAnchor: re-sharing anchor");
-
-        if (OVRPlugin.GetSystemHeadsetType() != OVRPlugin.SystemHeadset.Meta_Quest_Pro)
+        if (!IsReadyToShare())
         {
-            SampleController.Instance.Log("Local multiplayer is currently only supported on Meta Quest Pro. Local multiplayer features in this app are not available on Quest 1 & 2.");
             return;
         }
 
-        var userIds = PhotonAnchorManager.GetUserList().Select(userId => userId.ToString()).ToArray();
-
-        if (userIds.Length == 0)
-        {
-            SampleController.Instance.Log("ReshareAnchor: can't share - no users to share with or can't get the user ids through photon custom properties");
-            return;
-        }
-
-        if (_spatialAnchor == null)
-        {
-            SampleController.Instance.Log("ReshareAnchor: can't share - no associated spatial anchor");
-            return;
-        }
+        SampleController.Instance.Log("ReshareAnchor: re-sharing anchor with all users in the room");
 
         IsSelectedForShare = true;
 
@@ -277,6 +248,10 @@ public class SharedAnchor : MonoBehaviour
 
         if (result != OVRSpatialAnchor.OperationResult.Success)
         {
+            foreach (var spatialAnchor in spatialAnchors)
+            {
+                spatialAnchor.GetComponent<SharedAnchor>().shareIcon.color = Color.red;
+            }
             return;
         }
 
@@ -291,7 +266,7 @@ public class SharedAnchor : MonoBehaviour
             ++uuidIndex;
         }
 
-        PhotonAnchorManager.Instance.PublishAnchorUuids(uuids, (uint)uuids.Length);
+        PhotonAnchorManager.Instance.PublishAnchorUuids(uuids, (uint)uuids.Length, true);
     }
 
     public void OnAlignButtonPressed()

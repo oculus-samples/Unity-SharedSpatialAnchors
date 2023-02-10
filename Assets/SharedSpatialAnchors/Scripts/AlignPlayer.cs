@@ -34,6 +34,7 @@ public class AlignPlayer : MonoBehaviour
 
     public static AlignPlayer Instance;
     private SharedAnchor _currentAlignmentAnchor;
+    private CachedSharedAnchor _currentCachedAlignmentAnchor;
     private Coroutine _realignCoroutine;
 
     private void Awake()
@@ -46,6 +47,48 @@ public class AlignPlayer : MonoBehaviour
         {
             Destroy(this);
         }
+    }
+
+    public void AlignToCachedAnchor(CachedSharedAnchor anchor)
+    {
+        if (_realignCoroutine != null)
+        {
+            StopCoroutine(_realignCoroutine);
+        }
+
+        if(anchor)
+            _realignCoroutine = StartCoroutine(AlignToCachedAnchorRoutine(anchor));
+    }
+
+    private IEnumerator AlignToCachedAnchorRoutine(CachedSharedAnchor anchor)
+    {
+        if (_currentCachedAlignmentAnchor != null)
+        {
+            player.position = Vector3.zero;
+            player.eulerAngles = Vector3.zero;
+
+            yield return null;
+        }
+
+        var anchorTransform = anchor.transform;
+
+        if (player)
+        {
+            player.position = anchorTransform.InverseTransformPoint(Vector3.zero);
+            player.eulerAngles = new Vector3(0, -anchorTransform.eulerAngles.y, 0);
+        }
+
+        if (playerHands)
+        {
+            playerHands.localPosition = -player.position;
+            playerHands.localEulerAngles = -player.eulerAngles;
+        }
+
+        _currentCachedAlignmentAnchor = anchor;
+
+        SampleController.Instance.Log("AlignToCachedAnchorRoutine: finished alignment!");
+
+        onAlign?.Invoke();
     }
 
     public void SetAlignmentAnchor(SharedAnchor anchor)

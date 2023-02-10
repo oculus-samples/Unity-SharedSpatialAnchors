@@ -59,7 +59,6 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
     private Guid _fakeUuid;
 
     private readonly HashSet<string> _usernameList = new HashSet<string>();
-    private readonly HashSet<Guid> _uuidsSharedWithMe = new HashSet<Guid>();
 
     #region [Monobehaviour Methods]
 
@@ -186,14 +185,14 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
             AddToUsernameList(player.NickName);
         }
 
-        if (SampleController.Instance.automaticCoLocation)
-        {
-            Photon.Pun.PhotonNetwork.Instantiate("PassthroughAvatarPhoton", Vector3.zero, Quaternion.identity);
-        }
-
         if (lobbyPanel)
         {
             lobbyPanel.gameObject.SetActive(false);
+        }
+
+        if (SampleController.Instance.automaticCoLocation)
+        {
+            Photon.Pun.PhotonNetwork.Instantiate("PassthroughAvatarPhoton", Vector3.zero, Quaternion.identity);
         }
 
         GameObject sceneCaptureController = GameObject.Find("SceneCaptureController");
@@ -217,15 +216,23 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
         AddToUsernameList(newPlayer.NickName);
 
-        if (SampleController.Instance.automaticCoLocation)
-        {
+        if (SampleController.Instance.automaticCoLocation) {
             Invoke(nameof(WaitToSendAnchor), 1);
+        } else if (SampleController.Instance.cachedAnchorSample) {
+            Invoke(nameof(WaitToReshareAnchor), 1);
         }
     }
 
     private void WaitToSendAnchor()
     {
         SampleController.Instance.colocationAnchor.OnShareButtonPressed();
+    }
+
+    private void WaitToReshareAnchor()
+    {
+        if (SampleController.Instance.colocationCachedAnchor != null) {
+            SampleController.Instance.colocationCachedAnchor.ReshareAnchor();
+        }
     }
 
     public override void OnPlayerLeftRoom(PhotonRealtime.Player otherPlayer)
@@ -287,7 +294,7 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
     #region [Send and read room data]
 
-    public void PublishAnchorUuids(Guid[] uuids, uint numUuids)
+    public void PublishAnchorUuids(Guid[] uuids, uint numUuids, bool isBuffered)
     {
         SampleController.Instance.Log("PublishAnchorUuids: numUuids: " + numUuids);
 
@@ -300,7 +307,8 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
             PackUuid(uuids[i], _sendUuidBuffer, ref offset);
         }
 
-        photonView.RPC(nameof(CheckForAnchorsShared), PhotonPun.RpcTarget.OthersBuffered, _sendUuidBuffer);
+        var rpcTarget = isBuffered ? PhotonPun.RpcTarget.OthersBuffered : PhotonPun.RpcTarget.Others;
+        photonView.RPC(nameof(CheckForAnchorsShared), rpcTarget, _sendUuidBuffer);
     }
 
     private static void PackUuid(Guid uuid, byte[] buf, ref int offset)
@@ -368,7 +376,8 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
             uuids.Add(uuid);
         }
 
-        ReceivedUuids(uuids);
+        Debug.Log(nameof(CheckForAnchorsShared) + " : set of uuids shared: " + uuids.Count);
+        SharedAnchorLoader.Instance.LoadAnchorsFromRemote(uuids);
     }
 
     public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
@@ -522,18 +531,6 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         return userIds;
     }
 
-    private void ReceivedUuids(HashSet<Guid> uuids)
-    {
-        Debug.Log("ReceivedUuids: set of uuids shared: " + uuids.Count);
-
-        uuids.ExceptWith(_uuidsSharedWithMe);
-
-        Debug.Log("ReceivedUuids: number of unique new uuids shared: " + uuids.Count);
-
-        SharedAnchorLoader.Instance.LoadCloudAnchors(uuids);
-        _uuidsSharedWithMe.UnionWith(uuids);
-    }
-
     //Two users are now confirmed to be on the same anchor
     public void SessionStart()
     {
@@ -546,11 +543,6 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
     public void SendSessionStart()
     {
         CoLocatedPassthroughManager.Instance.SessionStart();
-        if (SampleController.Instance.automaticCoLocation)
-        {
-            Photon.Pun.PhotonNetwork.Instantiate("PassthroughAvatarPhoton", Vector3.zero, Quaternion.identity);
-        }
     }
-
     #endregion
 }

@@ -29,27 +29,31 @@ using System.Collections.Generic;
 public class SampleController : MonoBehaviour
 {
     public bool automaticCoLocation = false;
+    public bool cachedAnchorSample = false;
 
     [HideInInspector]
     public SharedAnchor colocationAnchor;
+
+    [HideInInspector]
+    public CachedSharedAnchor colocationCachedAnchor;
 
     [SerializeField]
     private Transform rightHandAnchor;
 
     [SerializeField]
     private GameObject placementPreview;
-    
+
     [SerializeField]
     private Transform placementRoot;
-    
+
     [SerializeField]
     public TextMeshProUGUI logText;
-    
+
     [SerializeField]
     public TextMeshProUGUI pageText;
-    
+
     [SerializeField]
-    public OVRSpatialAnchor anchorPrefab; 
+    public OVRSpatialAnchor anchorPrefab;
 
     public static SampleController Instance;
     private bool _isPlacementMode;
@@ -66,9 +70,9 @@ public class SampleController : MonoBehaviour
         {
             Destroy(this);
         }
-        
+
         gameObject.AddComponent<SharedAnchorLoader>();
-        
+
         placementPreview.transform.parent = rightHandAnchor;
         placementPreview.transform.localPosition = Vector3.zero;
         placementPreview.transform.localRotation = Quaternion.identity;
@@ -87,7 +91,7 @@ public class SampleController : MonoBehaviour
     private void Update()
     {
         var shouldPlaceNewAnchor = _isPlacementMode && OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger);
-        
+
         if (shouldPlaceNewAnchor)
         {
             PlaceAnchorAtRoot(placementRoot);
@@ -121,12 +125,12 @@ public class SampleController : MonoBehaviour
     public void Log(string message)
     {
         // In VR Logging
-        
+
         logText.text = SampleController.Instance.logText.text + "\n" + message;
         logText.pageToDisplay = SampleController.Instance.logText.textInfo.pageCount;
 
         // Console logging (goes to logcat on device)
-        
+
         const string anchorTag = "SpatialAnchorsUnity: ";
         Debug.Log(anchorTag + message);
 

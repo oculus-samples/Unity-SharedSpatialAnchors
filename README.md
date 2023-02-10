@@ -8,4 +8,12 @@ For anchor sharing, this app uses Photon Unity Networking to share player data, 
 
 This codebase is available both as a reference and as a template for game that utilizes shared spatial anchors. Unity-SharedSpatialAnchors is under the license found [here](LICENSE) unless otherwise specified.
 
+## Documentation 
+
+Sample App Architecture: https://developer.oculus.com/documentation/unity/unity-ssa-sf/
+
+Scene Sharing: https://developer.oculus.com/documentation/unity/unity-shared-scene-sample/
+
+Health & Safety: https://developer.oculus.com/resources/unity-ssa-hs-app/ 
+
 See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
