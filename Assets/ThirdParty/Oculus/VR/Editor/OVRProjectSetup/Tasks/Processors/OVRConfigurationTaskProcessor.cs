@@ -56,6 +56,7 @@ internal abstract class OVRConfigurationTaskProcessor
 	public bool Completed => Started && (_enumerator == null || _enumerator.Current == null);
 	public List<OVRConfigurationTask> Tasks => _tasks;
 
+
 	protected OVRConfigurationTaskProcessor(OVRConfigurationTaskRegistry registry, BuildTargetGroup buildTargetGroup,
 		Func<IEnumerable<OVRConfigurationTask>, List<OVRConfigurationTask>> filter,
 		OVRProjectSetup.LogMessages logMessages,
@@ -96,6 +97,7 @@ internal abstract class OVRConfigurationTaskProcessor
 	{
 		PrepareTasks();
 		_startTime = Environment.TickCount;
+
 	}
 
 	public void Update()
@@ -123,5 +125,6 @@ internal abstract class OVRConfigurationTaskProcessor
 	{
 		_enumerator = null;
 		OnComplete?.Invoke(this);
+
 	}
 }

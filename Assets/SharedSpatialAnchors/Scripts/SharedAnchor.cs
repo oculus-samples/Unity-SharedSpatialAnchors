@@ -54,7 +54,6 @@ public class SharedAnchor : MonoBehaviour
 
     private OVRSpatialAnchor _spatialAnchor;
 
-
     public bool IsSavedLocally
     {
         set
@@ -110,12 +109,7 @@ public class SharedAnchor : MonoBehaviour
         }
 
         if (SampleController.Instance.automaticCoLocation)
-        {
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                transform.GetChild(i).gameObject.SetActive(false);
-            }
-        }
+            transform.Find("Canvas").gameObject.SetActive(false);
     }
 
     public void OnSaveLocalButtonPressed()
@@ -132,6 +126,8 @@ public class SharedAnchor : MonoBehaviour
             if (isSuccessful)
             {
                 IsSavedLocally = true;
+
+                SampleController.Instance.GetComponent<SharedAnchorLoader>().AddLocallySavedAnchor(_spatialAnchor);
             }
         });
     }
@@ -156,6 +152,7 @@ public class SharedAnchor : MonoBehaviour
         {
             if (isSuccessful)
             {
+                SampleController.Instance.GetComponent<SharedAnchorLoader>().RemoveLocallySavedAnchor(_spatialAnchor);
                 Destroy(gameObject);
             }
         });

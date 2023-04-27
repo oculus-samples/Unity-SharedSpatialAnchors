@@ -20,7 +20,6 @@
 
 using Meta.WitAi;
 using Meta.WitAi.Windows;
-using Meta.WitAi;
 using Oculus.Voice.Utility;
 using UnityEngine;
 

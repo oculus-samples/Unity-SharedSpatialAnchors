@@ -25,7 +25,7 @@ using UnityEngine;
 [InitializeOnLoad]
 internal static class OVRProjectSetupMovementSDK
 {
-	private const OVRConfigurationTask.TaskGroup Group = OVRConfigurationTask.TaskGroup.Features;
+	private const OVRProjectSetup.TaskGroup Group = OVRProjectSetup.TaskGroup.Features;
 
 	static OVRProjectSetupMovementSDK()
 	{
@@ -54,7 +54,7 @@ internal static class OVRProjectSetupMovementSDK
 	private static void AddMovementTrackingTasks<T>(string featureName, Func<OVRProjectConfig.FeatureSupport> supportLevel, Func<OVRManager, bool> permissionRequested, Action<OVRProjectConfig> enableSupport, Action<OVRManager> enablePermissionRequest) where T : Component
 	{
 		OVRProjectSetup.AddTask(
-			level: OVRConfigurationTask.TaskLevel.Required,
+			level: OVRProjectSetup.TaskLevel.Required,
 			group: Group,
 			isDone: buildTargetGroup => OVRProjectSetupUtils.FindComponentInScene<T>() == null || supportLevel() != OVRProjectConfig.FeatureSupport.None,
 			message: $"When using {featureName} in your project it's required to enable it's capability in the project config",
@@ -68,7 +68,7 @@ internal static class OVRProjectSetupMovementSDK
 			);
 
 		OVRProjectSetup.AddTask(
-			level: OVRConfigurationTask.TaskLevel.Optional,
+			level: OVRProjectSetup.TaskLevel.Optional,
 			group: Group,
 			isDone: buildTargetGroup =>
 			{

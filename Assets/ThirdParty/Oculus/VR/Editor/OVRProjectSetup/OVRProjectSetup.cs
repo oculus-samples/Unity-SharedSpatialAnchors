@@ -30,20 +30,39 @@ using System.Linq;
 /// This static class manages <see cref="OVRConfigurationTask"/> that can be added at any point.
 /// Use the AddTask method to add and register <see cref="OVRConfigurationTask"/>.
 /// </remarks>
-internal static class OVRProjectSetup
+public static class OVRProjectSetup
 {
-	internal static readonly OVRConfigurationTaskRegistry _principalRegistry;
+	public enum TaskLevel
+	{
+		Optional = 0,
+		Recommended = 1,
+		Required = 2
+	}
+
+	public enum TaskGroup
+	{
+		All = 0,
+		Compatibility = 1,
+		Rendering = 2,
+		Quality = 3,
+		Physics = 4,
+		Packages = 5,
+		Features = 6,
+		Miscellaneous = 7
+	}
+
+	private static readonly OVRConfigurationTaskRegistry _principalRegistry;
 
     internal static OVRConfigurationTaskRegistry Registry { get; private set; }
     internal static OVRConfigurationTaskProcessorQueue ProcessorQueue { get; }
 
     internal const string KeyPrefix = "OVRProjectSetup";
-    public static OVRProjectSetupSettingBool Enabled;
-    public static OVRProjectSetupSettingBool RequiredThrowErrors;
-    public static readonly OVRProjectSetupSettingBool AllowLogs = new OVRProjectSetupProjectSettingBool("AllowLogs", "Log outstanding issues", false);
-    public static readonly OVRProjectSetupSettingBool ShowStatusIcon = new OVRProjectSetupProjectSettingBool("ShowStatusIcon", "Show Status Icon", true);
+    internal static OVRProjectSetupSettingBool Enabled;
+    internal static OVRProjectSetupSettingBool RequiredThrowErrors;
+    internal static readonly OVRProjectSetupSettingBool AllowLogs = new OVRProjectSetupProjectSettingBool("AllowLogs", false, "Log outstanding issues");
+    internal static readonly OVRProjectSetupSettingBool ShowStatusIcon = new OVRProjectSetupProjectSettingBool("ShowStatusIcon", true, "Show Status Icon");
 
-    private static readonly HashSet<BuildTargetGroup> SupportedPlatforms = new HashSet<BuildTargetGroup>{BuildTargetGroup.Android, BuildTargetGroup.Standalone};
+    private static readonly HashSet<BuildTargetGroup> SupportedPlatforms = new HashSet<BuildTargetGroup> {BuildTargetGroup.Android, BuildTargetGroup.Standalone};
 
     static OVRProjectSetup()
     {
@@ -56,17 +75,16 @@ internal static class OVRProjectSetup
     internal static void SetupTemporaryRegistry()
     {
 	    Registry = new OVRConfigurationTaskRegistry();
-	    Enabled = new OVRProjectSetupConstSettingBool("Enabled", "Enabled", true);
-	    RequiredThrowErrors = new OVRProjectSetupConstSettingBool("RequiredThrowErrors", "Required throw errors", false);
+	    Enabled = new OVRProjectSetupConstSettingBool("Enabled", true, "Enabled");
+	    RequiredThrowErrors = new OVRProjectSetupConstSettingBool("RequiredThrowErrors", false, "Required throw errors");
     }
 
     internal static void RestoreRegistry()
     {
 	    Registry = _principalRegistry;
 	    Enabled =
-// An additional OVR_INTERNAL_CODE check that should be kept in as this setting item is not meant for public
-	    new OVRProjectSetupConstSettingBool("Enabled", "Enabled", true);
-	    RequiredThrowErrors = new OVRProjectSetupProjectSettingBool("RequiredThrowErrors", "Required throw errors", false);
+	    new OVRProjectSetupConstSettingBool("Enabled", true, "Enabled");
+	    RequiredThrowErrors = new OVRProjectSetupProjectSettingBool("RequiredThrowErrors", false, "Required throw errors");
     }
 
     private static void OnConsoleLink(Dictionary<string, string> infos)
@@ -75,7 +93,7 @@ internal static class OVRProjectSetup
         {
             if (href == OVRConfigurationTask.ConsoleLinkHref)
             {
-                OVRProjectSetupSettingsProvider.OpenSettingsWindow();
+                OVRProjectSetupSettingsProvider.OpenSettingsWindow(OVRProjectSetupSettingsProvider.Origins.Console);
             }
         }
     }
@@ -95,7 +113,7 @@ internal static class OVRProjectSetup
     /// <param name="task">The task that will get registered to the Setup Tool.</param>
     /// <exception cref="ArgumentException">Possible causes :
     /// - a task with the same unique ID already has been registered (conflict in hash generated from description message).</exception>
-    public static void AddTask(OVRConfigurationTask task)
+    internal static void AddTask(OVRConfigurationTask task)
     {
         Registry.AddTask(task);
     }
@@ -112,13 +130,13 @@ internal static class OVRProjectSetup
     /// </remarks>
     /// <param name="group">Category that fits the task. Feel free to add more to the enum if relevant. Do not use "All".</param>
     /// <param name="isDone">Func/Delegates/Lambda that checks if the Configuration Task is validated or not.</param>
-    /// <param name="fix">Action/Delegates/Lambda that actually validate the Configuration Task.</param>
     /// <param name="platform">Platform for which this Configuration Task applies. Use "Unknown" for any.</param>
+    /// <param name="fix">Action/Delegates/Lambda that actually validate the Configuration Task.</param>
     /// <param name="level">Level/Severity/Priority/Behaviour of the Configuration Task</param>
     /// <param name="conditionalLevel">Use this delegate for more control or complex behaviours over the level parameter.</param>
     /// <param name="message">Description of the Configuration Task</param>
     /// <param name="conditionalMessage">Use this delegate for more control or complex behaviours over the message parameter.</param>
-    /// /// <param name="fixMessage">Description of the actual fix for the Task</param>
+    /// <param name="fixMessage">Description of the actual fix for the Task</param>
     /// <param name="conditionalFixMessage">Use this delegate for more control or complex behaviours over the fixMessage parameter.</param>
     /// <param name="url">Url to more information about the Configuration Task</param>
     /// <param name="conditionalUrl">Use this delegate for more control or complex behaviours over the url parameter.</param>
@@ -132,12 +150,12 @@ internal static class OVRProjectSetup
     /// - group is set to "All". This category is not meant to be used to describe a task.
     /// - a task with the same unique ID already has been registered (conflict in hash generated from description message).</exception>
     public static void AddTask(
-        OVRConfigurationTask.TaskGroup group,
+        OVRProjectSetup.TaskGroup group,
         Func<BuildTargetGroup, bool> isDone,
         BuildTargetGroup platform = BuildTargetGroup.Unknown,
         Action<BuildTargetGroup> fix = null,
-        OVRConfigurationTask.TaskLevel level = OVRConfigurationTask.TaskLevel.Recommended,
-        Func<BuildTargetGroup, OVRConfigurationTask.TaskLevel> conditionalLevel = null,
+        OVRProjectSetup.TaskLevel level = OVRProjectSetup.TaskLevel.Recommended,
+        Func<BuildTargetGroup, OVRProjectSetup.TaskLevel> conditionalLevel = null,
         string message = null,
         Func<BuildTargetGroup, string> conditionalMessage = null,
         string fixMessage = null,
@@ -148,7 +166,7 @@ internal static class OVRProjectSetup
         Func<BuildTargetGroup, bool> conditionalValidity = null
         )
     {
-        var optionalLevel = OptionalLambdaType<BuildTargetGroup, OVRConfigurationTask.TaskLevel>.Create(level, conditionalLevel, true);
+        var optionalLevel = OptionalLambdaType<BuildTargetGroup, OVRProjectSetup.TaskLevel>.Create(level, conditionalLevel, true);
         var optionalMessage = OptionalLambdaType<BuildTargetGroup, string>.Create(message, conditionalMessage, true);
         var optionalFixMessage = OptionalLambdaType<BuildTargetGroup, string>.Create(fixMessage, conditionalFixMessage, true);
         var optionalUrl = OptionalLambdaType<BuildTargetGroup, string>.Create(url, conditionalUrl, true);
@@ -156,7 +174,7 @@ internal static class OVRProjectSetup
         AddTask(new OVRConfigurationTask(group, platform, isDone, fix, optionalLevel, optionalMessage, optionalFixMessage, optionalUrl, optionalValidity));
     }
 
-    public static bool IsPlatformSupported(BuildTargetGroup buildTargetGroup)
+    internal static bool IsPlatformSupported(BuildTargetGroup buildTargetGroup)
     {
         return SupportedPlatforms.Contains(buildTargetGroup);
     }
@@ -191,7 +209,7 @@ internal static class OVRProjectSetup
     )
     {
 	    // TODO : A bit overkill for just one task
-	    var filter = (Func<IEnumerable<OVRConfigurationTask>, List<OVRConfigurationTask>> )(tasks => tasks.Where(otherTask => otherTask == task).ToList());
+	    var filter = (Func<IEnumerable<OVRConfigurationTask>, List<OVRConfigurationTask>>)(tasks => tasks.Where(otherTask => otherTask == task).ToList());
 	    var fixer = new OVRConfigurationTaskFixer(Registry, buildTargetGroup, filter, logMessages, blocking, onCompleted);
 	    ProcessorQueue.Request(fixer);
     }

@@ -1,3 +1,23 @@
+/*
+* Copyright (c) Meta Platforms, Inc. and affiliates.
+* All rights reserved.
+*
+* Licensed under the Oculus SDK License Agreement (the "License");
+* you may not use the Oculus SDK except in compliance with the License,
+* which is provided at the time of installation or download, or which
+* otherwise accompanies this software in either electronic or hard copy form.
+*
+* You may obtain a copy of the License at
+*
+* https://developer.oculus.com/licenses/oculussdk/
+*
+* Unless required by applicable law or agreed to in writing, the Oculus SDK
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,41 +35,12 @@ public class WorldGenerationController : MonoBehaviour
 
     bool                sceneAlignmentApplied = false;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-    
-    public Transform FindDeskTransform(Scene scene)
-    {
-        GameObject deskObject = null;
-        foreach (var obstacle in scene.obstacles)
-        {
-            if (obstacle.type == ObstacleType.Desk)
-                deskObject = PopulateScaledObstacle(obstacle, ObstacleType.Desk);
-        }
-
-        return deskObject.transform;
-    }
-
     public void GenerateWorld(Scene scene)
     {
-        SampleController.Instance.Log("Generating World...");
-        SampleController.Instance.Log("Walls: " + scene.walls.Length);
-
-        if(scene.floor != null)
-            SampleController.Instance.Log("Floor: YES");
-        else
-            SampleController.Instance.Log("Floor: NO");
-
-        SampleController.Instance.Log("Obstacles: " + scene.obstacles.Length);
+        SampleController.Instance.Log("Updating Generated World...");
+        SampleController.Instance.Log($"Walls: {scene.walls.Length}");
+        SampleController.Instance.Log($"Floor: {scene.floor}");
+        SampleController.Instance.Log($"Obstacles: {scene.obstacles.Length}");
 
         foreach (GameObject obj in sceneObjects)
             Destroy(obj);
@@ -75,18 +66,19 @@ public class WorldGenerationController : MonoBehaviour
             newWall.SetActive(sceneAlignmentApplied);
             sceneObjects.Add(newWall);
         }
-        GameObject deskObject = null;
+
+        GameObject newObject;
         foreach (var obstacle in scene.obstacles)
         {
-            deskObject = PopulateScaledObstacle(obstacle, ObstacleType.Desk);
-            deskObject.SetActive(sceneAlignmentApplied);
-            sceneObjects.Add(deskObject);
+            newObject = PopulateScaledObstacle(obstacle);
+            newObject.SetActive(sceneAlignmentApplied);
+            sceneObjects.Add(newObject);
         }
 
         StartCoroutine(PlayIntroPassthrough());
     }
 
-    private GameObject PopulateScaledObstacle(Obstacle obstacle, ObstacleType type)
+    private GameObject PopulateScaledObstacle(Obstacle obstacle)
     {
         Quaternion obstacleRotation = obstacle.rotation;
         Quaternion toUp = Quaternion.AngleAxis(-Vector3.Angle(obstacleRotation * Vector3.up, Vector3.up), obstacle.rotation * Vector3.right);
@@ -110,12 +102,12 @@ public class WorldGenerationController : MonoBehaviour
             obstacleScale = new Vector3(obstacle.boundingBox.size.y, obstacle.boundingBox.size.x, obstacle.boundingBox.size.z);
         }
 
-        Vector3 deskPos = obstacle.position;
-        deskPos.y += obstacleScale.y;
+        Vector3 objPos = obstacle.position;
+        objPos.y += obstacleScale.y;
 
-        GameObject obstacleDeskGameObject = Object.Instantiate(obstaclePrefab, deskPos, obstacleRotation);
-        obstacleDeskGameObject.transform.localScale = obstacleScale;
-        return obstacleDeskGameObject;
+        GameObject obstacleGameObject = Object.Instantiate(obstaclePrefab, objPos, obstacleRotation);
+        obstacleGameObject.transform.localScale = obstacleScale;
+        return obstacleGameObject;
     }
 
     public void ShowSceneObjects()

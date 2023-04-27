@@ -51,7 +51,6 @@ namespace Meta.WitAi.Dictation
             _activeText = string.Empty;
             witDictation.VoiceEvents.OnFullTranscription.RemoveListener(OnFullTranscription);
             witDictation.VoiceEvents.OnPartialTranscription.RemoveListener(OnPartialTranscription);
-            witDictation.VoiceEvents.OnAborting.RemoveListener(OnCancelled);
         }
 
         private void OnCancelled()

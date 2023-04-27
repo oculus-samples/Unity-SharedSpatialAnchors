@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -20,7 +20,6 @@
 
 using System;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace Oculus.Interaction.Input
 {
@@ -58,8 +57,9 @@ namespace Oculus.Interaction.Input
         private UpdateModeFlags _updateMode;
         public UpdateModeFlags UpdateMode => _updateMode;
 
-        [SerializeField, Interface(typeof(IDataSource)), Optional]
-        private MonoBehaviour _updateAfter;
+        [SerializeField, Interface(typeof(IDataSource))]
+        [Optional(OptionalAttribute.Flag.DontHide)]
+        private UnityEngine.Object _updateAfter;
 
         private IDataSource UpdateAfter;
         private int _currentDataVersion;
@@ -197,7 +197,7 @@ namespace Oculus.Interaction.Input
 
         public void InjectUpdateAfter(IDataSource updateAfter)
         {
-            _updateAfter = updateAfter as MonoBehaviour;
+            _updateAfter = updateAfter as UnityEngine.Object;
             UpdateAfter = updateAfter;
         }
         #endregion

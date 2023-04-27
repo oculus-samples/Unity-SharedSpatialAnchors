@@ -36,11 +36,11 @@ namespace Oculus.Interaction.DistanceReticles
         private Renderer _invalidTargetRenderer;
 
         [SerializeField, Optional, Interface(typeof(IAxis1D))]
-        private MonoBehaviour _progress;
+        private UnityEngine.Object _progress;
         private IAxis1D Progress;
 
         [SerializeField, Optional, Interface(typeof(IActiveState))]
-        private MonoBehaviour _highlightState;
+        private UnityEngine.Object _highlightState;
         private IActiveState HighlightState;
 
         public UnityEvent WhenPerformLocomotion;
@@ -200,7 +200,7 @@ namespace Oculus.Interaction.DistanceReticles
 
         public void InjectOptionalProgress(IAxis1D progress)
         {
-            _progress = progress as MonoBehaviour;
+            _progress = progress as UnityEngine.Object;
             Progress = progress;
         }
         #endregion

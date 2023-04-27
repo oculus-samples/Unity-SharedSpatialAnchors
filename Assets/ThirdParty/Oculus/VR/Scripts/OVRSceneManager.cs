@@ -142,6 +142,31 @@ public class OVRSceneManager : MonoBehaviour
         public const string Other = "OTHER";
 
         /// <summary>
+        /// Represents an <see cref="OVRSceneAnchor"/> that is classified as a storage (e.g., cabinet, shelf).
+        /// </summary>
+        public const string Storage = "STORAGE";
+
+        /// <summary>
+        /// Represents an <see cref="OVRSceneAnchor"/> that is classified as a bed.
+        /// </summary>
+        public const string Bed = "BED";
+
+        /// <summary>
+        /// Represents an <see cref="OVRSceneAnchor"/> that is classified as a screen (e.g., TV, computer monitor).
+        /// </summary>
+        public const string Screen = "SCREEN";
+
+        /// <summary>
+        /// Represents an <see cref="OVRSceneAnchor"/> that is classified as a lamp.
+        /// </summary>
+        public const string Lamp = "LAMP";
+
+        /// <summary>
+        /// Represents an <see cref="OVRSceneAnchor"/> that is classified as a plant.
+        /// </summary>
+        public const string Plant = "PLANT";
+
+        /// <summary>
         /// The list of possible semantic labels.
         /// </summary>
         public static IReadOnlyList<string> List { get; } = new[]
@@ -153,7 +178,12 @@ public class OVRSceneManager : MonoBehaviour
             Couch,
             DoorFrame,
             WindowFrame,
-            Other
+            Other,
+            Storage,
+            Bed,
+            Screen,
+            Lamp,
+            Plant
         };
     }
 
@@ -735,12 +765,6 @@ public class OVRSceneManager : MonoBehaviour
             }
 
             if (OVRSceneAnchor.SceneAnchors.ContainsKey(uuid))
-            {
-                return;
-            }
-
-            // Ignoring this anchor because it has been destroyed.
-            if (OVRSceneAnchor.DestroyedSceneAnchors.Contains(uuid))
             {
                 return;
             }

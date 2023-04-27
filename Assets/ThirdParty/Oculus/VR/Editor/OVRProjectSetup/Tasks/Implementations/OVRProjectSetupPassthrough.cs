@@ -23,12 +23,12 @@ using UnityEditor;
 [InitializeOnLoad]
 internal static  class OVRProjectSetupPassthrough
 {
-	private const OVRConfigurationTask.TaskGroup Group = OVRConfigurationTask.TaskGroup.Features;
+	private const OVRProjectSetup.TaskGroup Group = OVRProjectSetup.TaskGroup.Features;
 
 	static OVRProjectSetupPassthrough()
 	{
 		OVRProjectSetup.AddTask(
-			level: OVRConfigurationTask.TaskLevel.Required,
+			level: OVRProjectSetup.TaskLevel.Required,
 			group: Group,
 			isDone: buildTargetGroup => OVRProjectSetupUtils.FindComponentInScene<OVRPassthroughLayer>() == null || OVRProjectConfig.CachedProjectConfig.insightPassthroughSupport != OVRProjectConfig.FeatureSupport.None,
 			message: "When using Passthrough in your project it's required to enable it's capability in the project config",
@@ -42,7 +42,7 @@ internal static  class OVRProjectSetupPassthrough
 			fixMessage:"Enable Passthrough support in the project config");
 
 		OVRProjectSetup.AddTask(
-			level: OVRConfigurationTask.TaskLevel.Required,
+			level: OVRProjectSetup.TaskLevel.Required,
 			group: Group,
 			isDone: buildTargetGroup => OVRProjectSetupCompatibilityTasks.IsTargetingARM64,
 			conditionalValidity: buildTargetGroup => OVRProjectConfig.CachedProjectConfig.insightPassthroughSupport != OVRProjectConfig.FeatureSupport.None,

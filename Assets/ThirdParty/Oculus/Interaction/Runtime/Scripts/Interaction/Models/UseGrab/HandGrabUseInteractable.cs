@@ -31,8 +31,9 @@ namespace Oculus.Interaction.HandGrab
         /// to a separate script. Implement it in the usable object so it also
         /// receives updates from this interaction automatically.
         /// </summary>
-        [SerializeField, Optional, Interface(typeof(IHandGrabUseDelegate))]
-        private MonoBehaviour _handUseDelegate;
+        [SerializeField, Interface(typeof(IHandGrabUseDelegate))]
+        [Optional(OptionalAttribute.Flag.DontHide)]
+        private UnityEngine.Object _handUseDelegate;
         private IHandGrabUseDelegate HandUseDelegate { get; set; }
 
         /// <summary>
@@ -76,12 +77,14 @@ namespace Oculus.Interaction.HandGrab
         /// <summary>
         /// Hand grab poses representing the initial pose when the item is used at minimum progress
         /// </summary>
-        [SerializeField, Optional]
+        [SerializeField]
+        [Optional(OptionalAttribute.Flag.DontHide)]
         private List<HandGrabPose> _relaxedHandGrabPoses = new List<HandGrabPose>();
         /// <summary>
         /// Hand grab poses representing the final pose when the item is used at maximum progress
         /// </summary>
-        [SerializeField, Optional]
+        [SerializeField]
+        [Optional(OptionalAttribute.Flag.DontHide)]
         private List<HandGrabPose> _tightHandGrabPoses = new List<HandGrabPose>();
 
         /// <summary>
@@ -150,7 +153,9 @@ namespace Oculus.Interaction.HandGrab
             }
             else if (_handGrabPoses.Count > 1)
             {
-                GrabPoseFinder.FindInterpolationRange(handScale, _handGrabPoses, out HandGrabPose under, out HandGrabPose over, out float t);
+                float relativeHandScale = handScale / this.transform.lossyScale.x;
+                GrabPoseFinder.FindInterpolationRange(relativeHandScale, _handGrabPoses,
+                    out HandGrabPose under, out HandGrabPose over, out float t);
                 if (under.HandPose != null && over.HandPose != null)
                 {
                     HandPose.Lerp(under.HandPose, over.HandPose, t, ref handPose);
@@ -177,7 +182,7 @@ namespace Oculus.Interaction.HandGrab
 
         public void InjectOptionalForwardUseDelegate(IHandGrabUseDelegate useDelegate)
         {
-            _handUseDelegate = useDelegate as MonoBehaviour;
+            _handUseDelegate = useDelegate as UnityEngine.Object;
             HandUseDelegate = useDelegate;
         }
 

@@ -103,7 +103,6 @@ namespace Oculus.Interaction
             _colliders = Rigidbody.GetComponentsInChildren<Collider>();
             this.AssertCollectionField(_colliders, nameof(_colliders),
                $"The associated {AssertUtils.Nicify(nameof(Rigidbody))} must have at least one Collider.");
-
             this.EndStart(ref _started);
         }
 
@@ -159,7 +158,6 @@ namespace Oculus.Interaction
         {
             _physicsGrabbable = physicsGrabbable;
         }
-
         #endregion
     }
 }

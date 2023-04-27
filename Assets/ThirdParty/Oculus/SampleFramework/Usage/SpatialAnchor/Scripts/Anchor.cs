@@ -146,6 +146,7 @@ public class Anchor : MonoBehaviour
         Destroy(gameObject);
     }
 
+
     /// <summary>
     /// UI callback for the anchor menu's Erase button
     /// </summary>

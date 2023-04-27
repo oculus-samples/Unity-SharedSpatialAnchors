@@ -68,6 +68,76 @@ namespace Meta.WitAi.TTS.Editor
             EditorGUILayout.Space();
             EditorGUILayout.Space();
             base.OnInspectorGUI();
+
+            // Layout TTS clip queue
+            LayoutClipQueue();
+        }
+
+        // Layout clip queue
+        private const string UI_CLIP_HEADER_TEXT = "Clip Queue";
+        private const string UI_CLIP_SPEAKER_TEXT = "Speaker Clip:";
+        private const string UI_CLIP_QUEUE_TEXT = "Loading Clips:";
+        private bool _speakerFoldout = false;
+        private bool _queueFoldout = false;
+        private void LayoutClipQueue()
+        {
+            // Ignore unless playing
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            // Add header
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(UI_CLIP_HEADER_TEXT, EditorStyles.boldLabel);
+
+            // Speaker Foldout
+            _speakerFoldout = EditorGUILayout.Foldout(_speakerFoldout, UI_CLIP_SPEAKER_TEXT);
+            if (_speakerFoldout)
+            {
+                EditorGUI.indentLevel++;
+                if (!_speaker.IsSpeaking)
+                {
+                    EditorGUILayout.LabelField("None");
+                }
+                else
+                {
+                    TTSServiceInspector.DrawClipGUI(_speaker.SpeakingClip);
+                }
+                EditorGUI.indentLevel--;
+            }
+
+            // Queue Foldout
+            TTSClipData[] QueuedClips = _speaker.QueuedClips;
+            _queueFoldout = EditorGUILayout.Foldout(_queueFoldout, $"{UI_CLIP_QUEUE_TEXT} {(QueuedClips == null ? 0 : QueuedClips.Length)}");
+            if (_queueFoldout)
+            {
+                EditorGUI.indentLevel++;
+                if (QueuedClips == null || QueuedClips.Length == 0)
+                {
+                    EditorGUILayout.LabelField("None");
+                }
+                else
+                {
+                    for (int i = 0; i < QueuedClips.Length; i++)
+                    {
+                        TTSClipData clipData = QueuedClips[i];
+                        bool oldFoldout = WitEditorUI.GetFoldoutValue(clipData);
+                        bool newFoldout = EditorGUILayout.Foldout(oldFoldout, $"Clip[{i}]");
+                        if (oldFoldout != newFoldout)
+                        {
+                            WitEditorUI.SetFoldoutValue(clipData, newFoldout);
+                        }
+                        if (newFoldout)
+                        {
+                            EditorGUI.indentLevel++;
+                            TTSServiceInspector.DrawClipGUI(clipData);
+                            EditorGUI.indentLevel--;
+                        }
+                    }
+                }
+                EditorGUI.indentLevel--;
+            }
         }
 
         // Refresh voices
@@ -82,7 +152,7 @@ namespace Meta.WitAi.TTS.Editor
             TTSVoiceSettings[] settings = tts?.GetAllPresetVoiceSettings();
             if (settings == null)
             {
-                Debug.LogError("No Preset Voice Settings Found!");
+                VLog.E("No Preset Voice Settings Found!");
                 return;
             }
 

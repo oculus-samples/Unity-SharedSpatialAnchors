@@ -18,24 +18,23 @@
  * limitations under the License.
  */
 
-using UnityEngine;
-using UnityEngine.Assertions;
 using Oculus.Interaction.Surfaces;
+using UnityEngine;
 
 namespace Oculus.Interaction
 {
     public class RayInteractable : PointerInteractable<RayInteractor, RayInteractable>
     {
         [SerializeField, Interface(typeof(ISurface))]
-        private MonoBehaviour _surface;
+        private UnityEngine.Object _surface;
         public ISurface Surface { get; private set; }
 
         [SerializeField, Optional, Interface(typeof(ISurface))]
-        private MonoBehaviour _selectSurface = null;
+        private UnityEngine.Object _selectSurface = null;
         private ISurface SelectSurface;
 
         [SerializeField, Optional, Interface(typeof(IMovementProvider))]
-        private MonoBehaviour _movementProvider;
+        private UnityEngine.Object _movementProvider;
         private IMovementProvider MovementProvider { get; set; }
 
         [SerializeField, Optional]
@@ -108,20 +107,21 @@ namespace Oculus.Interaction
         public void InjectSurface(ISurface surface)
         {
             Surface = surface;
-            _surface = surface as MonoBehaviour;
+            _surface = surface as UnityEngine.Object;
         }
 
         public void InjectOptionalSelectSurface(ISurface surface)
         {
             SelectSurface = surface;
-            _selectSurface = surface as MonoBehaviour;
+            _selectSurface = surface as UnityEngine.Object;
         }
 
         public void InjectOptionalMovementProvider(IMovementProvider provider)
         {
-            _movementProvider = provider as MonoBehaviour;
+            _movementProvider = provider as UnityEngine.Object;
             MovementProvider = provider;
         }
+
         #endregion
     }
 }

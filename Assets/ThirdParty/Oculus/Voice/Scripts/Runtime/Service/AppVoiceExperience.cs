@@ -19,6 +19,7 @@
  */
 
 using System;
+using System.Globalization;
 using Meta.WitAi;
 using Meta.WitAi.Configuration;
 using Meta.WitAi.Data;
@@ -28,6 +29,7 @@ using Meta.WitAi.Json;
 using Oculus.Voice.Bindings.Android;
 using Oculus.Voice.Core.Bindings.Android.PlatformLogger;
 using Oculus.Voice.Core.Bindings.Interfaces;
+using Oculus.Voice.Core.Utilities;
 using Oculus.Voice.Interfaces;
 using Oculus.VoiceSDK.Utilities;
 using UnityEngine;
@@ -35,7 +37,7 @@ using UnityEngine;
 namespace Oculus.Voice
 {
     [HelpURL("https://developer.oculus.com/experimental/voice-sdk/tutorial-overview/")]
-    public class AppVoiceExperience : VoiceService, IWitRuntimeConfigProvider
+    public class AppVoiceExperience : VoiceService, IWitRuntimeConfigProvider, IWitConfigurationProvider
     {
         [SerializeField] private WitRuntimeConfiguration witRuntimeConfiguration;
         [Tooltip("Uses platform services to access wit.ai instead of accessing wit directly from within the application.")]
@@ -50,12 +52,14 @@ namespace Oculus.Voice
             set => witRuntimeConfiguration = value;
         }
 
+        public WitConfiguration Configuration => witRuntimeConfiguration?.witConfiguration;
+
         private IPlatformVoiceService platformService;
         private IVoiceService voiceServiceImpl;
         private IVoiceSDKLogger voiceSDKLoggerImpl;
 #if UNITY_ANDROID && !UNITY_EDITOR
         // This version is auto-updated for a release build
-        private readonly string PACKAGE_VERSION = "49.0.0.180.358";
+        private readonly string PACKAGE_VERSION = "51.0.0.154.269";
 #endif
 
         private bool Initialized => null != voiceServiceImpl;
@@ -108,7 +112,8 @@ namespace Oculus.Voice
         {
             if (IsNetworkPresent())
             {
-                voiceSDKLoggerImpl.LogInteractionStart(options.requestID, "message");
+                voiceSDKLoggerImpl.LogInteractionStart(options.RequestId, "message");
+                LogRequestConfig();
                 voiceServiceImpl.Activate(text, options);
             }
         }
@@ -117,7 +122,8 @@ namespace Oculus.Voice
         {
             if (IsMicPresent() && IsNetworkPresent())
             {
-                voiceSDKLoggerImpl.LogInteractionStart(options.requestID, "speech");
+                voiceSDKLoggerImpl.LogInteractionStart(options.RequestId, "speech");
+                LogRequestConfig();
                 voiceServiceImpl.Activate(options);
             }
         }
@@ -126,7 +132,7 @@ namespace Oculus.Voice
         {
             if (IsMicPresent() && IsNetworkPresent())
             {
-                voiceSDKLoggerImpl.LogInteractionStart(options.requestID, "speech");
+                voiceSDKLoggerImpl.LogInteractionStart(options.RequestId, "speech");
                 voiceServiceImpl.ActivateImmediately(options);
             }
         }
@@ -201,6 +207,7 @@ namespace Oculus.Voice
                     }
 
                     voiceServiceImpl.VoiceEvents = VoiceEvents;
+                    voiceServiceImpl.TelemetryEvents = TelemetryEvents;
                     voiceSDKLoggerImpl.IsUsingPlatformIntegration = true;
                 }
                 else
@@ -239,6 +246,7 @@ namespace Oculus.Voice
             }
 
             voiceServiceImpl.VoiceEvents = VoiceEvents;
+            voiceServiceImpl.TelemetryEvents = TelemetryEvents;
             voiceSDKLoggerImpl.IsUsingPlatformIntegration = false;
         }
 
@@ -263,8 +271,16 @@ namespace Oculus.Voice
             VoiceEvents.OnAborted?.AddListener(OnAborted);
             VoiceEvents.OnError?.AddListener(OnError);
             VoiceEvents.OnStartListening?.AddListener(OnStartedListening);
+            VoiceEvents.OnMinimumWakeThresholdHit?.AddListener(OnMinimumWakeThresholdHit);
             VoiceEvents.OnStoppedListening?.AddListener(OnStoppedListening);
             VoiceEvents.OnMicDataSent?.AddListener(OnMicDataSent);
+            VoiceEvents.OnRequestCreated?.AddListener(OnWitRequestCreated);
+            VoiceEvents.onPartialTranscription?.AddListener(OnPartialTranscription);
+            VoiceEvents.onFullTranscription?.AddListener(OnFullTranscription);
+            VoiceEvents.OnStoppedListeningDueToTimeout?.AddListener(OnStoppedListeningDueToTimeout);
+            VoiceEvents.OnStoppedListeningDueToInactivity?.AddListener(OnStoppedListeningDueToInactivity);
+            VoiceEvents.OnStoppedListeningDueToDeactivation?.AddListener(OnStoppedListeningDueToDeactivation);
+            TelemetryEvents.OnAudioTrackerFinished?.AddListener(OnAudioDurationTrackerFinished);
         }
 
         protected override void OnDisable()
@@ -288,8 +304,16 @@ namespace Oculus.Voice
             VoiceEvents.OnAborted?.RemoveListener(OnAborted);
             VoiceEvents.OnError?.RemoveListener(OnError);
             VoiceEvents.OnStartListening?.RemoveListener(OnStartedListening);
+            VoiceEvents.OnMinimumWakeThresholdHit?.RemoveListener(OnMinimumWakeThresholdHit);
             VoiceEvents.OnStoppedListening?.RemoveListener(OnStoppedListening);
             VoiceEvents.OnMicDataSent?.RemoveListener(OnMicDataSent);
+            VoiceEvents.OnRequestCreated?.RemoveListener(OnWitRequestCreated);
+            VoiceEvents.onPartialTranscription?.RemoveListener(OnPartialTranscription);
+            VoiceEvents.onFullTranscription?.RemoveListener(OnFullTranscription);
+            VoiceEvents.OnStoppedListeningDueToTimeout?.RemoveListener(OnStoppedListeningDueToTimeout);
+            VoiceEvents.OnStoppedListeningDueToInactivity?.RemoveListener(OnStoppedListeningDueToInactivity);
+            VoiceEvents.OnStoppedListeningDueToDeactivation?.RemoveListener(OnStoppedListeningDueToDeactivation);
+            TelemetryEvents.OnAudioTrackerFinished?.RemoveListener(OnAudioDurationTrackerFinished);
         }
 
         private void OnApplicationFocus(bool hasFocus)
@@ -333,14 +357,74 @@ namespace Oculus.Voice
             voiceSDKLoggerImpl.LogInteractionPoint("startedListening");
         }
 
+        void OnMinimumWakeThresholdHit()
+        {
+            voiceSDKLoggerImpl.LogInteractionPoint("minWakeThresholdHit");
+        }
+
         void OnStoppedListening()
         {
             voiceSDKLoggerImpl.LogInteractionPoint("stoppedListening");
         }
 
+        void OnStoppedListeningDueToTimeout()
+        {
+            voiceSDKLoggerImpl.LogInteractionPoint("stoppedListeningTimeout");
+        }
+
+        void OnStoppedListeningDueToInactivity()
+        {
+            voiceSDKLoggerImpl.LogInteractionPoint("stoppedListeningInactivity");
+        }
+
+        void OnStoppedListeningDueToDeactivation()
+        {
+            voiceSDKLoggerImpl.LogInteractionPoint("stoppedListeningDeactivate");
+        }
+
         void OnMicDataSent()
         {
             voiceSDKLoggerImpl.LogInteractionPoint("micDataSent");
+        }
+
+        void OnWitRequestCreated(WitRequest request)
+        {
+            voiceSDKLoggerImpl.LogInteractionPoint("witRequestCreated");
+            if (request != null)
+            {
+                voiceSDKLoggerImpl.LogAnnotation("requestIdOverride", request.Options?.RequestId);
+            }
+        }
+
+        void OnAudioDurationTrackerFinished(long timestamp, double audioDuration)
+        {
+            voiceSDKLoggerImpl.LogAnnotation("adt_duration", audioDuration.ToString(CultureInfo.InvariantCulture));
+            voiceSDKLoggerImpl.LogAnnotation("adt_finished", timestamp.ToString());
+        }
+
+        void OnPartialTranscription(string text)
+        {
+            voiceSDKLoggerImpl.LogFirstTranscriptionTime();
+        }
+
+        void OnFullTranscription(string text)
+        {
+            voiceSDKLoggerImpl.LogInteractionPoint("fullTranscriptionTime");
+        }
+
+        void LogRequestConfig()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            voiceSDKLoggerImpl.LogAnnotation("clientSDKVersion", PACKAGE_VERSION);
+#endif
+            voiceSDKLoggerImpl.LogAnnotation("minWakeThreshold",
+                RuntimeConfiguration?.soundWakeThreshold.ToString(CultureInfo.InvariantCulture));
+            voiceSDKLoggerImpl.LogAnnotation("minKeepAliveTimeSec",
+                RuntimeConfiguration?.minKeepAliveTimeInSeconds.ToString(CultureInfo.InvariantCulture));
+            voiceSDKLoggerImpl.LogAnnotation("minTranscriptionKeepAliveTimeSec",
+                RuntimeConfiguration?.minTranscriptionKeepAliveTimeInSeconds.ToString(CultureInfo.InvariantCulture));
+            voiceSDKLoggerImpl.LogAnnotation("maxRecordingTime",
+                RuntimeConfiguration?.maxRecordingTime.ToString(CultureInfo.InvariantCulture));
         }
         #endregion
     }

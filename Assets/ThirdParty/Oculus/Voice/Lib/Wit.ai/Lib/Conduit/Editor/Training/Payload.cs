@@ -6,14 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-namespace Meta.Conduit
+using System;
+
+namespace Oculus.Interaction.Deprecated
 {
-    /// <summary>
-    /// Used to transfer data between steps.
-    /// </summary>
+    [Obsolete("Not required any more")]
     internal class Payload
     {
-        public string Data { get; set; } = "";
-        public string Error { get; set; } = "";
     }
 }

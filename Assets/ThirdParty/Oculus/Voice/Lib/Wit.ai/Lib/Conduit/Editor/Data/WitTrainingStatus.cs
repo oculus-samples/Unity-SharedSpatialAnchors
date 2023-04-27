@@ -6,18 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-using System.Runtime.Serialization;
+using System;
 
-namespace Meta.Conduit
+namespace Oculus.Interaction.Deprecated
 {
+    [Obsolete("Auto-Training now happens on the server")]
     public enum WitTrainingStatus
     {
-        Unknown,
-        [EnumMember(Value = "done")]
-        Done,
-        [EnumMember(Value = "scheduled")]
-        Scheduled,
-        [EnumMember(Value = "ongoing")]
-        Ongoing
     }
 }

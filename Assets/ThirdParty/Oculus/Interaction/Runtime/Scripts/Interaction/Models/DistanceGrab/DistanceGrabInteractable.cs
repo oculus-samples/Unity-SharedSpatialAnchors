@@ -54,7 +54,7 @@ namespace Oculus.Interaction
         /// </summary>
         [Header("Snap")]
         [SerializeField, Optional, Interface(typeof(IMovementProvider))]
-        private MonoBehaviour _movementProvider;
+        private UnityEngine.Object _movementProvider;
         private IMovementProvider MovementProvider { get; set; }
 
         #region Properties
@@ -149,7 +149,7 @@ namespace Oculus.Interaction
 
         public void InjectOptionalMovementProvider(IMovementProvider provider)
         {
-            _movementProvider = provider as MonoBehaviour;
+            _movementProvider = provider as UnityEngine.Object;
             MovementProvider = provider;
         }
         #endregion

@@ -710,104 +710,88 @@ public class OVROverlay : MonoBehaviour
 			if (et == null)
 				continue;
 
+			ret = true;
+
+			// PC requries premultiplied Alpha, premultiply it unless its already premultiplied
+			bool premultiplyAlpha = !Application.isMobilePlatform && !isAlphaPremultiplied;
+
+			// OpenGL does not support copy texture between different format
+			bool isOpenGL = SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2;
+			// Graphics.CopyTexture only works when textures are same size
+			bool isSameSize = et.width == textures[eyeId].width && et.height == textures[eyeId].height;
+
+			bool bypassBlit = Application.isMobilePlatform && !isOpenGL && isSameSize;
+			if (bypassBlit)
+			{
+				Graphics.CopyTexture(textures[eyeId], et);
+				continue;
+			}
+
+			// Need to run the blit shader for premultiply Alpha
 			for (int mip = 0; mip < mipLevels; ++mip)
 			{
-				bool dataIsLinear = isHdr || (QualitySettings.activeColorSpace == ColorSpace.Linear);
-
-				var rt = textures[eyeId] as RenderTexture;
-#if UNITY_ANDROID && !UNITY_EDITOR
-				dataIsLinear = true; //HACK: Graphics.CopyTexture causes linear->srgb conversion on target write with D3D but not GLES.
-#endif
-				// PC requries premultiplied Alpha
-				bool requiresPremultipliedAlpha = !Application.isMobilePlatform;
-
-				bool linearToSRGB = !isHdr && dataIsLinear;
-				// if the texture needs to be premultiplied, premultiply it unless its already premultiplied
-				bool premultiplyAlpha = requiresPremultipliedAlpha && !isAlphaPremultiplied;
-
-				bool bypassBlit = !linearToSRGB && !premultiplyAlpha && rt != null && rt.format == rtFormat;
-
 				RenderTexture tempRTDst = null;
 
-				if (!bypassBlit)
+				int width = size.w >> mip;
+				if (width < 1) width = 1;
+				int height = size.h >> mip;
+				if (height < 1) height = 1;
+				RenderTextureDescriptor descriptor = new RenderTextureDescriptor(width, height, rtFormat, 0);
+				descriptor.msaaSamples = sampleCount;
+				descriptor.useMipMap = true;
+				descriptor.autoGenerateMips = false;
+				descriptor.sRGB = true;
+
+				tempRTDst = RenderTexture.GetTemporary(descriptor);
+
+				if (!tempRTDst.IsCreated())
 				{
-					int width = size.w >> mip;
-					if (width < 1) width = 1;
-					int height = size.h >> mip;
-					if (height < 1) height = 1;
-					RenderTextureDescriptor descriptor = new RenderTextureDescriptor(width, height, rtFormat, 0);
-					descriptor.msaaSamples = sampleCount;
-					descriptor.useMipMap = true;
-					descriptor.autoGenerateMips = false;
-					descriptor.sRGB = false;
-
-					tempRTDst = RenderTexture.GetTemporary(descriptor);
-
-					if (!tempRTDst.IsCreated())
-					{
-						tempRTDst.Create();
-					}
-
-					tempRTDst.DiscardContents();
-
-					Material blitMat = null;
-					if (currentOverlayShape != OverlayShape.Cubemap && currentOverlayShape != OverlayShape.OffcenterCubemap)
-					{
-						blitMat = tex2DMaterial;
-					}
-					else
-					{
-						blitMat = cubeMaterial;
-					}
-
-					blitMat.SetInt("_linearToSrgb", linearToSRGB ? 1 : 0);
-					blitMat.SetInt("_premultiply", premultiplyAlpha ? 1 : 0);
-					blitMat.SetInt("_flip", OVRPlugin.nativeXrApi == OVRPlugin.XrApi.OpenXR ? 1 : 0);
+					tempRTDst.Create();
 				}
+
+				tempRTDst.DiscardContents();
+
+				Material blitMat = null;
+				if (currentOverlayShape != OverlayShape.Cubemap && currentOverlayShape != OverlayShape.OffcenterCubemap)
+				{
+					blitMat = tex2DMaterial;
+				}
+				else
+				{
+					blitMat = cubeMaterial;
+				}
+
+				blitMat.SetInt("_premultiply", premultiplyAlpha ? 1 : 0);
 
 				if (currentOverlayShape != OverlayShape.Cubemap && currentOverlayShape != OverlayShape.OffcenterCubemap)
 				{
-					if (bypassBlit)
+					blitMat.SetInt("_flip", OVRPlugin.nativeXrApi == OVRPlugin.XrApi.OpenXR ? 1 : 0);
+					if (overrideTextureRectMatrix)
 					{
-						Graphics.CopyTexture(textures[eyeId], 0, mip, et, 0, mip);
+						BlitSubImage(textures[eyeId], tempRTDst, tex2DMaterial, GetBlitRect(eyeId));
 					}
 					else
 					{
-						if (overrideTextureRectMatrix)
-						{
-							BlitSubImage(textures[eyeId], tempRTDst, tex2DMaterial, GetBlitRect(eyeId));
-						}
-						else
-						{
-							Graphics.Blit(textures[eyeId], tempRTDst, tex2DMaterial);
-						}
-						//Resolve, decompress, swizzle, etc not handled by simple CopyTexture.
-						Graphics.CopyTexture(tempRTDst, 0, 0, et, 0, mip);
+						Graphics.Blit(textures[eyeId], tempRTDst, tex2DMaterial);
 					}
+					//Resolve, decompress, swizzle, etc not handled by simple CopyTexture.
+					Graphics.CopyTexture(tempRTDst, 0, 0, et, 0, mip);
 				}
 				else // Cubemap
 				{
 					for (int face = 0; face < 6; ++face)
 					{
 						cubeMaterial.SetInt("_face", face);
-						if (bypassBlit)
-						{
-							Graphics.CopyTexture(textures[eyeId], face, mip, et, face, mip);
-						}
-						else
-						{
-							//Resolve, decompress, swizzle, etc not handled by simple CopyTexture.
-							Graphics.Blit(textures[eyeId], tempRTDst, cubeMaterial);
-							Graphics.CopyTexture(tempRTDst, 0, 0, et, face, mip);
-						}
+						//Resolve, decompress, swizzle, etc not handled by simple CopyTexture.
+						Graphics.Blit(textures[eyeId], tempRTDst, cubeMaterial);
+						Graphics.CopyTexture(tempRTDst, 0, 0, et, face, mip);
 					}
 				}
+
 				if (tempRTDst != null)
 				{
 					RenderTexture.ReleaseTemporary(tempRTDst);
 				}
-
-				ret = true;
 			}
 		}
 

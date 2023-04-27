@@ -69,7 +69,14 @@ namespace Meta.WitAi.Data.Configuration
         /// <summary>
         /// The assemblies that we want to exclude from Conduit.
         /// </summary>
-        [SerializeField] public List<string> excludedAssemblies = new List<string>();
+        [SerializeField] public List<string> excludedAssemblies = new List<string>
+        {
+            "Oculus.Voice.Demo, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "Meta.WitAi.Samples, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+        };
+
+        [Tooltip("When true, Conduit will attempt to match incoming requests by type when no exact matches are found. This increases tolerance but reduces runtime performance.")]
+        [SerializeField] public bool relaxedResolution;
 
         /// <summary>
         /// Safe access of local path

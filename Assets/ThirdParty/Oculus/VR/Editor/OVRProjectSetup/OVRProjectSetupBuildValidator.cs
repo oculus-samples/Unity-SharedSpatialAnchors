@@ -49,7 +49,7 @@ internal class OVRProjectSetupBuildValidator : IPreprocessBuildWithReport
     private static void ValidateTask(OVRConfigurationTask task, BuildTargetGroup buildTargetGroup)
     {
         if (task.IsIgnored(buildTargetGroup)
-            || task.Level.GetValue(buildTargetGroup) != OVRConfigurationTask.TaskLevel.Required
+            || task.Level.GetValue(buildTargetGroup) != OVRProjectSetup.TaskLevel.Required
             || task.IsDone(buildTargetGroup))
         {
             return;

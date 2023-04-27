@@ -6,22 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-using System.Collections.Generic;
+using System;
 
-namespace Conduit
+namespace Oculus.Interaction.Deprecated
 {
+    [Obsolete("Auto-Training now happens on the server")]
     public class WitTrainingEntity
     {
-      public string Entity { get; set; }
-
-      public string Role { get; set; }
-
-      public string Body { get; set; }
-
-      public int Start { get; set; }
-
-      public int End { get; set; }
-
-      public List<WitTrainingEntity> Entities { get; set; }
     }
 }

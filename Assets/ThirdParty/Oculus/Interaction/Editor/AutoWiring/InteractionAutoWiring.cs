@@ -89,6 +89,26 @@ namespace Oculus.Interaction.Editor
                 }
             );
 
+            #region HandGrab
+
+            AutoWiring.Register(
+                typeof(HandGrab.HandGrabInteractable),
+                new[] {
+                    new ComponentWiringStrategyConfig("_rigidbody", new FieldWiringStrategy[]
+                        {
+                            FieldWiringStrategies.WireFieldToAncestors
+                        }),
+                    new ComponentWiringStrategyConfig("_pointableElement", new FieldWiringStrategy[]
+                        {
+                            FieldWiringStrategies.WireFieldToAncestors
+                        }),
+                    new ComponentWiringStrategyConfig("_physicsGrabbable", new FieldWiringStrategy[]
+                        {
+                            FieldWiringStrategies.WireFieldToAncestors
+                        })
+                }
+            );
+            #endregion
         }
     }
 }

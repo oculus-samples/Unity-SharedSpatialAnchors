@@ -47,6 +47,11 @@
             "name": "Unity",
             "expression": "",
             "define": "OVR_UNITY_ASSET_STORE"
+        },
+        {
+            "name": "com.unity.xr.oculus",
+            "expression": "3.2.6",
+            "define": "OCULUS_XR_ETFR_DELAYED_PERMISSION_REQUEST"
         }
     ],
     "noEngineReferences": false

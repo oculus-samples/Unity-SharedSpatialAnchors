@@ -35,7 +35,7 @@ namespace Meta.Conduit.Editor
         public HashSet<string> AssembliesToIgnore { get; set; } = new HashSet<string>();
 
         // The simple names of the assemblies to use in matching against compilation assemblies.
-        private HashSet<string> _shortAssemblyNamesToIgnore = new HashSet<string>();
+        private readonly HashSet<string> _shortAssemblyNamesToIgnore = new HashSet<string>();
 
         private IEnumerable<IConduitAssembly> ConduitAssemblies => _assemblies.Values;
 
@@ -101,9 +101,9 @@ namespace Meta.Conduit.Editor
 
         public bool GetSourceCode(Type type, out string sourceCodeFile, out bool singleUnit)
         {
-            if (type == null || !type.IsEnum)
+            if (type == null)
             {
-                throw new ArgumentException("Type needs to be an enum");
+                throw new ArgumentException("Type cannot be null");
             }
 
             foreach (var assembly in GetCompilationAssemblies(AssembliesType.Player))
@@ -157,15 +157,27 @@ namespace Meta.Conduit.Editor
                 {
                     continue;
                 }
-                
-                var sourceCode = File.ReadAllText(sourceFile);
-                
+
+                string sourceCode = "";
+                try
+                {
+                    sourceCode = File.ReadAllText(sourceFile);
+                }
+                catch (Exception e)
+                {
+                    VLog.D($"Failed to read file {sourceFile}.\n{e}");
+                    sourceCodeFile = string.Empty;
+                    singleUnit = false;
+                    return false;
+                }
+
+
                 if (!ContainsType(sourceCode, type))
                 {
                     continue;
                 }
 
-                singleUnit = IsSingleEnumSourceCode(sourceCode);
+                singleUnit = IsSingleUnitSourceCode(sourceCode);
 
                 sourceCodeFile = sourceFile;
                 return true;
@@ -177,12 +189,12 @@ namespace Meta.Conduit.Editor
         }
 
         /// <summary>
-        /// Returns true if the code contains only a single enum defined.
+        /// Returns true if the code contains only a single unit (enum/class/struct) defined.
         /// This is not 100% accurate as it relies on simple code search so may return false positives.
         /// This checks only for classes, structs, and enums.  
         /// </summary>
         /// <returns></returns>
-        private bool IsSingleEnumSourceCode(string sourceCode)
+        private bool IsSingleUnitSourceCode(string sourceCode)
         {
             // This matches enums, classes and structs including their identifiers and nested braces (for scopes)
             var codeBlockPattern = @"(enum|class|struct)\s\w+[\n\r\s]*\{(?>\{(?<c>)|[^{}]+|\}(?<-c>))*(?(c)(?!))\}";
@@ -192,12 +204,7 @@ namespace Meta.Conduit.Editor
 
         private bool ContainsType(string sourceCode, Type type)
         {
-            if (!type.IsEnum)
-            {
-                throw new ArgumentException("Type needs to be an enum");
-            }
-
-            var pattern = $"enum\\s{type.Name}";
+            var pattern = $"(enum|class|struct)\\s{type.Name}";
 
             return Regex.IsMatch(sourceCode, pattern);
         }

@@ -12,16 +12,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5a46bda3295124c99b0e6537ac7252, type: 3}
   m_Name: Shapes Demo - WitConfiguration
   m_EditorClassIdentifier: 
-  application:
-    witConfiguration: {fileID: 0}
+  _clientAccessToken: 
+  _appInfo:
     name: 
     id: 
     lang: 
     isPrivate: 0
     createdAt: 
-  configId: 4e21a24e472ab684e84db753427d5687
-  clientAccessToken: 
-  entities: []
-  intents: []
-  traits: []
+    trainingStatus: 0
+    lastTrainDuration: 0
+    lastTrainedAt: 
+    nextTrainAt: 
+    intents: []
+    entities: []
+    traits: []
+    voices: []
+  _configurationId: 4e21a24e472ab684e84db753427d5687
+  timeoutMS: 10000
+  endpointConfiguration:
+    uriScheme: 
+    authority: 
+    port: 0
+    witApiVersion: 
+    speech: 
+    message: 
+    dictation: 
   isDemoOnly: 1
+  useConduit: 1
+  _manifestLocalPath: ConduitManifest-63301a14-cdfe-465a-91c0-0d8db67feb7f.json
+  excludedAssemblies:
+  - Oculus.Voice.Demo, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - Meta.WitAi.Samples, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  relaxedResolution: 0

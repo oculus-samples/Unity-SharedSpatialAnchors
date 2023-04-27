@@ -6,14 +6,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using System.Reflection;
+using Meta.WitAi.Data.Configuration;
 
 namespace Meta.WitAi.Windows
 {
     public class WitIntentPropertyDrawer : WitPropertyDrawer
     {
+        // Maps the expansion status of references foldouts
+        private readonly Dictionary<string, bool> _referencesExpanded = new Dictionary<string, bool>();
+        
         // Use name value for title if possible
         protected override string GetLocalizedText(SerializedProperty property, string key)
         {
@@ -36,6 +41,7 @@ namespace Meta.WitAi.Windows
             // Default to base
             return base.GetLocalizedText(property, key);
         }
+
         // Layout entity override
         protected override void LayoutPropertyField(FieldInfo subfield, SerializedProperty subfieldProperty, GUIContent labelContent, bool canEdit)
         {
@@ -48,25 +54,80 @@ namespace Meta.WitAi.Windows
 
             // Entity foldout
             subfieldProperty.isExpanded = WitEditorUI.LayoutFoldout(labelContent, subfieldProperty.isExpanded);
-            if (subfieldProperty.isExpanded)
+            if (!subfieldProperty.isExpanded)
             {
-                EditorGUI.indentLevel++;
-                if (subfieldProperty.arraySize == 0)
+                return;
+            }
+            
+            EditorGUI.indentLevel++;
+            if (subfieldProperty.arraySize == 0)
+            {
+                WitEditorUI.LayoutErrorLabel(WitTexts.Texts.ConfigurationEntitiesMissingLabel);
+            }
+            else
+            {
+                for (int i = 0; i < subfieldProperty.arraySize; i++)
                 {
-                    WitEditorUI.LayoutErrorLabel(WitTexts.Texts.ConfigurationEntitiesMissingLabel);
+                    SerializedProperty entityProp = subfieldProperty.GetArrayElementAtIndex(i);
+                    string entityPropName = entityProp.FindPropertyRelative("name").stringValue;
+                    WitEditorUI.LayoutLabel(entityPropName);
                 }
-                else
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        protected override void OnGUIPostFields(Rect position, SerializedProperty property, GUIContent label)
+        {
+            var configuration = property.serializedObject.targetObject as WitConfiguration;
+            if (configuration == null || !configuration.useConduit)
+            {
+                return;
+            }
+            
+            var assemblyWalker = WitConfigurationEditor.AssemblyWalker;
+            if (assemblyWalker == null)
+            {
+                return;
+            }
+
+            var manifest = ManifestLoader.LoadManifest(configuration.ManifestLocalPath);
+
+            var intentName = property.FindPropertyRelative("name")?.stringValue;
+
+            if (!manifest.ContainsAction(intentName))
+            {
+                return;
+            }
+
+            var contexts = manifest.GetInvocationContexts(intentName);
+            
+            if (!_referencesExpanded.ContainsKey(intentName))
+            {
+                _referencesExpanded[intentName] = false;
+            }
+            _referencesExpanded[intentName] = WitEditorUI.LayoutFoldout(new GUIContent("References"), _referencesExpanded[intentName]);
+            if (!_referencesExpanded[intentName])
+            {
+                return;
+            }
+            
+            EditorGUI.indentLevel++;
+            foreach (var context in contexts)
+            {
+                GUILayout.BeginHorizontal();
                 {
-                    for (int i = 0; i < subfieldProperty.arraySize; i++)
+                    GUILayout.Space(EditorGUI.indentLevel * WitStyles.IndentationSpaces);
+                    if (WitEditorUI.LayoutTextLink($"{context.Type.Name}::{context.MethodInfo.Name}()"))
                     {
-                        SerializedProperty entityProp = subfieldProperty.GetArrayElementAtIndex(i);
-                        string entityPropName = entityProp.FindPropertyRelative("name").stringValue;
-                        WitEditorUI.LayoutLabel(entityPropName);
+                        assemblyWalker.GetSourceCode(context.Type, out var sourceCodeFile, out _);
+                        UnityEditorInternal.InternalEditorUtility.OpenFileAtLineExternal(sourceCodeFile, 1);
                     }
                 }
-                EditorGUI.indentLevel--;
+                GUILayout.EndHorizontal();
             }
+            EditorGUI.indentLevel--;
         }
+
         // Determine if should layout field
         protected override bool ShouldLayoutField(SerializedProperty property, FieldInfo subfield)
         {

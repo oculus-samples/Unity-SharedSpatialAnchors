@@ -333,7 +333,7 @@ public class OVRManifestPreprocessor
             "com.oculus.permission.IMPORT_EXPORT_IOT_MAP_DATA",
             sharedAnchorEntryNeeded,
             modifyIfFound,
-            "required", targetSharedAnchorSupport == OVRProjectConfig.FeatureSupport.Required ? "true" : "false");
+            "required", targetSharedAnchorSupport.ToRequiredAttributeValue());
 
 
         //============================================================================
@@ -480,6 +480,19 @@ public class OVRManifestPreprocessor
             eyeTrackingEntryNeeded,
             modifyIfFound);
 
+        //============================================================================
+        // Virtual Keyboard
+        var virtualKeyboardSupport = OVRProjectConfig.GetProjectConfig().virtualKeyboardSupport;
+        bool virtualKeyboardEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None);
+
+        AddOrRemoveTag(doc,
+            androidNamespaceURI,
+            "/manifest",
+            "uses-feature",
+            "com.oculus.feature.VIRTUAL_KEYBOARD",
+            virtualKeyboardEntryNeeded,
+            (virtualKeyboardSupport == OVRProjectConfig.FeatureSupport.Required) ? true : modifyIfFound, // If Required, we should override the current entry
+            "required", (virtualKeyboardSupport == OVRProjectConfig.FeatureSupport.Required) ? "true" : "false");
     }
 
 

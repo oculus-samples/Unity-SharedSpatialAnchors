@@ -139,13 +139,7 @@ namespace Meta.WitAi
 
             var path = WitEndpointConfig.GetEndpointConfig(config).Message;
             WitRequest request = new WitRequest(config, path, queryParams.ToArray());
-
-            if (null != requestOptions)
-            {
-                request.onResponse += requestOptions.onResponse;
-                request.requestIdOverride = requestOptions.requestID;
-            }
-
+            request.SetOptions(requestOptions);
             return request;
         }
 
@@ -167,13 +161,7 @@ namespace Meta.WitAi
 
             var path = WitEndpointConfig.GetEndpointConfig(config).Speech;
             WitRequest request = new WitRequest(config, path, queryParams.ToArray());
-
-            if (null != requestOptions)
-            {
-                request.onResponse += requestOptions.onResponse;
-                request.requestIdOverride = requestOptions.requestID;
-            }
-
+            request.SetOptions(requestOptions);
             return request;
         }
 
@@ -188,12 +176,7 @@ namespace Meta.WitAi
             List<WitRequest.QueryParam> queryParams = new List<WitRequest.QueryParam>();
             var path = WitEndpointConfig.GetEndpointConfig(config).Dictation;
             WitRequest request = new WitRequest(config, path, queryParams.ToArray());
-            if (null != requestOptions)
-            {
-                request.onResponse += requestOptions.onResponse;
-                request.requestIdOverride = requestOptions.requestID;
-            }
-
+            request.SetOptions(requestOptions);
             return request;
         }
 
@@ -210,7 +193,7 @@ namespace Meta.WitAi
         {
             var json = new WitResponseClass()
             {
-                {"name", intentName} 
+                {"name", intentName}
             };
 
             var postData = Encoding.UTF8.GetBytes(json.ToString());
@@ -236,7 +219,7 @@ namespace Meta.WitAi
             {
                 { "text", manifestData },
                 { "config_type", "1" },
-                { "config_value", "" } 
+                { "config_value", "" }
             };
 
             var postData = Encoding.UTF8.GetBytes(jsonNode.ToString());

@@ -11,8 +11,8 @@ namespace Meta.WitAi
     public static class WitConstants
     {
         // Wit service version info
-        public const string API_VERSION = "20220728";
-        public const string SDK_VERSION = "0.0.49";
+        public const string API_VERSION = "20221114";
+        public const string SDK_VERSION = "51.0.0";
         public const string CLIENT_NAME = "wit-unity";
 
         // Wit service endpoint info
@@ -39,20 +39,21 @@ namespace Meta.WitAi
         public const string ENDPOINT_TTS_PARAM = "q";
         public const string ENDPOINT_TTS_CLIP = "WitTTSClip";
         public const string ENDPOINT_TTS_NO_TEXT = "No text provided";
+        public const int ENDPOINT_TTS_CHANNELS = 1;
+        public const int ENDPOINT_TTS_SAMPLE_RATE = 24000;
+        public const int ENDPOINT_TTS_STREAM_CLIP_BUFFER = 5; // In Seconds
+        public const float ENDPOINT_TTS_STREAM_READY_DURATION = 0.1f; // In Seconds
         public const int ENDPOINT_TTS_TIMEOUT = 10000; // In ms
-        public const int ENDPOINT_TTS_MAX_TEXT_LENGTH = 140;
+        public const int ENDPOINT_TTS_MAX_TEXT_LENGTH = 280;
 
         // Dictation Endpoint
         public const string ENDPOINT_DICTATION = "dictation";
 
-        // Composer Endpoints
-        public const string ENDPOINT_COMPOSER_SPEECH = "converse";
-        public const string ENDPOINT_COMPOSER_MESSAGE = "event";
-        public const string ENDPOINT_COMPOSER_PARAM_SESSION = "session_id";
-        public const string ENDPOINT_COMPOSER_PARAM_CONTEXT_MAP = "context_map";
-
         // Runtime Sync Endpoints
         public const string ENDPOINT_IMPORT = "import";
         public const string ENDPOINT_INTENTS = "intents";
+
+        // Reusable constants
+        public const string CANCEL_ERROR = "Cancelled";
     }
 }

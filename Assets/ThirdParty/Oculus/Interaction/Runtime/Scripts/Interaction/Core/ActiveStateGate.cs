@@ -26,11 +26,11 @@ namespace Oculus.Interaction
     public class ActiveStateGate : MonoBehaviour, IActiveState
     {
         [SerializeField, Interface(typeof(ISelector))]
-        private MonoBehaviour _openSelector;
+        private UnityEngine.Object _openSelector;
         private ISelector OpenSelector { get; set; }
 
         [SerializeField, Interface(typeof(ISelector))]
-        private MonoBehaviour _closeSelector;
+        private UnityEngine.Object _closeSelector;
         private ISelector CloseSelector { get; set; }
 
         public bool Active { get; private set; } = false;
@@ -90,13 +90,13 @@ namespace Oculus.Interaction
 
         public void InjectOpenState(ISelector openSelector)
         {
-            _openSelector = openSelector as MonoBehaviour;
+            _openSelector = openSelector as UnityEngine.Object;
             OpenSelector = openSelector;
         }
 
         public void InjectCloseState(ISelector closeSelector)
         {
-            _closeSelector = closeSelector as MonoBehaviour;
+            _closeSelector = closeSelector as UnityEngine.Object;
             CloseSelector = closeSelector;
         }
 

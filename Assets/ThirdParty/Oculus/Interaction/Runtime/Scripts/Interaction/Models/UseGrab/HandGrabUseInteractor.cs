@@ -38,11 +38,11 @@ namespace Oculus.Interaction.HandGrab
         , IHandGrabState
     {
         [SerializeField, Optional, Interface(typeof(IHand))]
-        private MonoBehaviour _hand;
+        private UnityEngine.Object _hand;
         public IHand Hand { get; private set; }
 
         [SerializeField, Interface(typeof(IFingerUseAPI))]
-        private MonoBehaviour _useAPI;
+        private UnityEngine.Object _useAPI;
         public IFingerUseAPI UseAPI { get; private set; }
 
         private HandGrabTarget _currentTarget = new HandGrabTarget();
@@ -280,13 +280,13 @@ namespace Oculus.Interaction.HandGrab
 
         public void InjectUseApi(IFingerUseAPI useApi)
         {
-            _useAPI = useApi as MonoBehaviour;
+            _useAPI = useApi as UnityEngine.Object;
             UseAPI = useApi;
         }
 
         public void InjectOptionalHand(IHand hand)
         {
-            _hand = hand as MonoBehaviour;
+            _hand = hand as UnityEngine.Object;
             Hand = hand;
         }
 

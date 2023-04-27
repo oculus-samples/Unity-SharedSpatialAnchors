@@ -81,9 +81,9 @@ namespace Oculus.Interaction.PoseDetection.Debug
         private string GetLabelText(IActiveStateTreeNode node)
         {
             string label = _isDuplicate ? "<i>" : "";
-            if (node.ActiveState is MonoBehaviour mono)
+            if (node.ActiveState is UnityEngine.Object obj)
             {
-                label += mono.gameObject.name + System.Environment.NewLine;
+                label += obj.name + System.Environment.NewLine;
             }
             label += string.Format(OBJNAME_FORMAT, node.ActiveState.GetType().Name);
             return label;

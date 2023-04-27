@@ -95,7 +95,7 @@ namespace Meta.WitAi.TTS.Integrations
             }
 
             // Return clip path
-            return Path.Combine(directory, clipData.clipID + "." + clipData.audioType.ToString().ToLower());
+            return Path.Combine(directory, clipData.clipID + "." + WitTTSVRequest.GetAudioExtension(clipData.audioType));
         }
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace Meta.WitAi.TTS.Integrations
                 clipData.clip = clip;
                 // Call on complete
                 OnStreamComplete(clipData, error);
-            }, WitTTSVRequest.TTSAudioType, true, (progress) => clipData.loadProgress = progress);
+            }, clipData.audioType, false, 0f, 0f, (progress) => clipData.loadProgress = progress);
             if (canPerform)
             {
                 _streamRequests[clipData.clipID] = request;

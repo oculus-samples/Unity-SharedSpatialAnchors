@@ -18,13 +18,13 @@ namespace Oculus.Interaction.HandGrab
     public class HandGrabResult
     {
         public bool HasHandPose;
-        public Pose SnapPose;
+        public Pose RelativePose;
         public GrabPoseScore Score;
         public HandPose HandPose;
 
         public HandGrabResult()
         {
-            SnapPose = Pose.identity;
+            RelativePose = Pose.identity;
             HandPose = new HandPose();
         }
     }

@@ -6,6 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Uncomment when added to Wit.ai
+//#define OGG_SUPPORT
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -15,19 +18,118 @@ using UnityEngine.Networking;
 
 namespace Meta.WitAi.Requests
 {
+    // Supported audio types
+    public enum TTSWitAudioType
+    {
+        PCM = 0,
+        MPEG = 1,
+        #if OGG_SUPPORT
+        OGG = 3,
+        #endif
+        WAV = 2
+    }
     public class WitTTSVRequest : WitVRequest
     {
-        // Audio type for tts
-        public static AudioType TTSAudioType = AudioType.WAV;
-
         // Constructor
         public WitTTSVRequest(IWitRequestConfiguration configuration) : base(configuration, false)
         {
             Timeout = WitConstants.ENDPOINT_TTS_TIMEOUT;
         }
 
+        // Cast audio type
+        public static AudioType GetAudioType(TTSWitAudioType witAudioType)
+        {
+            switch (witAudioType)
+            {
+                // PCM
+                case TTSWitAudioType.PCM:
+                    return AudioType.UNKNOWN;
+                #if OGG_SUPPORT
+                // OGG
+                case TTSWitAudioType.OGG:
+                    return AudioType.OGGVORBIS;
+                #endif
+                // MP3 & WAV
+                case TTSWitAudioType.MPEG:
+                case TTSWitAudioType.WAV:
+                default:
+                    AudioType result = AudioType.UNKNOWN;
+                    if (!AudioType.TryParse(witAudioType.ToString().ToUpper(), out result))
+                    {
+                        VLog.W($"Cannot parse audio type\nAudio Type: {witAudioType}");
+                    }
+                    return result;
+            }
+        }
+        // Get audio type
+        public static string GetAudioMimeType(TTSWitAudioType witAudioType)
+        {
+            switch (witAudioType)
+            {
+                // PCM
+                case TTSWitAudioType.PCM:
+                    return "audio/raw";
+                #if OGG_SUPPORT
+                // OGG
+                case TTSWitAudioType.OGG:
+                #endif
+                // MP3 & WAV
+                case TTSWitAudioType.MPEG:
+                case TTSWitAudioType.WAV:
+                default:
+                    return $"audio/{witAudioType.ToString().ToLower()}";
+            }
+        }
+        // Get audio extension
+        public static string GetAudioExtension(TTSWitAudioType witAudioType) => GetAudioExtension(GetAudioType(witAudioType));
+        // Get audio extension
+        public static string GetAudioExtension(AudioType audioType)
+        {
+            switch (audioType)
+            {
+                // PCM
+                case AudioType.UNKNOWN:
+                    return "raw";
+                // OGG
+                case AudioType.OGGVORBIS:
+                    return "ogg";
+                // MP3
+                case AudioType.MPEG:
+                    return "mp3";
+                // WAV
+                case AudioType.WAV:
+                    return "wav";
+                default:
+                    VLog.W($"Attempting to process unsupported audio type: {audioType}");
+                    return audioType.ToString().ToLower();
+            }
+        }
+        // Whether streamed audio is allowed by unity
+        public static bool CanStreamAudio(TTSWitAudioType witAudioType)
+        {
+            switch (witAudioType)
+            {
+                // Raw PCM: Supported by Wit.ai & custom unity implementation (DownloadHandlerRawPCM)
+                case TTSWitAudioType.PCM:
+                    return true;
+                #if OGG_SUPPORT
+                // OGG: Supported by Unity (DownloadHandlerAudioClip) but not by Wit.ai
+                case TTSWitAudioType.OGG:
+                    return true;
+                #endif
+                // MP3: Supported by Wit.ai but not by Unity (DownloadHandlerAudioClip)
+                case TTSWitAudioType.MPEG:
+                    return false;
+                // WAV: does not support streaming
+                case TTSWitAudioType.WAV:
+                default:
+                    return false;
+            }
+        }
+
         // Internal base method for tts request
         private UnityWebRequest GetUnityRequest(string textToSpeak,
+            TTSWitAudioType audioType,
             Dictionary<string, string> ttsData)
         {
             // Get uri
@@ -36,7 +138,7 @@ namespace Meta.WitAi.Requests
             // Generate request
             UnityWebRequest unityRequest = new UnityWebRequest(uri, UnityWebRequest.kHttpVerbPOST);
             unityRequest.SetRequestHeader(WitConstants.HEADER_POST_CONTENT, "application/json");
-            unityRequest.SetRequestHeader(WitConstants.HEADER_GET_CONTENT, $"audio/{TTSAudioType.ToString().ToLower()}");
+            unityRequest.SetRequestHeader(WitConstants.HEADER_GET_CONTENT, GetAudioMimeType(audioType));
 
             // Add upload handler
             ttsData[WitConstants.ENDPOINT_TTS_PARAM] = textToSpeak;
@@ -49,29 +151,38 @@ namespace Meta.WitAi.Requests
         }
 
         /// <summary>
-        /// TTS streaming audio request
+        /// Streams text to speech audio clip
         /// </summary>
         /// <param name="textToSpeak">Text to be spoken</param>
         /// <param name="ttsData">Info on tts voice settings</param>
         /// <param name="onClipReady">Clip ready to be played</param>
         /// <param name="onProgress">Clip load progress</param>
         /// <returns>False if request cannot be called</returns>
-        public bool RequestStream(string textToSpeak, Dictionary<string, string> ttsData,
+        public bool RequestStream(string textToSpeak,
+            TTSWitAudioType audioType,
+            bool audioStream,
+            float audioStreamReadyDuration, float audioStreamChunkLength,
+            Dictionary<string, string> ttsData,
             RequestCompleteDelegate<AudioClip> onClipReady,
             RequestProgressDelegate onProgress = null)
         {
-            // Error
+            // Error if no text is provided
             if (string.IsNullOrEmpty(textToSpeak))
             {
                 onClipReady?.Invoke(null, WitConstants.ENDPOINT_TTS_NO_TEXT);
                 return false;
             }
+            // Warn if incompatible with streaming
+            if (audioStream && !CanStreamAudio(audioType))
+            {
+                VLog.W($"Wit cannot stream {audioType} files please use {TTSWitAudioType.PCM} instead.");
+            }
 
             // Get tts unity request
-            UnityWebRequest unityRequest = GetUnityRequest(textToSpeak, ttsData);
+            UnityWebRequest unityRequest = GetUnityRequest(textToSpeak, audioType, ttsData);
 
             // Perform an audio stream request
-            return RequestAudioClip(unityRequest, onClipReady, TTSAudioType, true, onProgress);
+            return RequestAudioClip(unityRequest, onClipReady, GetAudioType(audioType), audioStream, audioStreamReadyDuration, audioStreamChunkLength, onProgress);
         }
 
         /// <summary>
@@ -84,7 +195,9 @@ namespace Meta.WitAi.Requests
         /// <param name="onProgress">Clip load progress</param>
         /// <returns>False if request cannot be called</returns>
         public bool RequestDownload(string downloadPath,
-            string textToSpeak, Dictionary<string, string> ttsData,
+            string textToSpeak,
+            TTSWitAudioType audioType,
+            Dictionary<string, string> ttsData,
             RequestCompleteDelegate<bool> onComplete,
             RequestProgressDelegate onProgress = null)
         {
@@ -96,7 +209,7 @@ namespace Meta.WitAi.Requests
             }
 
             // Get tts unity request
-            UnityWebRequest unityRequest = GetUnityRequest(textToSpeak, ttsData);
+            UnityWebRequest unityRequest = GetUnityRequest(textToSpeak, audioType, ttsData);
 
             // Perform a file download request
             return RequestFileDownload(downloadPath, unityRequest, onComplete, onProgress);

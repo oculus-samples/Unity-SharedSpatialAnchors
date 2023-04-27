@@ -854,7 +854,11 @@ public class OVRLint : EditorWindow
 
 		var textures = Resources.FindObjectsOfTypeAll<Texture2D>();
 
+#if UNITY_2022_2_OR_NEWER
+		int maxTextureSize = 1024 * (1 << QualitySettings.globalTextureMipmapLimit);
+#else
 		int maxTextureSize = 1024 * (1 << QualitySettings.masterTextureLimit);
+#endif
 		maxTextureSize = maxTextureSize * maxTextureSize;
 
 		for (int i = 0; i < textures.Length; ++i)

@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Meta.WitAi.Data.Info;
@@ -70,6 +71,13 @@ namespace Meta.Conduit
                 name = Name,
                 keywords = keywords
             };
+        }
+
+        public string GetQualifiedTypeName()
+        {
+            return string.IsNullOrEmpty(Namespace)
+                ? $"{ID}"
+                : $"{Namespace}.{ID}";
         }
 
         public override bool Equals(object obj)

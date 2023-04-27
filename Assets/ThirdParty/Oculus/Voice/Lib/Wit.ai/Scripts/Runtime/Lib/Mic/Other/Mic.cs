@@ -309,6 +309,9 @@ namespace Meta.WitAi.Lib
             VLog.D("Reserved mic " + CurrentDeviceName);
             AudioClip = Microphone.Start(CurrentDeviceName, true, 1, AudioEncoding.samplerate);
             AudioClip.name = CurrentDeviceName;
+            // Init the num of channels from AudioClip in
+            // the AudioEncoding
+            AudioEncoding.numChannels = AudioClip.channels;
 #endif
         }
 
@@ -362,10 +365,10 @@ namespace Meta.WitAi.Lib
 
             SampleDurationMS = sampleLen;
 
-            Sample = new float[AudioEncoding.samplerate / 1000 * SampleDurationMS * AudioClip.channels];
-
             if (AudioClip)
             {
+                Sample = new float[AudioEncoding.samplerate / 1000 * SampleDurationMS * AudioClip.channels];
+
                 StartCoroutine(ReadRawAudio());
 
 #if !UNITY_WEBGL || UNITY_EDITOR

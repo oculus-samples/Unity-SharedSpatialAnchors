@@ -136,7 +136,7 @@ namespace Oculus.Interaction.GrabAPI
             return grabbing;
         }
 
-        public Vector3 GetCenterOffset()
+        public Vector3 GetWristOffsetLocal()
         {
             ReturnValue rc = isdk_FingerPinchGrabAPI_GetCenterOffset(GetHandle(), out Vector3 center);
             Debug.Assert(rc != ReturnValue.Failure, "FingerPinchGrabAPI: isdk_FingerPinchGrabAPI_GetCenterOffset failed");

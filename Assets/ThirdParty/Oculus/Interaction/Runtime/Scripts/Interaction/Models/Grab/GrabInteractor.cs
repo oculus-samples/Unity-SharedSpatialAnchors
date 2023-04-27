@@ -30,7 +30,7 @@ namespace Oculus.Interaction
     public class GrabInteractor : PointerInteractor<GrabInteractor, GrabInteractable>, IRigidbodyRef
     {
         [SerializeField, Interface(typeof(ISelector))]
-        private MonoBehaviour _selector;
+        private UnityEngine.Object _selector;
 
         [SerializeField]
         private Rigidbody _rigidbody;
@@ -47,7 +47,7 @@ namespace Oculus.Interaction
         private bool _outsideReleaseDist = false;
 
         [SerializeField, Interface(typeof(IVelocityCalculator)), Optional]
-        private MonoBehaviour _velocityCalculator;
+        private UnityEngine.Object _velocityCalculator;
         public IVelocityCalculator VelocityCalculator { get; set; }
 
         private GrabInteractable _selectedInteractableOverride;
@@ -272,7 +272,7 @@ namespace Oculus.Interaction
 
         public void InjectSelector(ISelector selector)
         {
-            _selector = selector as MonoBehaviour;
+            _selector = selector as UnityEngine.Object;
             Selector = selector;
         }
 
@@ -293,7 +293,7 @@ namespace Oculus.Interaction
 
         public void InjectOptionalVelocityCalculator(IVelocityCalculator velocityCalculator)
         {
-            _velocityCalculator = velocityCalculator as MonoBehaviour;
+            _velocityCalculator = velocityCalculator as UnityEngine.Object;
             VelocityCalculator = velocityCalculator;
         }
 

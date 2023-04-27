@@ -10,9 +10,10 @@
   "AboutWitSdkVersionLabel": "Wit.ai SDK Version",
   "AboutWitApiVersionLabel": "Wit.ai API Version",
   "AboutTutorialButtonLabel": "Tutorials",
-  "AboutTutorialButtonUrl": "https://developer.oculus.com/experimental/voice-sdk/tutorial-overview/",
+  "AboutTutorialButtonUrl": "https://developer.oculus.com/documentation/unity/voice-sdk-tutorials-overview/",
   "SettingsTitleLabel": "Voice SDK Settings",
   "UnderstandingViewerTitleLabel": "Understanding Viewer",
   "BuiltInAppBtnLabel": "Open Built-In NLP Documentation",
-  "BuiltInAppUrl": "https://developer.oculus.com/documentation/unity/voice-sdk-built-in"
+  "BuiltInAppUrl": "https://developer.oculus.com/documentation/unity/voice-sdk-built-in",
+  "VoiceDocsUrl": "https://developer.oculus.com/documentation/unity/voice-sdk-integrate-voice"
 }

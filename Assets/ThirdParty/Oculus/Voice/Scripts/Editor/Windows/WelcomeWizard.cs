@@ -37,6 +37,7 @@ namespace Oculus.Voice.Windows
         protected override GUIContent Title => VoiceSDKStyles.SetupTitle;
         protected override string ContentHeaderLabel => VoiceSDKStyles.Texts.SetupHeaderLabel;
         protected override string ContentSubheaderLabel => VoiceSDKStyles.Texts.SetupSubheaderLabel;
+        protected override string DocsUrl => VoiceSDKStyles.Texts.VoiceDocsUrl;
 
         protected override void OnEnable()
         {

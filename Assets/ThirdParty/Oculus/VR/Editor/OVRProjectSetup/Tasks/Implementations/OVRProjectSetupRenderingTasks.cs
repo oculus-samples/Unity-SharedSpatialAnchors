@@ -24,6 +24,10 @@ using UnityEditor;
 using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
+#if USING_URP
+using UnityEngine.Rendering.Universal;
+#endif
+
 
 [InitializeOnLoad]
 internal static class OVRProjectSetupRenderingTasks
@@ -36,6 +40,42 @@ internal static class OVRProjectSetupRenderingTasks
             UnityEditor.EditorBuildSettings.TryGetConfigObject<Unity.XR.Oculus.OculusSettings>("Unity.XR.Oculus.Settings", out var settings);
             return settings;
         }
+    }
+#endif
+
+#if USING_URP && UNITY_2022_2_OR_NEWER
+    // Call action for all UniversalRendererData being used, return true if all the return value of action is true
+    private static bool ForEachRendererData(Func<UniversalRendererData, bool> action)
+    {
+        var ret = true;
+        var pipelineAssets = new System.Collections.Generic.List<RenderPipelineAsset>();
+        QualitySettings.GetAllRenderPipelineAssetsForPlatform("Android", ref pipelineAssets);
+        foreach(var pipelineAsset in pipelineAssets) {
+            var urpPipelineAsset = pipelineAsset as UniversalRenderPipelineAsset;
+            // If using URP pipeline
+            if (urpPipelineAsset)
+            {
+                var path = AssetDatabase.GetAssetPath(urpPipelineAsset);
+                var dependency = AssetDatabase.GetDependencies(path);
+                for (int i = 0; i < dependency.Length; i++)
+                {
+                    // Try to read the dependecy as UniversalRendererData
+                    if (AssetDatabase.GetMainAssetTypeAtPath(dependency[i]) != typeof(UniversalRendererData))
+                        continue;
+
+                    UniversalRendererData renderData = (UniversalRendererData)AssetDatabase.LoadAssetAtPath(dependency[i], typeof(UniversalRendererData));
+                    if (renderData)
+                    {
+                        ret = ret && action(renderData);
+                    }
+                    if(!ret)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return ret;
     }
 #endif
 
@@ -53,11 +93,11 @@ internal static class OVRProjectSetupRenderingTasks
 
     static OVRProjectSetupRenderingTasks()
     {
-        const OVRConfigurationTask.TaskGroup targetGroup = OVRConfigurationTask.TaskGroup.Rendering;
+        const OVRProjectSetup.TaskGroup targetGroup = OVRProjectSetup.TaskGroup.Rendering;
 
         //[Required] Set the color space to linear
         OVRProjectSetup.AddTask(
-            conditionalLevel: buildTargetGroup => OVRProjectSetupUtils.IsPackageInstalled(OVRProjectSetupXRTasks.UnityXRPackage) ? OVRConfigurationTask.TaskLevel.Required : OVRConfigurationTask.TaskLevel.Recommended,
+            conditionalLevel: buildTargetGroup => OVRProjectSetupUtils.IsPackageInstalled(OVRProjectSetupXRTasks.UnityXRPackage) ? OVRProjectSetup.TaskLevel.Required : OVRProjectSetup.TaskLevel.Recommended,
             group: targetGroup,
             isDone: buildTargetGroup => PlayerSettings.colorSpace == ColorSpace.Linear,
             message: "Color Space is required to be Linear",
@@ -65,9 +105,35 @@ internal static class OVRProjectSetupRenderingTasks
             fixMessage: "PlayerSettings.colorSpace = ColorSpace.Linear"
         );
 
-        //[Required] Use Graphics Jobs
+
+#if USING_XR_SDK_OCULUS && OCULUS_XR_EYE_TRACKED_FOVEATED_RENDERING && UNITY_2021_3_OR_NEWER
+        //[Required] Use Vulkan and IL2CPP/ARM64 when using ETFR
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Recommended,
+            level: OVRProjectSetup.TaskLevel.Required,
+            group: targetGroup,
+            isDone: buildTargetGroup =>
+            {
+                var useIL2CPP = PlayerSettings.GetScriptingBackend(buildTargetGroup) == ScriptingImplementation.IL2CPP;
+                var useARM64 = PlayerSettings.Android.targetArchitectures == AndroidArchitecture.ARM64;
+                var useVK = GetGraphicsAPIs(buildTargetGroup).Any(item => item == GraphicsDeviceType.Vulkan);
+                return useVK && useARM64 && useIL2CPP;
+            },
+            message: "Need to use Vulkan for Graphics APIs, IL2CPP for scripting backend, and ARM64 for target architectures when using eye-tracked foveated rendering",
+            fix: buildTargetGroup =>
+            {
+                var buildTarget = buildTargetGroup.GetBuildTarget();
+                PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+                PlayerSettings.SetScriptingBackend(buildTargetGroup, ScriptingImplementation.IL2CPP);
+                PlayerSettings.SetGraphicsAPIs(buildTarget, new[] { GraphicsDeviceType.Vulkan });
+            },
+            fixMessage: "Set target architectures to ARM64, scripting backend to IL2CPP, and Graphics APIs to Vulkan for this build.",
+            conditionalValidity: buildTargetGroup => OculusSettings?.FoveatedRenderingMethod == Unity.XR.Oculus.OculusSettings.FoveationMethod.EyeTrackedFoveatedRendering
+        );
+#endif
+
+        //[Required] Disable Graphics Jobs
+        OVRProjectSetup.AddTask(
+            level: OVRProjectSetup.TaskLevel.Recommended,
             group: targetGroup,
             isDone: buildTargetGroup => !PlayerSettings.graphicsJobs,
             message: "Disable Graphics Jobs",
@@ -77,8 +143,9 @@ internal static class OVRProjectSetupRenderingTasks
 
         //[Recommended] Set the Graphics API order
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Recommended,
-            group: targetGroup,
+            level: OVRProjectSetup.TaskLevel.Recommended,
+            platform: BuildTargetGroup.Android,
+			group: targetGroup,
             isDone: buildTargetGroup =>
 	            GetGraphicsAPIs(buildTargetGroup).Any(item => item == GraphicsDeviceType.OpenGLES3 || item == GraphicsDeviceType.Vulkan),
             message: "Manual selection of Graphic API, favoring Vulkan (or OpenGLES3)",
@@ -93,7 +160,7 @@ internal static class OVRProjectSetupRenderingTasks
 
         //[Recommended] Enable Multithreaded Rendering
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Recommended,
+            level: OVRProjectSetup.TaskLevel.Recommended,
             group: targetGroup,
             isDone: buildTargetGroup => PlayerSettings.MTRendering &&
                                         (buildTargetGroup != BuildTargetGroup.Android
@@ -116,7 +183,7 @@ internal static class OVRProjectSetupRenderingTasks
 #if USING_XR_SDK_OCULUS
         //[Recommended] Select Low Overhead Mode
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Recommended,
+            level: OVRProjectSetup.TaskLevel.Recommended,
             conditionalValidity: buildTargetGroup =>
 	            GetGraphicsAPIs(buildTargetGroup).Contains(GraphicsDeviceType.OpenGLES3),
             group: targetGroup,
@@ -136,7 +203,7 @@ internal static class OVRProjectSetupRenderingTasks
 
         //[Recommended] Enable Dash Support
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Recommended,
+            level: OVRProjectSetup.TaskLevel.Recommended,
             group: targetGroup,
             platform: BuildTargetGroup.Standalone,
             isDone: buildTargetGroup => OculusSettings?.DashSupport ?? true,
@@ -155,7 +222,7 @@ internal static class OVRProjectSetupRenderingTasks
 
         //[Recommended] Set the Display Buffer Format to 32 bit
         OVRProjectSetup.AddTask(
-	        level: OVRConfigurationTask.TaskLevel.Recommended,
+	        level: OVRProjectSetup.TaskLevel.Recommended,
 	        group: targetGroup,
 	        isDone: buildTargetGroup =>
 		        PlayerSettings.use32BitDisplayBuffer,
@@ -167,7 +234,7 @@ internal static class OVRProjectSetupRenderingTasks
         //[Recommended] Set the Rendering Path to Forward
         // TODO : Support Scripted Rendering Pipeline?
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Recommended,
+            level: OVRProjectSetup.TaskLevel.Recommended,
             group: targetGroup,
             isDone: buildTargetGroup =>
                 EditorGraphicsSettings.GetTierSettings(buildTargetGroup, Graphics.activeTier).renderingPath == RenderingPath.Forward,
@@ -184,7 +251,7 @@ internal static class OVRProjectSetupRenderingTasks
 
         //[Recommended] Set the Stereo Rendering to Instancing
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Recommended,
+            level: OVRProjectSetup.TaskLevel.Recommended,
             group: targetGroup,
             isDone: buildTargetGroup =>
                 PlayerSettings.stereoRenderingPath == StereoRenderingPath.Instancing,
@@ -193,9 +260,47 @@ internal static class OVRProjectSetupRenderingTasks
             fixMessage: "PlayerSettings.stereoRenderingPath = StereoRenderingPath.Instancing"
         );
 
+    #if USING_URP && UNITY_2022_2_OR_NEWER
+        //[Recommended] When using URP, set Intermediate texture to "Auto"
+        OVRProjectSetup.AddTask(
+            level: OVRProjectSetup.TaskLevel.Recommended,
+            group: targetGroup,
+            isDone: buildTargetGroup =>
+                ForEachRendererData(rd => { return rd.intermediateTextureMode == IntermediateTextureMode.Auto; }),
+            message: "Setting the intermate texture mode to \"Always\" might have a performance impact, it is recommended to use \"Auto\"",
+            fix: buildTargetGroup =>
+                ForEachRendererData(rd => { rd.intermediateTextureMode = IntermediateTextureMode.Auto; return true; }),
+            fixMessage: "Set Intermediate texture to \"Auto\""
+        );
+
+        //[Recommended] When using URP, disable SSAO
+        OVRProjectSetup.AddTask(
+            level: OVRProjectSetup.TaskLevel.Recommended,
+            group: targetGroup,
+            isDone: buildTargetGroup =>
+                ForEachRendererData(rd =>
+                {
+                    return rd.rendererFeatures.Count == 0 || !rd.rendererFeatures.Any(feature => feature.isActive && feature.GetType().Name == "ScreenSpaceAmbientOcclusion");
+                }),
+            message: "SSAO will have some performace impact, it is recommended to disable SSAO",
+            fix: buildTargetGroup =>
+                ForEachRendererData(rd =>
+                {
+                    rd.rendererFeatures.ForEach(feature =>
+                        {
+                            if (feature.GetType().Name == "ScreenSpaceAmbientOcclusion")
+                                feature.SetActive(false);
+                        }
+                    );
+                    return true;
+                }),
+            fixMessage: "Disable SSAO"
+        );
+#endif
+
         //[Optional] Use Non-Directional Lightmaps
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Optional,
+            level: OVRProjectSetup.TaskLevel.Optional,
             group: targetGroup,
             isDone: buildTargetGroup =>
             {
@@ -209,7 +314,7 @@ internal static class OVRProjectSetupRenderingTasks
 
         //[Optional] Disable Realtime GI
         OVRProjectSetup.AddTask(
-            level: OVRConfigurationTask.TaskLevel.Optional,
+            level: OVRProjectSetup.TaskLevel.Optional,
             group: targetGroup,
             isDone: buildTargetGroup => !Lightmapping.realtimeGI,
             message: "Disable Realtime Global Illumination",
@@ -219,7 +324,7 @@ internal static class OVRProjectSetupRenderingTasks
 
         //[Optional] GPU Skinning
         OVRProjectSetup.AddTask(
-	        level: OVRConfigurationTask.TaskLevel.Optional,
+	        level: OVRProjectSetup.TaskLevel.Optional,
 	        platform:BuildTargetGroup.Android,
 	        group: targetGroup,
 	        isDone: buildTargetGroup => PlayerSettings.gpuSkinning,

@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Linq;
 using UnityEngine;
 using OVRSimpleJSON;
 
@@ -43,10 +44,13 @@ public class OVRGLTFAnimatinonNode
     private OVRBinaryChunk m_binaryChunk;
     private GameObject m_gameObj;
     private InputNodeState m_inputNodeState = new InputNodeState();
+    private OVRGLTFAnimationNodeMorphTargetHandler m_morphTargetHandler;
 
     private List<Vector3> m_translations = new List<Vector3>();
     private List<Quaternion> m_rotations = new List<Quaternion>();
     private List<Vector3> m_scales = new List<Vector3>();
+    private List<float> m_weights = new List<float>();
+    private int m_additiveWeightIndex = -1;
 
     private static Dictionary<OVRGLTFInputNode, int> InputNodeKeyFrames = new Dictionary<OVRGLTFInputNode, int>{
         {OVRGLTFInputNode.Button_A_X, 5},
@@ -54,7 +58,7 @@ public class OVRGLTFAnimatinonNode
         {OVRGLTFInputNode.Button_Oculus_Menu, 24},
         {OVRGLTFInputNode.Trigger_Grip, 21},
         {OVRGLTFInputNode.Trigger_Front, 16},
-        {OVRGLTFInputNode.ThumbStick, 0},
+        {OVRGLTFInputNode.ThumbStick, 0}
     };
     private static List<int> ThumbStickKeyFrames = new List<int> { 29, 39, 34, 40, 31, 36, 32, 37 };
     private static Vector2[] CardDirections = new[]{
@@ -86,7 +90,8 @@ public class OVRGLTFAnimatinonNode
         None,
         Translation,
         Rotation,
-        Scale
+        Scale,
+        Weights
     };
 
     private enum OVRInterpolationType
@@ -104,12 +109,14 @@ public class OVRGLTFAnimatinonNode
         public Vector2 vecT;
     }
 
-    public OVRGLTFAnimatinonNode(JSONNode jsonData, OVRBinaryChunk binaryChunk, OVRGLTFInputNode inputNodeType, GameObject gameObj)
+    public OVRGLTFAnimatinonNode(JSONNode jsonData, OVRBinaryChunk binaryChunk, OVRGLTFInputNode inputNodeType,
+        GameObject gameObj, OVRGLTFAnimationNodeMorphTargetHandler morphTargetHandler)
     {
         m_jsonData = jsonData;
         m_binaryChunk = binaryChunk;
         m_intputNodeType = inputNodeType;
         m_gameObj = gameObj;
+        m_morphTargetHandler = morphTargetHandler;
         m_translations.Add(CloneVector3(m_gameObj.transform.localPosition));
         m_rotations.Add(CloneQuaternion(m_gameObj.transform.localRotation));
         m_scales.Add(CloneVector3(m_gameObj.transform.localScale));
@@ -119,9 +126,10 @@ public class OVRGLTFAnimatinonNode
     {
         int samplerId = channel["sampler"].AsInt;
         var target = channel["target"];
+        var extras = channel["extras"];
         int nodeId = target["node"].AsInt;
         OVRGLTFTransformType transformType = GetTransformType(target["path"].Value);
-        ProcessAnimationSampler(samplers[samplerId], nodeId, transformType);
+        ProcessAnimationSampler(samplers[samplerId], nodeId, transformType, extras);
         return;
     }
 
@@ -139,11 +147,14 @@ public class OVRGLTFAnimatinonNode
             m_gameObj.transform.localScale = (down ? m_scales[1] : m_scales[0]);
     }
 
-    public void UpdatePose(float t)
+    public void UpdatePose(float t, bool applyDeadZone = true)
     {
-        const float deadZone = 0.05f;
-        if (Math.Abs(m_inputNodeState.t - t) < deadZone)
-            return;
+        if (applyDeadZone)
+        {
+            const float deadZone = 0.05f;
+            if (Math.Abs(m_inputNodeState.t - t) < deadZone)
+                return;
+        }
         m_inputNodeState.t = t;
 
         if (m_translations.Count > 1)
@@ -152,6 +163,28 @@ public class OVRGLTFAnimatinonNode
             m_gameObj.transform.localRotation = Quaternion.Lerp(m_rotations[0], m_rotations[1], t);
         if (m_scales.Count > 1)
             m_gameObj.transform.localScale = Vector3.Lerp(m_scales[0], m_scales[1], t);
+        if (m_morphTargetHandler != null && m_weights.Count > 0)
+        {
+            // TODO: t assumes an animation channel input of [0,1].
+            // Changes will be necessary if a model has animations with more keyframes for different timescales
+            var stride = m_morphTargetHandler.Weights.Length;
+            if (m_additiveWeightIndex == -1)
+            {
+                for (int i = 0; i < stride; i++)
+                {
+                    m_morphTargetHandler.Weights[i] = Mathf.Lerp(m_weights[i], m_weights[i + stride], t);
+                }
+            }
+            else
+            {
+                m_morphTargetHandler.Weights[m_additiveWeightIndex] += Mathf.Lerp(m_weights[m_additiveWeightIndex],
+                    m_weights[m_additiveWeightIndex + stride], t);
+            }
+
+            // mark the geo as dirty
+            m_morphTargetHandler.MarkModified();
+        }
+
     }
 
     public void UpdatePose(Vector2 joystick)
@@ -290,11 +323,8 @@ public class OVRGLTFAnimatinonNode
         return new Vector2(weight1, weight2);
     }
 
-    private void ProcessAnimationSampler(JSONNode samplerNode, int nodeId, OVRGLTFTransformType transformType)
+    private void ProcessAnimationSampler(JSONNode samplerNode, int nodeId, OVRGLTFTransformType transformType, JSONNode extras)
     {
-        //We don't need input at this moment
-        //int inputId = samplerNode["input"].AsInt;
-
         int outputId = samplerNode["output"].AsInt;
         OVRInterpolationType interpolationId = ToOVRInterpolationType(samplerNode["interpolation"].Value);
         if(interpolationId == OVRInterpolationType.None)
@@ -303,20 +333,30 @@ public class OVRGLTFAnimatinonNode
             return;
         }
 
-        var jsonAccessor = m_jsonData["accessors"][outputId];
-        OVRGLTFAccessor outputReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
+
+        var jsonOutputAccessor = m_jsonData["accessors"][outputId];
+        OVRGLTFAccessor outputReader = new OVRGLTFAccessor(jsonOutputAccessor, m_jsonData);
+
+        int inputId = samplerNode["input"].AsInt;
+        var jsonInputAccessor = m_jsonData["accessors"][inputId];
+        OVRGLTFAccessor inputReader = new OVRGLTFAccessor(jsonInputAccessor, m_jsonData);
+        float[] inputFloats = new float[inputReader.GetDataCount()];
+        inputReader.ReadAsFloat(m_binaryChunk, ref inputFloats, 0);
+        // implementation assumes inputFloats = [0, 1]
+        // Changes will be necessary if a model has animations with more keyframes for different timescales
+
         switch (transformType)
         {
             case OVRGLTFTransformType.Translation:
                 Vector3[] translations = new Vector3[outputReader.GetDataCount()];
                 outputReader.ReadAsVector3(m_binaryChunk, ref translations, 0, OVRGLTFLoader.GLTFToUnitySpace);
-                CopyData(m_translations, translations);
+                CopyData(ref m_translations, translations);
                 break;
             case OVRGLTFTransformType.Rotation:
                 Vector4[] rotations = new Vector4[outputReader.GetDataCount()];
                 outputReader.ReadAsVector4(m_binaryChunk, ref rotations, 0, OVRGLTFLoader.GLTFToUnitySpace_Rotation);
                 List<Vector4> rotationDest = new List<Vector4>();
-                CopyData(rotationDest, rotations);
+                CopyData(ref rotationDest, rotations);
                 foreach (Vector4 v in rotationDest)
                 {
                     m_rotations.Add(new Quaternion(v.x, v.y, v.z, v.w));
@@ -325,7 +365,20 @@ public class OVRGLTFAnimatinonNode
             case OVRGLTFTransformType.Scale:
                 Vector3[] scales = new Vector3[outputReader.GetDataCount()];
                 outputReader.ReadAsVector3(m_binaryChunk, ref scales, 0, new Vector3(1, 1, 1));
-                CopyData(m_scales, scales);
+                CopyData(ref m_scales, scales);
+                break;
+            case OVRGLTFTransformType.Weights:
+                float[] weights = new float[outputReader.GetDataCount()];
+                outputReader.ReadAsFloat(m_binaryChunk, ref weights, 0);
+                CopyData(ref m_weights, weights);
+                if (extras != null && extras["additiveWeightIndex"] != null)
+                {
+                    m_additiveWeightIndex = extras["additiveWeightIndex"].AsInt;
+                }
+                if (m_morphTargetHandler != null)
+                {
+                    m_morphTargetHandler.Weights = new float[weights.Length / inputFloats.Length];
+                }
                 break;
             default:
                 Debug.LogError("Unsupported transform type: " + transformType.ToString());
@@ -343,6 +396,10 @@ public class OVRGLTFAnimatinonNode
                 return OVRGLTFTransformType.Rotation;
             case "scale":
                 return OVRGLTFTransformType.Scale;
+            case "weights":
+                return OVRGLTFTransformType.Weights;
+            case "none":
+                return OVRGLTFTransformType.None;
             default:
                 Debug.LogError("Unsupported transform type: " + transform);
                 return OVRGLTFTransformType.None;
@@ -367,9 +424,13 @@ public class OVRGLTFAnimatinonNode
         }
     }
 
-    private void CopyData<T>(List<T> dest, T[] src)
+    private void CopyData<T>(ref List<T> dest, T[] src)
     {
-        if (m_intputNodeType == OVRGLTFInputNode.ThumbStick)
+        if (m_intputNodeType == OVRGLTFInputNode.None)
+        {
+            dest = src.ToList();
+        }
+        else if (m_intputNodeType == OVRGLTFInputNode.ThumbStick)
         {
             foreach (int idx in ThumbStickKeyFrames)
             {

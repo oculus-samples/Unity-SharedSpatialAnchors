@@ -91,6 +91,8 @@ namespace Oculus.Interaction
         private Dictionary<IPointableCanvas, Action<PointerEvent>> _pointerCanvasActionMap =
             new Dictionary<IPointableCanvas, Action<PointerEvent>>();
 
+        private Pointer[] _pointersToProcessScratch = Array.Empty<Pointer>();
+
         private void AddPointerCanvas(IPointableCanvas pointerCanvas)
         {
             Action<PointerEvent> pointerCanvasAction = (args) => HandlePointerEvent(pointerCanvas.Canvas, args);
@@ -339,15 +341,36 @@ namespace Oculus.Interaction
 
         public override void Process()
         {
-            foreach (Pointer pointer in _pointersForDeletion)
-            {
-                ProcessPointer(pointer, true);
-            }
-            _pointersForDeletion.Clear();
+            ProcessPointers(_pointersForDeletion, true);
+            ProcessPointers(_pointerMap.Values, false);
+        }
 
-            foreach (Pointer pointer in _pointerMap.Values)
+        private void ProcessPointers(ICollection<Pointer> pointers, bool clearAndReleasePointers)
+        {
+            // Before processing pointers, take a copy of the array since _pointersForDeletion or
+            // _pointerMap may be modified if a pointer event handler adds or removes a
+            // PointableCanvas.
+            
+            int pointersToProcessCount = pointers.Count;
+            if (pointersToProcessCount == 0)
             {
-                ProcessPointer(pointer);
+                return;
+            }
+            
+            if (pointersToProcessCount > _pointersToProcessScratch.Length)
+            {
+                _pointersToProcessScratch = new Pointer[pointersToProcessCount];
+            }
+            
+            pointers.CopyTo(_pointersToProcessScratch, 0);
+            if (clearAndReleasePointers)
+            {
+                pointers.Clear();
+            }
+
+            foreach (Pointer pointer in _pointersToProcessScratch)
+            {
+                ProcessPointer(pointer, clearAndReleasePointers);
             }
         }
 

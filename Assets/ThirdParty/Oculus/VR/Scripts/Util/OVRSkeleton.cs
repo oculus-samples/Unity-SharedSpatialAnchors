@@ -215,7 +215,7 @@ public class OVRSkeleton : MonoBehaviour
         Capsules = _capsules.AsReadOnly();
     }
 
-    private void Start()
+    protected virtual void Start()
     {
         if (ShouldInitialize())
         {
@@ -451,105 +451,107 @@ public class OVRSkeleton : MonoBehaviour
         var data = _dataProvider.GetSkeletonPoseData();
 
         IsDataValid = data.IsDataValid;
-        if (data.IsDataValid)
+
+        if (!data.IsDataValid)
         {
+	        return;
+        }
 
-            if (SkeletonChangedCount != data.SkeletonChangedCount)
-            {
-                SkeletonChangedCount = data.SkeletonChangedCount;
-                IsInitialized = false;
-                Initialize();
-            }
+        if (SkeletonChangedCount != data.SkeletonChangedCount)
+        {
+	        SkeletonChangedCount = data.SkeletonChangedCount;
+	        IsInitialized = false;
+	        Initialize();
+        }
 
-            IsDataHighConfidence = data.IsDataHighConfidence;
+        IsDataHighConfidence = data.IsDataHighConfidence;
 
-            if (_updateRootPose)
-            {
-                transform.localPosition = data.RootPose.Position.FromFlippedZVector3f();
-                transform.localRotation = data.RootPose.Orientation.FromFlippedZQuatf();
-            }
+        if (_updateRootPose)
+        {
+	        transform.localPosition = data.RootPose.Position.FromFlippedZVector3f();
+	        transform.localRotation = data.RootPose.Orientation.FromFlippedZQuatf();
+        }
 
-            if (_updateRootScale)
-            {
-                transform.localScale = new Vector3(data.RootScale, data.RootScale, data.RootScale);
-            }
+        if (_updateRootScale)
+        {
+	        transform.localScale = new Vector3(data.RootScale, data.RootScale, data.RootScale);
+        }
 
-            for (var i = 0; i < _bones.Count; ++i)
-            {
-                var boneTransform = _bones[i].Transform;
-                if (boneTransform == null) continue;
+        for (var i = 0; i < _bones.Count; ++i)
+        {
+	        var boneTransform = _bones[i].Transform;
+	        if (boneTransform == null) continue;
 
-                if (_skeletonType == SkeletonType.Body)
-                {
-                    boneTransform.localPosition = data.BoneTranslations[i].FromFlippedZVector3f();
-                    boneTransform.localRotation = data.BoneRotations[i].FromFlippedZQuatf();
-                }
-                else if (_skeletonType == SkeletonType.HandLeft || _skeletonType == SkeletonType.HandRight)
-                {
-                    boneTransform.localRotation = data.BoneRotations[i].FromFlippedXQuatf();
+	        if (_skeletonType == SkeletonType.Body)
+	        {
+		        boneTransform.localPosition = data.BoneTranslations[i].FromFlippedZVector3f();
+		        boneTransform.localRotation = data.BoneRotations[i].FromFlippedZQuatf();
+	        }
+	        else if (_skeletonType == SkeletonType.HandLeft || _skeletonType == SkeletonType.HandRight)
+	        {
+		        boneTransform.localRotation = data.BoneRotations[i].FromFlippedXQuatf();
 
-                    if (_bones[i].Id == BoneId.Hand_WristRoot)
-                    {
-                        boneTransform.localRotation *= wristFixupRotation;
-                    }
-                }
-                else
-                {
-                    boneTransform.localRotation = data.BoneRotations[i].FromFlippedZQuatf();
-                }
-            }
+		        if (_bones[i].Id == BoneId.Hand_WristRoot)
+		        {
+			        boneTransform.localRotation *= wristFixupRotation;
+		        }
+	        }
+	        else
+	        {
+		        boneTransform.localRotation = data.BoneRotations[i].FromFlippedZQuatf();
+	        }
         }
     }
 
     private void FixedUpdate()
     {
-        if (!IsInitialized || _dataProvider == null)
-        {
-            IsDataValid = false;
-            IsDataHighConfidence = false;
+	    if (!IsInitialized || _dataProvider == null)
+	    {
+		    IsDataValid = false;
+		    IsDataHighConfidence = false;
 
-            return;
-        }
+		    return;
+	    }
 
-        Update();
+	    Update();
 
-        if (_enablePhysicsCapsules)
-        {
-            var data = _dataProvider.GetSkeletonPoseData();
+	    if (_enablePhysicsCapsules)
+	    {
+		    var data = _dataProvider.GetSkeletonPoseData();
 
-            IsDataValid = data.IsDataValid;
-            IsDataHighConfidence = data.IsDataHighConfidence;
+		    IsDataValid = data.IsDataValid;
+		    IsDataHighConfidence = data.IsDataHighConfidence;
 
-            for (int i = 0; i < _capsules.Count; ++i)
-            {
-                OVRBoneCapsule capsule = _capsules[i];
-                var capsuleGO = capsule.CapsuleRigidbody.gameObject;
+		    for (int i = 0; i < _capsules.Count; ++i)
+		    {
+			    OVRBoneCapsule capsule = _capsules[i];
+			    var capsuleGO = capsule.CapsuleRigidbody.gameObject;
 
-                if (data.IsDataValid && data.IsDataHighConfidence)
-                {
-                    Transform bone = _bones[(int)capsule.BoneIndex].Transform;
+			    if (data.IsDataValid && data.IsDataHighConfidence)
+			    {
+				    Transform bone = _bones[(int)capsule.BoneIndex].Transform;
 
-                    if (capsuleGO.activeSelf)
-                    {
-                        capsule.CapsuleRigidbody.MovePosition(bone.position);
-                        capsule.CapsuleRigidbody.MoveRotation(bone.rotation);
-                    }
-                    else
-                    {
-                        capsuleGO.SetActive(true);
-                        capsule.CapsuleRigidbody.position = bone.position;
-                        capsule.CapsuleRigidbody.rotation = bone.rotation;
-                    }
-                }
-                else
-                {
-                    if (capsuleGO.activeSelf)
-                    {
-                        capsuleGO.SetActive(false);
-                    }
-                }
-            }
-        }
+				    if (capsuleGO.activeSelf)
+				    {
+					    capsule.CapsuleRigidbody.MovePosition(bone.position);
+					    capsule.CapsuleRigidbody.MoveRotation(bone.rotation);
+				    }
+				    else
+				    {
+					    capsuleGO.SetActive(true);
+					    capsule.CapsuleRigidbody.position = bone.position;
+					    capsule.CapsuleRigidbody.rotation = bone.rotation;
+				    }
+			    }
+			    else
+			    {
+				    if (capsuleGO.activeSelf)
+				    {
+					    capsuleGO.SetActive(false);
+				    }
+			    }
+		    }
+	    }
     }
 
     public BoneId GetCurrentStartBoneId()

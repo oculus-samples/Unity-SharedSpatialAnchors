@@ -1,3 +1,12 @@
-﻿fileFormatVersion: 2
+fileFormatVersion: 2
 guid: e9472fadade3498f99ac09ff55817d41
-timeCreated: 1650587458
+MonoImporter:
+  labels: ["oculus_interaction_deprecated"]
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

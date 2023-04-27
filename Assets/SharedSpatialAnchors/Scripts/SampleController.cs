@@ -80,21 +80,13 @@ public class SampleController : MonoBehaviour
         placementPreview.SetActive(false);
     }
 
-    private void Start()
-    {
-        if(automaticCoLocation)
-        {
-            PlaceAnchorAtRoot(placementRoot);
-        }
-    }
-
     private void Update()
     {
         var shouldPlaceNewAnchor = _isPlacementMode && OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger);
 
         if (shouldPlaceNewAnchor)
         {
-            PlaceAnchorAtRoot(placementRoot);
+            PlaceAnchorAtRoot();
         }
     }
 
@@ -111,15 +103,26 @@ public class SampleController : MonoBehaviour
         placementPreview.SetActive(false);
     }
 
-    private void PlaceAnchorAtRoot(Transform root)
+    public void PlaceAnchorAtRoot()
     {
-        Log("PlaceAnchorAtRoot: root: " + root.ToOVRPose().ToPosef());
+        Log("PlaceAnchorAtRoot: root: " + placementRoot.ToOVRPose().ToPosef());
 
-        colocationAnchor = Instantiate(anchorPrefab, root.position, root.rotation).GetComponent<SharedAnchor>();
+        colocationAnchor = Instantiate(anchorPrefab, placementRoot.position, placementRoot.rotation).GetComponent<SharedAnchor>();
+
         if(automaticCoLocation)
+            StartCoroutine(WaitingForAnchorLocalization());
+    }
+
+    private System.Collections.IEnumerator WaitingForAnchorLocalization()
+    {
+        while (!colocationAnchor.GetComponent<OVRSpatialAnchor>().Localized)
         {
-            colocationAnchor.OnAlignButtonPressed();
+            Log(nameof(WaitingForAnchorLocalization) + "...");
+            yield return null;
         }
+
+        Log($"{nameof(WaitingForAnchorLocalization)}: Anchor Localized");
+        colocationAnchor.OnAlignButtonPressed();
     }
 
     public void Log(string message)

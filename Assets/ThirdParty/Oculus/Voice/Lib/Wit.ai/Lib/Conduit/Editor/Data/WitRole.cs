@@ -6,17 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-namespace Meta.Conduit
+using System;
+
+namespace Oculus.Interaction.Deprecated
 {
+    [Obsolete("Replaced by WitEntityRoleInfo")]
     public class WitRole
     {
-        public string id { get; set; }
-
-        public string name { get; set; }
-
-        public override string ToString()
-        {
-            return $"{this.name} ({this.id})";
-        }
     }
 }

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Meta.WitAi;
+using Meta.WitAi.Json;
 
 namespace Meta.Conduit
 {
@@ -51,58 +52,111 @@ namespace Meta.Conduit
         /// </summary>
         public List<ManifestAction> Actions { get; set; } = new List<ManifestAction>();
 
+        
+        /// <summary>
+        /// List of error handlers (methods).
+        /// </summary>
+        public List<ManifestErrorHandler> ErrorHandlers = new List<ManifestErrorHandler>();
         /// <summary>
         /// Maps action IDs (intents) to CLR methods. Each entry in the value list is a different overload of the method.
         /// The list is sorted with the most parameters listed first, so we get maximal matches during dispatching by
         /// default without needing to sort them at runtime.
         /// </summary>
-        private readonly Dictionary<string, List<InvocationContext>> methodLookup =
+        private readonly Dictionary<string, List<InvocationContext>> _methodLookup =
             new Dictionary<string, List<InvocationContext>>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// If entities are resolved, this will hold their data types.
+        /// This will be empty if entities were not explicitly resolved.
+        /// </summary>
+        [JsonIgnore]
+        public Dictionary<string, Type> CustomEntityTypes { get; } = new Dictionary<string, Type>();
+
+        /// <summary>
+        /// A list of registered callbacks 
+        /// </summary>
+        [JsonIgnore]
+        public static List<string> WitResponseMatcherIntents = new List<string>();
+        public bool ResolveEntities()
+        {
+            bool allResolved = true;
+            foreach (var entity in Entities)
+            {
+                var typeName = string.IsNullOrEmpty(entity.Namespace) ? entity.ID : $"{entity.Namespace}.{entity.ID}";
+
+                var qualifiedTypeName = $"{typeName},{entity.Assembly}";
+                var type = Type.GetType(qualifiedTypeName);
+                if (type == null)
+                {
+                    VLog.E($"Failed to resolve type: {qualifiedTypeName}");
+                    allResolved = false;
+                }
+                CustomEntityTypes[entity.Name] = type;
+            }
+
+            return allResolved;
+        }
+
+        public Tuple<MethodInfo, Type> GetMethodInfo(IManifestMethod action)
+        {
+            var lastPeriod = action.ID.LastIndexOf('.');
+            if (lastPeriod <= 0)
+            {
+                VLog.E($"Invalid Action ID: {action.ID}");
+                return null;
+            }
+
+            var typeName = action.ID.Substring(0, lastPeriod);
+            var qualifiedTypeName = $"{typeName},{action.Assembly}";
+            var method = action.ID.Substring(lastPeriod + 1);
+
+            var targetType = Type.GetType(qualifiedTypeName);
+            if (targetType == null)
+            {
+                VLog.E($"Failed to resolve type: {qualifiedTypeName}");
+                return  null;
+            }
+
+            var types = new Type[action.Parameters.Count];
+            for (var i = 0; i < action.Parameters.Count; i++)
+            {
+                var manifestParameter = action.Parameters[i];
+                var fullTypeName = $"{manifestParameter.QualifiedTypeName},{manifestParameter.TypeAssembly}";
+                types[i] = Type.GetType(fullTypeName);
+                if (types[i] == null)
+                {
+                    VLog.E($"Failed to resolve type: {fullTypeName}");
+                }
+            }
+
+            var targetMethod = GetBestMethodMatch(targetType, method, types);
+            if (targetMethod == null)
+            {
+                VLog.E($"Failed to resolve method {typeName}.{method}.");
+                return  null;
+            }
+
+            return Tuple.Create( targetMethod, targetType);
+        }
 
         /// <summary>
         /// Processes all actions in the manifest and associate them with the methods they should invoke.
         /// </summary>
-        public bool ResolveActions()
+        private bool ResolveAllActions()
         {
             var resolvedAll = true;
             foreach (var action in this.Actions)
             {
-                var lastPeriod = action.ID.LastIndexOf('.');
-                if (lastPeriod <= 0)
+                var methodInfo = GetMethodInfo(action);
+                if (methodInfo == null)
                 {
-                    VLog.E($"Invalid Action ID: {action.ID}");
-                    resolvedAll = false;
-                    continue;
+                    return false;
                 }
-
-                var typeName = action.ID.Substring(0, lastPeriod);
-                var qualifiedTypeName = $"{typeName},{action.Assembly}";
-                var method = action.ID.Substring(lastPeriod + 1);
-
-                var targetType = Type.GetType(qualifiedTypeName);
-                if (targetType == null)
-                {
-                    VLog.E($"Failed to resolve type: {qualifiedTypeName}");
-                    resolvedAll = false;
-                    continue;
-                }
-
-                var types = new Type[action.Parameters.Count];
-                for (var i = 0; i < action.Parameters.Count; i++)
-                {
-                    var manifestParameter = action.Parameters[i];
-                    var fullTypeName = $"{manifestParameter.QualifiedTypeName},{manifestParameter.TypeAssembly}";
-                    types[i] = Type.GetType(fullTypeName);
-                    if (types[i] == null)
-                    {
-                        VLog.E($"Failed to resolve type: {fullTypeName}");
-                    }
-                }
-
-                var targetMethod = GetBestMethodMatch(targetType, method, types);
+                var targetMethod = methodInfo.Item1;
+                var targetType = methodInfo.Item2;
                 if (targetMethod == null)
                 {
-                    VLog.E($"Failed to resolve method {typeName}.{method}.");
+                    VLog.E($"Invalid Action ID: {action.ID}");
                     resolvedAll = false;
                     continue;
                 }
@@ -122,18 +176,18 @@ namespace Meta.Conduit
                     MethodInfo = targetMethod,
                     MinConfidence = actionAttribute.MinConfidence,
                     MaxConfidence = actionAttribute.MaxConfidence,
-                    ValidatePartial = actionAttribute.ValidatePartial
+                    ValidatePartial = actionAttribute.ValidatePartial,
                 };
 
-                if (!this.methodLookup.ContainsKey(action.Name))
+                if (!_methodLookup.ContainsKey(action.Name))
                 {
-                    this.methodLookup.Add(action.Name, new List<InvocationContext>());
+                    _methodLookup.Add(action.Name, new List<InvocationContext>());
                 }
 
-                this.methodLookup[action.Name].Add(invocationContext);
+                _methodLookup[action.Name].Add(invocationContext);
             }
 
-            foreach (var invocationContext in this.methodLookup.Values.Where(invocationContext =>
+            foreach (var invocationContext in _methodLookup.Values.Where(invocationContext =>
                          invocationContext.Count > 1))
             {
                 // This is a slow operation. If there multiple overloads are common, we should optimize this
@@ -142,6 +196,74 @@ namespace Meta.Conduit
             }
 
             return resolvedAll;
+        }
+
+        private bool ResolveErrorHandlers()
+        {
+            if (this.ErrorHandlers == null)
+            {
+                return true;
+            }
+            
+            var resolvedAll = true;
+            foreach (var action in this.ErrorHandlers)
+            {
+                var methodInfo = GetMethodInfo(action);
+                var targetMethod = methodInfo.Item1;
+                var targetType = methodInfo.Item2;
+                if (targetMethod == null)
+                {
+                    VLog.E($"Invalid Action ID: {action.ID}");
+                    resolvedAll = false;
+                    continue;
+                }
+
+                var attributes = targetMethod.GetCustomAttributes(typeof(OnConduitFailedParameterResolutionAttribute), false);
+                if (attributes.Length == 0)
+                {
+                    VLog.E($"{targetMethod} - Did not have expected Conduit attribute");
+                    resolvedAll = false;
+                    continue;
+                }
+                var actionAttribute = attributes.First() as OnConduitFailedParameterResolutionAttribute;
+                if (actionAttribute == null)
+                {
+                    VLog.E("Found null attribute when one was expected");
+                    continue;
+                }
+                
+                var invocationContext = new InvocationContext()
+                {
+                    Type = targetType,
+                    MethodInfo = targetMethod,
+                    CustomAttributeType = typeof(OnConduitFailedParameterResolutionAttribute)
+                };
+
+                if (!_methodLookup.ContainsKey(action.Name))
+                {
+                    _methodLookup.Add(action.Name, new List<InvocationContext>());
+                }
+
+                _methodLookup[action.Name].Add(invocationContext);
+            }
+
+            foreach (var invocationContext in _methodLookup.Values.Where(invocationContext =>
+                         invocationContext.Count > 1))
+            {
+                // This is a slow operation. If there multiple overloads are common, we should optimize this
+                invocationContext.Sort((one, two) =>
+                    two.MethodInfo.GetParameters().Length - one.MethodInfo.GetParameters().Length);
+            }
+
+            return resolvedAll;
+        }
+        
+        /// <summary>
+        /// Processes all actions in the manifest and associate them with the methods they should invoke.
+        /// </summary>
+        public bool ResolveActions()
+        {
+            return ResolveAllActions() && ResolveErrorHandlers();
         }
 
         private MethodInfo GetBestMethodMatch(Type targetType, string method, Type[] parameterTypes)
@@ -160,7 +282,7 @@ namespace Meta.Conduit
         /// <returns>True if the action exists, false otherwise.</returns>
         public bool ContainsAction(string @action)
         {
-            return this.methodLookup.ContainsKey(action);
+            return _methodLookup.ContainsKey(action);
         }
 
         /// <summary>
@@ -170,7 +292,30 @@ namespace Meta.Conduit
         /// <returns>The invocationContext.</returns>
         public List<InvocationContext> GetInvocationContexts(string actionId)
         {
-            return this.methodLookup[actionId];
+            return _methodLookup.ContainsKey(actionId) ? _methodLookup[actionId] : new List<InvocationContext>();
+        }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
+
+        public List<InvocationContext> GetErrorHandlerContexts()
+        {
+            List<InvocationContext> contexts = new List<InvocationContext>(); 
+            foreach (var methodLookupValue in _methodLookup.Values)
+            {
+                foreach (var invocationContext in methodLookupValue)
+                {
+                    if (invocationContext.CustomAttributeType == typeof(OnConduitFailedParameterResolutionAttribute))
+                    {
+                        contexts.Add(invocationContext);
+                    }
+                }
+            }
+
+            return contexts;
+
         }
     }
 }

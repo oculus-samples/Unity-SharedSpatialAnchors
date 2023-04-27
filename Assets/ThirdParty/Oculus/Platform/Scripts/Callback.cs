@@ -16,11 +16,7 @@ namespace Oculus.Platform
 
       notificationCallbacks[type] = new RequestCallback<T>(callback);
 
-      if (type == Message.MessageType.Notification_Room_InviteAccepted)
-      {
-        FlushRoomInviteNotificationQueue();
-      }
-      else if (type == Message.MessageType.Notification_GroupPresence_JoinIntentReceived)
+      if (type == Message.MessageType.Notification_GroupPresence_JoinIntentReceived)
       {
         FlushJoinIntentNotificationQueue();
       }
@@ -175,11 +171,6 @@ namespace Oculus.Platform
       else if (!hasRegisteredJoinIntentNotificationHandler && msg.Type == Message.MessageType.Notification_GroupPresence_JoinIntentReceived)
       {
         latestPendingJoinIntentNotifications = msg;
-      }
-      // We need to queue up GameInvites because the callback runner will be called before a handler has beeen set.
-      else if (!hasRegisteredRoomInviteNotificationHandler && msg.Type == Message.MessageType.Notification_Room_InviteAccepted)
-      {
-        pendingRoomInviteNotifications.Add(msg);
       }
     }
 

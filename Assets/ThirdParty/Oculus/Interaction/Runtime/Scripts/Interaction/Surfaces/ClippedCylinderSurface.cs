@@ -34,7 +34,7 @@ namespace Oculus.Interaction.Surfaces
 
         [Tooltip("The clippers that will be used to clip the Cylinder Surface.")]
         [SerializeField, Interface(typeof(ICylinderClipper))]
-        private List<MonoBehaviour> _clippers;
+        private List<UnityEngine.Object> _clippers;
 
         public Transform Transform => _cylinderSurface.Transform;
 
@@ -208,8 +208,8 @@ namespace Oculus.Interaction.Surfaces
 
         public void InjectClippers(IEnumerable<ICylinderClipper> clippers)
         {
-            _clippers = new List<MonoBehaviour>(
-                clippers.Select(c => c as MonoBehaviour));
+            _clippers = new List<UnityEngine.Object>(
+                clippers.Select(c => c as UnityEngine.Object));
         }
 
         #endregion

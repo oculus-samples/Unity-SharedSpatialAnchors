@@ -34,7 +34,7 @@ public class OVRProjectConfigEditor : Editor
         DrawProjectConfigInspector(projectConfig);
     }
 
-    public static void DrawTargetDeviceInspector(OVRProjectConfig projectConfig)
+        public static void DrawTargetDeviceInspector(OVRProjectConfig projectConfig)
     {
         // Target Devices
         EditorGUILayout.LabelField("Target Devices", EditorStyles.boldLabel);
@@ -62,6 +62,11 @@ public class OVRProjectConfigEditor : Editor
             {
                 bool oldSupportsDevice = projectConfig.targetDeviceTypes.Contains(deviceType);
                 bool newSupportsDevice = oldSupportsDevice;
+                if (deviceType == OVRProjectConfig.DeviceType.Quest)
+                {
+                    continue;
+                }
+
                 OVREditorUtil.SetupBoolField(projectConfig, ObjectNames.NicifyVariableName(deviceType.ToString()), ref newSupportsDevice, ref hasModified);
 
                 if (newSupportsDevice && !oldSupportsDevice)
@@ -261,6 +266,7 @@ public class OVRProjectConfigEditor : Editor
                         "If checked, this application can use experimental features. Note that such features are for developer use only. This option must be disabled when submitting to the Oculus Store."),
                     ref projectConfig.experimentalFeaturesEnabled, ref hasModified);
 
+                OVREditorUtil.SetupEnumField(projectConfig, "Virtual Keyboard Support", ref projectConfig.virtualKeyboardSupport, ref hasModified);
 
                 break;
         }

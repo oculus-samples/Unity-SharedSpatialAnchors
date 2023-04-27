@@ -6,8 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-namespace Meta.Conduit
+using System;
+
+namespace Oculus.Interaction.Deprecated
 {
+    [Obsolete("Replaced by WitEntityInfo")]
     public class WitEntity
     {
         public string name { get; set; }

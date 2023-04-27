@@ -28,7 +28,7 @@ namespace Oculus.Interaction
     public class RayInteractor : PointerInteractor<RayInteractor, RayInteractable>
     {
         [SerializeField, Interface(typeof(ISelector))]
-        private MonoBehaviour _selector;
+        private UnityEngine.Object _selector;
 
         [SerializeField]
         private Transform _rayOrigin;
@@ -214,7 +214,7 @@ namespace Oculus.Interaction
 
         public void InjectSelector(ISelector selector)
         {
-            _selector = selector as MonoBehaviour;
+            _selector = selector as UnityEngine.Object;
             Selector = selector;
         }
 

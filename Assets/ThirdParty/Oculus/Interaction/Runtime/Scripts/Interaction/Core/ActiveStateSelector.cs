@@ -29,7 +29,7 @@ namespace Oculus.Interaction
         [Tooltip("ISelector events will be raised " +
             "based on state changes of this IActiveState.")]
         [SerializeField, Interface(typeof(IActiveState))]
-        private MonoBehaviour _activeState;
+        private UnityEngine.Object _activeState;
         protected IActiveState ActiveState { get; private set; }
 
         private bool _selecting = false;
@@ -72,7 +72,7 @@ namespace Oculus.Interaction
 
         public void InjectActiveState(IActiveState activeState)
         {
-            _activeState = activeState as MonoBehaviour;
+            _activeState = activeState as UnityEngine.Object;
             ActiveState = activeState;
         }
         #endregion

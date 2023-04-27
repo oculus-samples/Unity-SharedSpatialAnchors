@@ -33,7 +33,7 @@ namespace Oculus.Interaction
     public class InteractableGroupView : MonoBehaviour, IInteractableView
     {
         [SerializeField, Interface(typeof(IInteractable))]
-        private List<MonoBehaviour> _interactables;
+        private List<UnityEngine.Object> _interactables;
 
         private List<IInteractable> Interactables;
 
@@ -211,7 +211,7 @@ namespace Oculus.Interaction
         {
             Interactables = interactables;
             _interactables =
-                Interactables.ConvertAll(interactable => interactable as MonoBehaviour);
+                Interactables.ConvertAll(interactable => interactable as UnityEngine.Object);
         }
 
         public void InjectOptionalData(object data)

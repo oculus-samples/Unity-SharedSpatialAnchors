@@ -6,19 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-using System.Collections.Generic;
-using Meta.WitAi.Data.Info;
+using System;
 
-namespace Meta.Conduit
+namespace Oculus.Interaction.Deprecated
 {
-    /// <summary>
-    /// This class exists because Wit.ai returns the roles in a format different from what it expects.
-    /// This is used for GET requests.
-    /// </summary>
-    public class WitIncomingEntity : WitEntity
+    [Obsolete("Replaced by WitEntityInfo")]
+    public class WitIncomingEntity
     {
-        public List<WitRole> roles { get; set; } = new List<WitRole>();
-
-        public List<WitKeyword> keywords { get; set; } = new List<WitKeyword>();
     }
 }

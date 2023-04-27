@@ -12,7 +12,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Meta.Conduit;
 using Meta.WitAi.Json;
 using UnityEditor;
@@ -20,6 +19,8 @@ using UnityEngine;
 using Meta.WitAi.Lib;
 using Meta.WitAi.Requests;
 using Meta.WitAi.Windows;
+using Meta.WitAi.Interfaces;
+using UnityEngine.SceneManagement;
 
 namespace Meta.WitAi.Data.Configuration
 {
@@ -73,13 +74,14 @@ namespace Meta.WitAi.Data.Configuration
             _needsConfigReload = false;
 
             // Find all Wit Configurations
+            List<WitConfiguration> loaded = GetLoadedConfigurations();
             List<WitConfiguration> found = new List<WitConfiguration>();
             string[] guids = AssetDatabase.FindAssets("t:WitConfiguration");
             foreach (var guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 WitConfiguration config = AssetDatabase.LoadAssetAtPath<WitConfiguration>(path);
-                if (!config.isDemoOnly)
+                if (!config.isDemoOnly || loaded.Contains(config))
                 {
                     found.Add(config);
                 }
@@ -106,6 +108,36 @@ namespace Meta.WitAi.Data.Configuration
             // Search through configs
             return Array.FindIndex(WitConfigs, (checkConfig) => string.Equals(checkConfig.name, configurationName));
         }
+        // Return all configurations referenced in loaded scenes
+        public static List<WitConfiguration> GetLoadedConfigurations()
+        {
+            // Get results
+            List<WitConfiguration> results = new List<WitConfiguration>();
+
+            // Iterate loaded scenes
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                foreach (var rootGameObject in scene.GetRootGameObjects())
+                {
+                    IWitConfigurationProvider[] providers = rootGameObject.GetComponentsInChildren<IWitConfigurationProvider>(true);
+                    if (providers != null)
+                    {
+                        foreach (var provider in providers)
+                        {
+                            WitConfiguration config = provider.Configuration;
+                            if (config != null && !results.Contains(config))
+                            {
+                                results.Add(config);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Return results list
+            return results;
+        }
         #endregion
 
         #region MANAGEMENT
@@ -120,7 +152,7 @@ namespace Meta.WitAi.Data.Configuration
             int index = SaveConfiguration(serverToken, configurationAsset);
             if (index == -1)
             {
-                MonoBehaviour.DestroyImmediate(configurationAsset);
+                configurationAsset.DestroySafely();
             }
             // Return new index
             return index;
@@ -284,9 +316,10 @@ namespace Meta.WitAi.Data.Configuration
             VLog.SuppressErrors = suppressErrors;
             PerformRequest(request, (error) =>
             {
+                VLog.SuppressErrors = false;
                 if (!string.IsNullOrEmpty(error))
                 {
-                    onComplete?.Invoke(false,"error");
+                    onComplete?.Invoke(false, error);
                 }
                 else
                 {

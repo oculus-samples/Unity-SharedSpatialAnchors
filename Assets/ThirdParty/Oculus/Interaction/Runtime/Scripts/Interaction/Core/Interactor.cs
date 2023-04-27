@@ -37,11 +37,11 @@ namespace Oculus.Interaction
                                     where TInteractable : Interactable<TInteractor, TInteractable>
     {
         [SerializeField, Interface(typeof(IActiveState)), Optional]
-        private MonoBehaviour _activeState;
+        private UnityEngine.Object _activeState;
         private IActiveState ActiveState = null;
 
         [SerializeField, Interface(typeof(IGameObjectFilter)), Optional]
-        private List<MonoBehaviour> _interactableFilters = new List<MonoBehaviour>();
+        private List<UnityEngine.Object> _interactableFilters = new List<UnityEngine.Object>();
         private List<IGameObjectFilter> InteractableFilters = null;
 
         private Func<TInteractable> _computeCandidateOverride;
@@ -705,7 +705,7 @@ namespace Oculus.Interaction
         #region Inject
         public void InjectOptionalActiveState(IActiveState activeState)
         {
-            _activeState = activeState as MonoBehaviour;
+            _activeState = activeState as UnityEngine.Object;
             ActiveState = activeState;
         }
 
@@ -713,7 +713,7 @@ namespace Oculus.Interaction
         {
             InteractableFilters = interactableFilters;
             _interactableFilters = interactableFilters.ConvertAll(interactableFilter =>
-                                    interactableFilter as MonoBehaviour);
+                                    interactableFilter as UnityEngine.Object);
         }
 
         public void InjectOptionalData(object data)

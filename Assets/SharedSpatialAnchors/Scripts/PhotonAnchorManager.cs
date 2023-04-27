@@ -193,6 +193,11 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         if (SampleController.Instance.automaticCoLocation)
         {
             Photon.Pun.PhotonNetwork.Instantiate("PassthroughAvatarPhoton", Vector3.zero, Quaternion.identity);
+
+            if(PhotonPun.PhotonNetwork.IsMasterClient)
+            {
+                SampleController.Instance.PlaceAnchorAtRoot();
+            }
         }
 
         GameObject sceneCaptureController = GameObject.Find("SceneCaptureController");
@@ -201,7 +206,6 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
             if (Photon.Pun.PhotonNetwork.IsMasterClient)
             {
                 sceneCaptureController.GetComponent<SceneApiSceneCaptureStrategy>().InitSceneCapture();
-                sceneCaptureController.GetComponent<SceneApiSceneCaptureStrategy>().BeginCaptureScene();
             }
             else
             {
@@ -391,7 +395,7 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         }
 
         object data;
-        if (propertiesThatChanged.TryGetValue("roomData", out data))
+        if (propertiesThatChanged.TryGetValue(SceneApiSceneCaptureStrategy.RoomDataKey, out data))
         {
             SampleController.Instance.Log("Room data recieved from master client.");
             DeserializeToScene((byte[])data);
@@ -409,7 +413,7 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         }
 
         object data;
-        if (Photon.Pun.PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("roomData", out data))
+        if (Photon.Pun.PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue(SceneApiSceneCaptureStrategy.RoomDataKey, out data))
         {
             DeserializeToScene((byte[])data);
         }

@@ -41,7 +41,8 @@ namespace Oculus.Interaction.HandGrab
 
         public HandPose HandPose => _isHandPoseValid ? _handPose : null;
 
-        public Pose WorldGrabPose => _relativeTo != null ? _relativeTo.GlobalPose(Pose) : Pose.identity;
+        public Pose WorldGrabPose => _relativeTo != null ?
+            PoseUtils.GlobalPose(_relativeTo, Pose) : Pose.identity;
         public HandAlignType HandAlignment => _handAlignment;
 
         public GrabAnchor Anchor { get; private set; } = GrabAnchor.None;
@@ -68,7 +69,7 @@ namespace Oculus.Interaction.HandGrab
             Anchor = anchor;
             _relativeTo = relativeTo;
             _handAlignment = handAlignment;
-            _pose.CopyFrom(result.SnapPose);
+            _pose.CopyFrom(result.RelativePose);
             _isHandPoseValid = result.HasHandPose;
             if (_isHandPoseValid)
             {

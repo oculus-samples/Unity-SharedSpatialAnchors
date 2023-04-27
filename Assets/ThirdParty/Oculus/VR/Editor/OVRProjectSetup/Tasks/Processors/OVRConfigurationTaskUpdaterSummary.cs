@@ -25,12 +25,12 @@ using UnityEngine;
 internal class OVRConfigurationTaskUpdaterSummary
 {
     private readonly List<OVRConfigurationTask> _outstandingTasks;
-    private readonly Dictionary<OVRConfigurationTask.TaskLevel, List<OVRConfigurationTask>> _outstandingTasksPerLevel;
+    private readonly Dictionary<OVRProjectSetup.TaskLevel, List<OVRConfigurationTask>> _outstandingTasksPerLevel;
     private bool HasChangedState { get; set; }
 
     public bool HasAvailableFixes => _outstandingTasks.Count > 0;
-    public bool HasFixes(OVRConfigurationTask.TaskLevel taskLevel) => _outstandingTasksPerLevel[taskLevel].Count > 0;
-    public int GetNumberOfFixes(OVRConfigurationTask.TaskLevel taskLevel) => _outstandingTasksPerLevel[taskLevel].Count;
+    public bool HasFixes(OVRProjectSetup.TaskLevel taskLevel) => _outstandingTasksPerLevel[taskLevel].Count > 0;
+    public int GetNumberOfFixes(OVRProjectSetup.TaskLevel taskLevel) => _outstandingTasksPerLevel[taskLevel].Count;
     public int GetTotalNumberOfFixes() => _outstandingTasks.Count;
     private readonly BuildTargetGroup _buildTargetGroup;
 
@@ -40,8 +40,8 @@ internal class OVRConfigurationTaskUpdaterSummary
     {
         _buildTargetGroup = buildTargetGroup;
         _outstandingTasks = new List<OVRConfigurationTask>();
-        _outstandingTasksPerLevel = new Dictionary<OVRConfigurationTask.TaskLevel, List<OVRConfigurationTask>>();
-        for (var i = OVRConfigurationTask.TaskLevel.Required; i >= OVRConfigurationTask.TaskLevel.Optional; i--)
+        _outstandingTasksPerLevel = new Dictionary<OVRProjectSetup.TaskLevel, List<OVRConfigurationTask>>();
+        for (var i = OVRProjectSetup.TaskLevel.Required; i >= OVRProjectSetup.TaskLevel.Optional; i--)
         {
             _outstandingTasksPerLevel.Add(i, new List<OVRConfigurationTask>());
         }
@@ -50,7 +50,7 @@ internal class OVRConfigurationTaskUpdaterSummary
     public void Reset()
     {
         _outstandingTasks.Clear();
-        for (var i = OVRConfigurationTask.TaskLevel.Required; i >= OVRConfigurationTask.TaskLevel.Optional; i--)
+        for (var i = OVRProjectSetup.TaskLevel.Required; i >= OVRProjectSetup.TaskLevel.Optional; i--)
         {
             _outstandingTasksPerLevel[i].Clear();
         }
@@ -69,11 +69,11 @@ internal class OVRConfigurationTaskUpdaterSummary
     {
     }
 
-    public OVRConfigurationTask.TaskLevel? HighestFixLevel
+    public OVRProjectSetup.TaskLevel? HighestFixLevel
     {
         get
         {
-            for (var i = OVRConfigurationTask.TaskLevel.Required; i >= OVRConfigurationTask.TaskLevel.Optional; i--)
+            for (var i = OVRProjectSetup.TaskLevel.Required; i >= OVRProjectSetup.TaskLevel.Optional; i--)
             {
                 if (HasFixes(i))
                 {
@@ -88,7 +88,7 @@ internal class OVRConfigurationTaskUpdaterSummary
     public string ComputeNoticeMessage()
     {
         var highestLevel = HighestFixLevel;
-        var level = highestLevel ?? OVRConfigurationTask.TaskLevel.Optional;
+        var level = highestLevel ?? OVRProjectSetup.TaskLevel.Optional;
         var count = GetNumberOfFixes(level);
         if (count == 0)
         {
@@ -104,7 +104,7 @@ internal class OVRConfigurationTaskUpdaterSummary
     public string ComputeLogMessage()
     {
         var highestLevel = HighestFixLevel;
-        var level = highestLevel ?? OVRConfigurationTask.TaskLevel.Optional;
+        var level = highestLevel ?? OVRProjectSetup.TaskLevel.Optional;
         var count = GetNumberOfFixes(level);
         var message = GetFullLogMessage(level, count);
         return message;
@@ -122,19 +122,19 @@ internal class OVRConfigurationTaskUpdaterSummary
 
         switch (highestLevel)
         {
-            case OVRConfigurationTask.TaskLevel.Optional:
+            case OVRProjectSetup.TaskLevel.Optional:
             {
                 Debug.Log(message);
             }
                 break;
 
-            case OVRConfigurationTask.TaskLevel.Recommended:
+            case OVRProjectSetup.TaskLevel.Recommended:
             {
                 Debug.LogWarning(message);
             }
                 break;
 
-            case OVRConfigurationTask.TaskLevel.Required:
+            case OVRProjectSetup.TaskLevel.Required:
             {
                 if (OVRProjectSetup.RequiredThrowErrors.Value)
                 {
@@ -149,7 +149,7 @@ internal class OVRConfigurationTaskUpdaterSummary
         }
     }
 
-    private static string GetLogMessage(OVRConfigurationTask.TaskLevel level, int count)
+    private static string GetLogMessage(OVRProjectSetup.TaskLevel level, int count)
     {
         switch (count)
         {
@@ -164,7 +164,7 @@ internal class OVRConfigurationTaskUpdaterSummary
         }
     }
 
-    internal static string GetFullLogMessage(OVRConfigurationTask.TaskLevel level, int count)
+    internal static string GetFullLogMessage(OVRProjectSetup.TaskLevel level, int count)
     {
         return
             $"[Oculus Settings] {GetLogMessage(level, count)}\nFor more information, go to <a href=\"{OVRConfigurationTask.ConsoleLinkHref}\">Edit > Project Settings > {OVRProjectSetupSettingsProvider.SettingsName}</a>";

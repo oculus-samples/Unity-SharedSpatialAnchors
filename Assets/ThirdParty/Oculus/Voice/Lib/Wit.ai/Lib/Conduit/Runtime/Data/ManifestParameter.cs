@@ -8,6 +8,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Meta.WitAi.Json;
 
 namespace Meta.Conduit
 {
@@ -27,10 +28,10 @@ namespace Meta.Conduit
         /// </summary>
         public string Name
         {
-            get => name;
-            set => name = ConduitUtilities.DelimitWithUnderscores(value);
+            get => _name;
+            set => _name = ConduitUtilities.DelimitWithUnderscores(value);
         }
-        private string name;
+        private string _name;
 
         /// <summary>
         /// This is the technical name of the parameter in the actual method in codebase.
@@ -96,7 +97,7 @@ namespace Meta.Conduit
         public override int GetHashCode()
         {
             var hash = 17;
-            hash = hash * 31 + name.GetHashCode();
+            hash = hash * 31 + _name.GetHashCode();
             hash = hash * 31 + InternalName.GetHashCode();
             hash = hash * 31 + QualifiedName.GetHashCode();
             hash = hash * 31 + TypeAssembly.GetHashCode();

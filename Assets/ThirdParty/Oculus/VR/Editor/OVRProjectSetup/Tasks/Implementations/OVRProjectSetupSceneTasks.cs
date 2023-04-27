@@ -23,12 +23,12 @@ using UnityEditor;
 [InitializeOnLoad]
 internal static class OVRProjectSetupSceneTasks
 {
-	private const OVRConfigurationTask.TaskGroup Group = OVRConfigurationTask.TaskGroup.Features;
+	private const OVRProjectSetup.TaskGroup Group = OVRProjectSetup.TaskGroup.Features;
 
 	static OVRProjectSetupSceneTasks()
 	{
 		OVRProjectSetup.AddTask(
-			level: OVRConfigurationTask.TaskLevel.Required,
+			level: OVRProjectSetup.TaskLevel.Required,
 			group: Group,
 			isDone: buildTargetGroup => OVRProjectSetupUtils.FindComponentInScene<OVRSceneManager>() == null || OVRProjectConfig.CachedProjectConfig.anchorSupport == OVRProjectConfig.AnchorSupport.Enabled,
 			message: "When using Scene in your project it's required to enable it's capability in the project config",

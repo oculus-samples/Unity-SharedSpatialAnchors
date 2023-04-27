@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -28,7 +28,7 @@ namespace Oculus.Interaction.DistanceReticles
     public class ReticleMeshDrawer : InteractorReticle<ReticleDataMesh>
     {
         [SerializeField, Interface(typeof(IHandGrabber), typeof(IHandGrabState), typeof(IInteractorView))]
-        private MonoBehaviour _handGrabber;
+        private UnityEngine.Object _handGrabber;
         private IHandGrabber HandGrabber { get; set; }
         private IHandGrabState HandGrabSource { get; set; }
 
@@ -126,7 +126,7 @@ namespace Oculus.Interaction.DistanceReticles
 
         public void InjectHandGrabber(IHandGrabber handGrabber)
         {
-            _handGrabber = handGrabber as MonoBehaviour;
+            _handGrabber = handGrabber as UnityEngine.Object;
             HandGrabber = handGrabber;
             Interactor = handGrabber as IInteractorView;
             HandGrabSource = handGrabber as IHandGrabState;

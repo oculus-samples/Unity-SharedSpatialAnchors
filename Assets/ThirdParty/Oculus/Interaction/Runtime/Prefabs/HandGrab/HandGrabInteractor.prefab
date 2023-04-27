@@ -59,6 +59,7 @@ GameObject:
   - component: {fileID: 5051340845603383047}
   - component: {fileID: 2225697885797083731}
   - component: {fileID: 2876613987327765954}
+  - component: {fileID: 4958027446342093711}
   m_Layer: 2
   m_Name: PinchArea
   m_TagString: Untagged
@@ -110,6 +111,19 @@ CapsuleCollider:
   m_Height: 0.09
   m_Direction: 1
   m_Center: {x: 0, y: 0.013425885, z: 0}
+--- !u!114 &4958027446342093711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 206931871687596337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a52cc62b98662b4e9ac356027b2b070, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _hand: {fileID: 8646129326984794350}
 --- !u!1 &2781004746544239580
 GameObject:
   m_ObjectHideFlags: 0

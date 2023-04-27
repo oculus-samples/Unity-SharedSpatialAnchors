@@ -41,9 +41,6 @@ namespace Oculus.Interaction.DistanceReticles
             }
         }
 
-        [SerializeField, Optional]
-        private Collider[] _colliders;
-
         [SerializeField]
         [Range(0f, 1f)]
         private float _snappiness;
@@ -91,10 +88,6 @@ namespace Oculus.Interaction.DistanceReticles
             _renderer = renderer;
         }
 
-        public void InjectOptionalColliders(Collider[] colliders)
-        {
-            _colliders = colliders;
-        }
         #endregion
     }
 }

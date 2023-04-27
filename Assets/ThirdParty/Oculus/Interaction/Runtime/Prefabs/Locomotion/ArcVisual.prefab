@@ -312,6 +312,7 @@ GameObject:
   - component: {fileID: 8892046515983053113}
   - component: {fileID: 8892046515983053112}
   - component: {fileID: 8892046515983053114}
+  - component: {fileID: 7712086311778540564}
   m_Layer: 0
   m_Name: ProceduralArc
   m_TagString: Untagged
@@ -395,15 +396,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interactor: {fileID: 0}
-  _progress: {fileID: 5419002223357359416}
-  _arcFilter: {fileID: 8892046515983053113}
-  _renderer: {fileID: 8892046515983053112}
-  _arcPointsCount: 30
-  _divisions: 8
-  _radius: 0.005
+  _tubeRenderer: {fileID: 7712086311778540564}
   _gradient:
     serializedVersion: 2
-    key0: {r: 1, g: 1, b: 1, a: 0}
+    key0: {r: 1, g: 1, b: 1, a: 1}
     key1: {r: 1, g: 1, b: 1, a: 1}
     key2: {r: 0, g: 0, b: 0, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
@@ -419,18 +415,66 @@ MonoBehaviour:
     ctime5: 0
     ctime6: 0
     ctime7: 0
-    atime0: 655
-    atime1: 5012
-    atime2: 65535
-    atime3: 65535
-    atime4: 65535
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
     atime5: 0
     atime6: 0
     atime7: 0
     m_Mode: 0
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
+  _progress: {fileID: 5419002223357359416}
+  _arcPointsCount: 30
   _noDestinationTint: {r: 1, g: 0, b: 0, a: 0.5019608}
+--- !u!114 &7712086311778540564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8892046515983053118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 038d627f7b72e904382b2b0f8fb30c29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _filter: {fileID: 8892046515983053113}
+  _renderer: {fileID: 8892046515983053112}
+  _divisions: 8
+  _radius: 0.005
+  _gradient:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 0}
+    key1: {r: 1, g: 1, b: 1, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 1}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 4981
+    atime2: 65535
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 3
+  _tint: {r: 1, g: 1, b: 1, a: 1}
   _progressFade: 0.2
-  _endFadeThresold: 0.1
+  _endFadeThresold: 0.2
   _mirrorTexture: 1

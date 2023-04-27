@@ -55,7 +55,7 @@ public static partial class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 	public static readonly System.Version wrapperVersion = _versionZero;
 #else
-	public static readonly System.Version wrapperVersion = OVRP_1_81_0.version;
+	public static readonly System.Version wrapperVersion = OVRP_1_83_0.version;
 #endif
 
 #if !OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -701,6 +701,7 @@ public static partial class OVRPlugin
 		Thumb = 0x02,
 		Index = 0x04,
 	}
+
 
 	[StructLayout(LayoutKind.Sequential)]
 	public struct ControllerState5
@@ -2064,6 +2065,78 @@ public static partial class OVRPlugin
 		public double Time;
 	}
 
+		[StructLayout(LayoutKind.Sequential)]
+	private struct FaceState2Internal
+	{
+		public float ExpressionWeights_0;
+		public float ExpressionWeights_1;
+		public float ExpressionWeights_2;
+		public float ExpressionWeights_3;
+		public float ExpressionWeights_4;
+		public float ExpressionWeights_5;
+		public float ExpressionWeights_6;
+		public float ExpressionWeights_7;
+		public float ExpressionWeights_8;
+		public float ExpressionWeights_9;
+		public float ExpressionWeights_10;
+		public float ExpressionWeights_11;
+		public float ExpressionWeights_12;
+		public float ExpressionWeights_13;
+		public float ExpressionWeights_14;
+		public float ExpressionWeights_15;
+		public float ExpressionWeights_16;
+		public float ExpressionWeights_17;
+		public float ExpressionWeights_18;
+		public float ExpressionWeights_19;
+		public float ExpressionWeights_20;
+		public float ExpressionWeights_21;
+		public float ExpressionWeights_22;
+		public float ExpressionWeights_23;
+		public float ExpressionWeights_24;
+		public float ExpressionWeights_25;
+		public float ExpressionWeights_26;
+		public float ExpressionWeights_27;
+		public float ExpressionWeights_28;
+		public float ExpressionWeights_29;
+		public float ExpressionWeights_30;
+		public float ExpressionWeights_31;
+		public float ExpressionWeights_32;
+		public float ExpressionWeights_33;
+		public float ExpressionWeights_34;
+		public float ExpressionWeights_35;
+		public float ExpressionWeights_36;
+		public float ExpressionWeights_37;
+		public float ExpressionWeights_38;
+		public float ExpressionWeights_39;
+		public float ExpressionWeights_40;
+		public float ExpressionWeights_41;
+		public float ExpressionWeights_42;
+		public float ExpressionWeights_43;
+		public float ExpressionWeights_44;
+		public float ExpressionWeights_45;
+		public float ExpressionWeights_46;
+		public float ExpressionWeights_47;
+		public float ExpressionWeights_48;
+		public float ExpressionWeights_49;
+		public float ExpressionWeights_50;
+		public float ExpressionWeights_51;
+		public float ExpressionWeights_52;
+		public float ExpressionWeights_53;
+		public float ExpressionWeights_54;
+		public float ExpressionWeights_55;
+		public float ExpressionWeights_56;
+		public float ExpressionWeights_57;
+		public float ExpressionWeights_58;
+		public float ExpressionWeights_59;
+		public float ExpressionWeights_60;
+		public float ExpressionWeights_61;
+		public float ExpressionWeights_62;
+		public float ExpressionWeightConfidences_0;
+		public float ExpressionWeightConfidences_1;
+		public FaceExpressionStatusInternal Status;
+		public double Time;
+	}
+
 	public enum FaceRegionConfidence
 	{
 		Lower = 0,
@@ -2073,71 +2146,71 @@ public static partial class OVRPlugin
 
 	public enum FaceExpression
 	{
-		Invalid                = -1,
-		Brow_Lowerer_L         = 0,
-		Brow_Lowerer_R         = 1,
-		Cheek_Puff_L           = 2,
-		Cheek_Puff_R           = 3,
-		Cheek_Raiser_L         = 4,
-		Cheek_Raiser_R         = 5,
-		Cheek_Suck_L           = 6,
-		Cheek_Suck_R           = 7,
-		Chin_Raiser_B          = 8,
-		Chin_Raiser_T          = 9,
-		Dimpler_L              = 10,
-		Dimpler_R              = 11,
-		Eyes_Closed_L          = 12,
-		Eyes_Closed_R          = 13,
-		Eyes_Look_Down_L       = 14,
-		Eyes_Look_Down_R       = 15,
-		Eyes_Look_Left_L       = 16,
-		Eyes_Look_Left_R       = 17,
-		Eyes_Look_Right_L      = 18,
-		Eyes_Look_Right_R      = 19,
-		Eyes_Look_Up_L         = 20,
-		Eyes_Look_Up_R         = 21,
-		Inner_Brow_Raiser_L    = 22,
-		Inner_Brow_Raiser_R    = 23,
-		Jaw_Drop               = 24,
-		Jaw_Sideways_Left      = 25,
-		Jaw_Sideways_Right     = 26,
-		Jaw_Thrust             = 27,
-		Lid_Tightener_L        = 28,
-		Lid_Tightener_R        = 29,
-		Lip_Corner_Depressor_L = 30,
-		Lip_Corner_Depressor_R = 31,
-		Lip_Corner_Puller_L    = 32,
-		Lip_Corner_Puller_R    = 33,
-		Lip_Funneler_LB        = 34,
-		Lip_Funneler_LT        = 35,
-		Lip_Funneler_RB        = 36,
-		Lip_Funneler_RT        = 37,
-		Lip_Pressor_L          = 38,
-		Lip_Pressor_R          = 39,
-		Lip_Pucker_L           = 40,
-		Lip_Pucker_R           = 41,
-		Lip_Stretcher_L        = 42,
-		Lip_Stretcher_R        = 43,
-		Lip_Suck_LB            = 44,
-		Lip_Suck_LT            = 45,
-		Lip_Suck_RB            = 46,
-		Lip_Suck_RT            = 47,
-		Lip_Tightener_L        = 48,
-		Lip_Tightener_R        = 49,
-		Lips_Toward            = 50,
-		Lower_Lip_Depressor_L  = 51,
-		Lower_Lip_Depressor_R  = 52,
-		Mouth_Left             = 53,
-		Mouth_Right            = 54,
-		Nose_Wrinkler_L        = 55,
-		Nose_Wrinkler_R        = 56,
-		Outer_Brow_Raiser_L    = 57,
-		Outer_Brow_Raiser_R    = 58,
-		Upper_Lid_Raiser_L     = 59,
-		Upper_Lid_Raiser_R     = 60,
-		Upper_Lip_Raiser_L     = 61,
-		Upper_Lip_Raiser_R     = 62,
-		Max                    = 63,
+		Invalid                    = -1,
+		Brow_Lowerer_L             = 0,
+		Brow_Lowerer_R             = 1,
+		Cheek_Puff_L               = 2,
+		Cheek_Puff_R               = 3,
+		Cheek_Raiser_L             = 4,
+		Cheek_Raiser_R             = 5,
+		Cheek_Suck_L               = 6,
+		Cheek_Suck_R               = 7,
+		Chin_Raiser_B              = 8,
+		Chin_Raiser_T              = 9,
+		Dimpler_L                  = 10,
+		Dimpler_R                  = 11,
+		Eyes_Closed_L              = 12,
+		Eyes_Closed_R              = 13,
+		Eyes_Look_Down_L           = 14,
+		Eyes_Look_Down_R           = 15,
+		Eyes_Look_Left_L           = 16,
+		Eyes_Look_Left_R           = 17,
+		Eyes_Look_Right_L          = 18,
+		Eyes_Look_Right_R          = 19,
+		Eyes_Look_Up_L             = 20,
+		Eyes_Look_Up_R             = 21,
+		Inner_Brow_Raiser_L        = 22,
+		Inner_Brow_Raiser_R        = 23,
+		Jaw_Drop                   = 24,
+		Jaw_Sideways_Left          = 25,
+		Jaw_Sideways_Right         = 26,
+		Jaw_Thrust                 = 27,
+		Lid_Tightener_L            = 28,
+		Lid_Tightener_R            = 29,
+		Lip_Corner_Depressor_L     = 30,
+		Lip_Corner_Depressor_R     = 31,
+		Lip_Corner_Puller_L        = 32,
+		Lip_Corner_Puller_R        = 33,
+		Lip_Funneler_LB            = 34,
+		Lip_Funneler_LT            = 35,
+		Lip_Funneler_RB            = 36,
+		Lip_Funneler_RT            = 37,
+		Lip_Pressor_L              = 38,
+		Lip_Pressor_R              = 39,
+		Lip_Pucker_L               = 40,
+		Lip_Pucker_R               = 41,
+		Lip_Stretcher_L            = 42,
+		Lip_Stretcher_R            = 43,
+		Lip_Suck_LB                = 44,
+		Lip_Suck_LT                = 45,
+		Lip_Suck_RB                = 46,
+		Lip_Suck_RT                = 47,
+		Lip_Tightener_L            = 48,
+		Lip_Tightener_R            = 49,
+		Lips_Toward                = 50,
+		Lower_Lip_Depressor_L      = 51,
+		Lower_Lip_Depressor_R      = 52,
+		Mouth_Left                 = 53,
+		Mouth_Right                = 54,
+		Nose_Wrinkler_L            = 55,
+		Nose_Wrinkler_R            = 56,
+		Outer_Brow_Raiser_L        = 57,
+		Outer_Brow_Raiser_R        = 58,
+		Upper_Lid_Raiser_L         = 59,
+		Upper_Lid_Raiser_R         = 60,
+		Upper_Lip_Raiser_L         = 61,
+		Upper_Lip_Raiser_R         = 62,
+		Max                        = 63,
 	}
 
 	public enum FaceConstants
@@ -2211,6 +2284,13 @@ public static partial class OVRPlugin
 		SceneCaptureComplete = 100,
 
 
+		VirtualKeyboardCommitText = 201,
+		VirtualKeyboardBackspace = 202,
+		VirtualKeyboardEnter = 203,
+		VirtualKeyboardShown = 204,
+		VirtualKeyboardHidden = 205,
+		VirtualKeyboardPlaySound = 206,
+
 
 	}
 
@@ -2252,6 +2332,150 @@ public static partial class OVRPlugin
 		SupportsGltf20Subset2 = 2,
 	}
 
+	public enum VirtualKeyboardLocationType
+	{
+		Custom = 0,
+		Far = 1,
+		Direct = 2
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardSpaceCreateInfo
+	{
+		public VirtualKeyboardLocationType locationType;
+		// Pose only set if locationType == Custom
+		public Posef pose;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardLocationInfo
+	{
+		public VirtualKeyboardLocationType locationType;
+		// Pose & Scale only set if locationType == Custom
+		public Posef pose;
+		public float scale;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardCreateInfo
+	{
+	}
+
+	public enum VirtualKeyboardInputSource
+	{
+		Invalid = 0,
+		ControllerRayLeft = 1,
+		ControllerRayRight = 2,
+		HandRayLeft = 3,
+		HandRayRight = 4,
+		ControllerDirectLeft = 5,
+		ControllerDirectRight = 6,
+		HandDirectIndexTipLeft = 7,
+		HandDirectIndexTipRight = 8,
+		EnumSize = 0x7FFFFFFF
+	}
+
+	[Flags]
+	public enum VirtualKeyboardInputStateFlags : ulong
+	{
+		IsPressed = 0x0000000000000001,
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardInputInfo
+	{
+		public VirtualKeyboardInputSource inputSource;
+		public Posef inputPose;
+		public VirtualKeyboardInputStateFlags inputState;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardSwipeTrailState
+	{
+		public float lifetimeSeconds;
+		public OVRPlugin.Colorf color;
+		public float startWidth;
+		public uint shapeCapacityInput;
+		public uint shapeCountOutput;
+		public IntPtr shape;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardSound
+	{
+		public uint SoundId;
+		public int Channels;
+		public int Frequency;
+		public float[] SoundBuffer;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardSoundInternal
+	{
+		public uint SoundId;
+		public uint Channels;
+		public uint Frequency;
+		public uint SoundCapacityInput;
+		public uint SoundCountOutput;
+		public IntPtr SoundBuffer;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardModelAnimationState
+	{
+		public int AnimationIndex;
+		public float Fraction;
+	}
+
+	public struct VirtualKeyboardModelAnimationStates
+	{
+		public VirtualKeyboardModelAnimationState[] States;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardModelAnimationStatesInternal
+	{
+		public UInt64 ModelKey;
+		public uint StateCapacityInput;
+		public uint StateCountOutput;
+		public IntPtr StatesBuffer;
+	}
+
+	public struct VirtualKeyboardTextureIds
+	{
+		public UInt64[] TextureIds;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardTextureIdsInternal
+	{
+		public uint TextureIdCapacityInput;
+		public uint TextureIdCountOutput;
+		public IntPtr TextureIdsBuffer;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardTextureData
+	{
+		public uint TextureCapacityInput;
+		public uint TextureCountOutput;
+		public uint TextureWidth;
+		public uint TextureHeight;
+		public IntPtr TextureBuffer;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VirtualKeyboardModelVisibility
+	{
+		public ulong ModelKey;
+		internal Bool _visible;
+
+		public bool Visible
+		{
+			get => _visible == Bool.True;
+			set => _visible = (value) ? Bool.True : Bool.False;
+		}
+	}
 
 
 	public enum InsightPassthroughColorMapType
@@ -3315,6 +3539,23 @@ public static partial class OVRPlugin
 #endif
 	}
 
+#if UNITY_EDITOR
+	public static bool UpdateInBatchMode()
+    {
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (!Application.isBatchMode)
+			return false;
+
+		if (version >= OVRP_1_8_0.version)
+			return OVRP_1_8_0.ovrp_Update2((int)Step.Render, -1/*OVRP_CURRENT_FRAMEINDEX*/, 0.0) == Bool.True;
+
+		return false;
+#endif
+	}
+#endif
+
 	public static bool UpdateNodePhysicsPoses(int frameIndex, double predictionSeconds)
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -3694,6 +3935,7 @@ public static partial class OVRPlugin
 		return new ControllerState5(GetControllerState4(controllerMask));
 #endif
 	}
+
 
 
 	public static InteractionProfile GetCurrentInteractionProfile(Hand hand)
@@ -7156,6 +7398,288 @@ public static partial class OVRPlugin
 
 // Virtual keyboard calls
 
+	public static Result CreateVirtualKeyboard(VirtualKeyboardCreateInfo createInfo)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			return OVRP_1_74_0.ovrp_CreateVirtualKeyboard(createInfo);
+		}
+
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result DestroyVirtualKeyboard()
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			return OVRP_1_74_0.ovrp_DestroyVirtualKeyboard();
+		}
+
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result SendVirtualKeyboardInput(VirtualKeyboardInputInfo inputInfo, ref Posef interactorRootPose)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			return OVRP_1_74_0.ovrp_SendVirtualKeyboardInput(inputInfo, ref interactorRootPose);
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result ChangeVirtualKeyboardTextContext(string textContext)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			return OVRP_1_74_0.ovrp_ChangeVirtualKeyboardTextContext(textContext);
+		}
+
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result CreateVirtualKeyboardSpace(VirtualKeyboardSpaceCreateInfo createInfo, out UInt64 keyboardSpace)
+	{
+		keyboardSpace = default;
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			return OVRP_1_74_0.ovrp_CreateVirtualKeyboardSpace(createInfo, out keyboardSpace);
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result SuggestVirtualKeyboardLocation(VirtualKeyboardLocationInfo locationInfo)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			return OVRP_1_74_0.ovrp_SuggestVirtualKeyboardLocation(locationInfo);
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result GetVirtualKeyboardScale(out float scale)
+	{
+		scale = default;
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			return OVRP_1_74_0.ovrp_GetVirtualKeyboardScale(out scale);
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result GetVirtualKeyboardSound(ref VirtualKeyboardSound sound)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version < OVRP_1_74_0.version)
+		{
+			return Result.Failure_Unsupported;
+		}
+
+		VirtualKeyboardSoundInternal soundInternal = new VirtualKeyboardSoundInternal();
+		soundInternal.SoundId = sound.SoundId;
+
+		Result result = OVRP_1_74_0.ovrp_GetVirtualKeyboardSound(ref soundInternal);
+		if (result != Result.Success)
+		{
+			Debug.LogError("Get sound failed: cannot query size");
+			return result;
+		}
+
+		soundInternal.SoundBuffer = Marshal.AllocHGlobal(sizeof(float) * (int)soundInternal.SoundCountOutput);
+		soundInternal.SoundCapacityInput = soundInternal.SoundCountOutput;
+
+		result = OVRP_1_74_0.ovrp_GetVirtualKeyboardSound(ref soundInternal);
+		if (result != Result.Success)
+		{
+			Debug.LogError("Get sound failed: cannot query sound data");
+			return result;
+		}
+
+		sound.Channels = (int)soundInternal.Channels;
+		sound.Frequency = (int)soundInternal.Frequency;
+		sound.SoundBuffer = new float[soundInternal.SoundCountOutput];
+		Marshal.Copy(soundInternal.SoundBuffer, sound.SoundBuffer, 0, (int)soundInternal.SoundCountOutput);
+		Marshal.FreeHGlobal(soundInternal.SoundBuffer);
+
+		return result;
+#endif
+	}
+
+	public static Result GetVirtualKeyboardSwipeTrailState(ref VirtualKeyboardSwipeTrailState swipeTrailState, Vector3[] targetBuffer = null)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_74_0.version)
+		{
+			var result =  OVRP_1_74_0.ovrp_GetVirtualKeyboardSwipeTrailState(ref swipeTrailState);
+
+			if (targetBuffer != null && result == Result.Success)
+			{
+				if (targetBuffer.Length < swipeTrailState.shapeCountOutput)
+				{
+					Debug.LogWarning($"targetBuffer length ({targetBuffer.Length}) is smaller than the number of results returned ({swipeTrailState.shapeCountOutput}).");
+				}
+				var sizeInBytes = Marshal.SizeOf(typeof(Vector3));
+				for (int i = 0; i < Math.Min(swipeTrailState.shapeCountOutput, targetBuffer.Length); i++)
+				{
+					IntPtr p = new IntPtr(swipeTrailState.shape.ToInt64() + (i * sizeInBytes));
+					targetBuffer[i] = Marshal.PtrToStructure<Vector3>(p);
+				}
+			}
+			return result;
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result GetVirtualKeyboardModelAnimationStates(UInt64 modelKey, out VirtualKeyboardModelAnimationStates animationStates)
+	{
+		animationStates = default;
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_83_0.version)
+		{
+			var animationStatesInternal = new VirtualKeyboardModelAnimationStatesInternal
+			{
+				ModelKey = modelKey,
+				StateCapacityInput = 0
+			};
+
+			var result = OVRP_1_83_0.ovrp_GetVirtualKeyboardModelAnimationStates(ref animationStatesInternal);
+			animationStates.States = new VirtualKeyboardModelAnimationState[animationStatesInternal.StateCountOutput];
+			if (result != Result.Success)
+			{
+				Debug.LogError("GetVirtualKeyboardModelAnimationStates failed: cannot query animation state data:" + result);
+			}
+			if (animationStatesInternal.StateCountOutput == 0 || result != Result.Success)
+			{
+				return result;
+			}
+			var sizeInBytes = Marshal.SizeOf(typeof(VirtualKeyboardModelAnimationState));
+			try {
+				animationStatesInternal.StatesBuffer = Marshal.AllocHGlobal(sizeInBytes * (int)animationStatesInternal.StateCountOutput);
+				animationStatesInternal.StateCapacityInput = animationStatesInternal.StateCountOutput;
+				result = OVRP_1_83_0.ovrp_GetVirtualKeyboardModelAnimationStates(ref animationStatesInternal);
+				if (result != Result.Success)
+				{
+					Debug.LogError("GetVirtualKeyboardModelAnimationStates failed: cannot populate animation state data:" + result);
+				}
+				else
+				{
+					for (int i = 0; i < animationStates.States.Length; i++)
+					{
+						IntPtr p = new IntPtr(animationStatesInternal.StatesBuffer.ToInt64() + (i * sizeInBytes));
+						animationStates.States[i] = Marshal.PtrToStructure<VirtualKeyboardModelAnimationState>(p);
+					}
+				}
+				return result;
+			} finally {
+				Marshal.FreeHGlobal(animationStatesInternal.StatesBuffer);
+			}
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result GetVirtualKeyboardDirtyTextures(out VirtualKeyboardTextureIds textureIds)
+	{
+		textureIds = default;
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_83_0.version)
+		{
+			var textureIdsInternal = new VirtualKeyboardTextureIdsInternal();
+
+			var result = OVRP_1_83_0.ovrp_GetVirtualKeyboardDirtyTextures(ref textureIdsInternal);
+
+			textureIds.TextureIds = new UInt64[textureIdsInternal.TextureIdCountOutput];
+			if (textureIdsInternal.TextureIdCountOutput == 0)
+			{
+				if (result != Result.Success)
+				{
+					Debug.LogError("GetVirtualKeyboardDirtyTextures failed: cannot query dirty textures data:" + result);
+				}
+				return result;
+			}
+			GCHandle handle = GCHandle.Alloc(textureIds.TextureIds, GCHandleType.Pinned);
+			try
+			{
+				textureIdsInternal.TextureIdCapacityInput = textureIdsInternal.TextureIdCountOutput;
+				textureIdsInternal.TextureIdsBuffer = handle.AddrOfPinnedObject();
+				result = OVRP_1_83_0.ovrp_GetVirtualKeyboardDirtyTextures(ref textureIdsInternal);
+				if (result != Result.Success)
+				{
+					Debug.LogError("GetVirtualKeyboardDirtyTextures failed: cannot populate dirty textures data:" + result);
+				}
+
+				return result;
+			}
+			finally
+			{
+				handle.Free();
+			}
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result GetVirtualKeyboardTextureData(UInt64 textureId, ref VirtualKeyboardTextureData textureData)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_83_0.version)
+		{
+			return  OVRP_1_83_0.ovrp_GetVirtualKeyboardTextureData(textureId, ref textureData);
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
+
+	public static Result SetVirtualKeyboardModelVisibility(ref VirtualKeyboardModelVisibility visibility)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return Result.Failure_Unsupported;
+#else
+		if (version >= OVRP_1_83_0.version)
+		{
+			return  OVRP_1_83_0.ovrp_SetVirtualKeyboardModelVisibility(ref visibility);
+		}
+		return Result.Failure_Unsupported;
+#endif
+	}
 
 	/// <summary>
 	/// True if face tracking is enabled, otherwise false.
@@ -7181,7 +7705,98 @@ public static partial class OVRPlugin
 		value == Bool.True;
 #endif //OVRPLUGIN_UNSUPPORTED_PLATFORM
 
+
 	private static FaceStateInternal cachedFaceState = new FaceStateInternal();
+	private static bool GetFaceStateInternal(Step stepId, int frameIndex, ref FaceState faceState)
+	{
+		Result res = OVRP_1_78_0.ovrp_GetFaceState(stepId, frameIndex, out cachedFaceState);
+		if (res != Result.Success)
+		{
+			return false;
+		}
+
+		// attempt to avoid allocations if client provides appropriately pre-initialized HandState
+		if (faceState.ExpressionWeights == null || faceState.ExpressionWeights.Length != (int)FaceConstants.MaxFaceExpressions)
+		{
+			faceState.ExpressionWeights = new float[(int)FaceConstants.MaxFaceExpressions];
+		}
+
+		if (faceState.ExpressionWeightConfidences == null || faceState.ExpressionWeightConfidences.Length != (int)FaceConstants.MaxFaceRegionConfidences)
+		{
+			faceState.ExpressionWeightConfidences = new float[(int)FaceConstants.MaxFaceRegionConfidences];
+		}
+
+		// unrolling the arrays is necessary to avoid per-frame allocations during marshaling
+		faceState.ExpressionWeights[0] = cachedFaceState.ExpressionWeights_0;
+		faceState.ExpressionWeights[1] = cachedFaceState.ExpressionWeights_1;
+		faceState.ExpressionWeights[2] = cachedFaceState.ExpressionWeights_2;
+		faceState.ExpressionWeights[3] = cachedFaceState.ExpressionWeights_3;
+		faceState.ExpressionWeights[4] = cachedFaceState.ExpressionWeights_4;
+		faceState.ExpressionWeights[5] = cachedFaceState.ExpressionWeights_5;
+		faceState.ExpressionWeights[6] = cachedFaceState.ExpressionWeights_6;
+		faceState.ExpressionWeights[7] = cachedFaceState.ExpressionWeights_7;
+		faceState.ExpressionWeights[8] = cachedFaceState.ExpressionWeights_8;
+		faceState.ExpressionWeights[9] = cachedFaceState.ExpressionWeights_9;
+		faceState.ExpressionWeights[10] = cachedFaceState.ExpressionWeights_10;
+		faceState.ExpressionWeights[11] = cachedFaceState.ExpressionWeights_11;
+		faceState.ExpressionWeights[12] = cachedFaceState.ExpressionWeights_12;
+		faceState.ExpressionWeights[13] = cachedFaceState.ExpressionWeights_13;
+		faceState.ExpressionWeights[14] = cachedFaceState.ExpressionWeights_14;
+		faceState.ExpressionWeights[15] = cachedFaceState.ExpressionWeights_15;
+		faceState.ExpressionWeights[16] = cachedFaceState.ExpressionWeights_16;
+		faceState.ExpressionWeights[17] = cachedFaceState.ExpressionWeights_17;
+		faceState.ExpressionWeights[18] = cachedFaceState.ExpressionWeights_18;
+		faceState.ExpressionWeights[19] = cachedFaceState.ExpressionWeights_19;
+		faceState.ExpressionWeights[20] = cachedFaceState.ExpressionWeights_20;
+		faceState.ExpressionWeights[21] = cachedFaceState.ExpressionWeights_21;
+		faceState.ExpressionWeights[22] = cachedFaceState.ExpressionWeights_22;
+		faceState.ExpressionWeights[23] = cachedFaceState.ExpressionWeights_23;
+		faceState.ExpressionWeights[24] = cachedFaceState.ExpressionWeights_24;
+		faceState.ExpressionWeights[25] = cachedFaceState.ExpressionWeights_25;
+		faceState.ExpressionWeights[26] = cachedFaceState.ExpressionWeights_26;
+		faceState.ExpressionWeights[27] = cachedFaceState.ExpressionWeights_27;
+		faceState.ExpressionWeights[28] = cachedFaceState.ExpressionWeights_28;
+		faceState.ExpressionWeights[29] = cachedFaceState.ExpressionWeights_29;
+		faceState.ExpressionWeights[30] = cachedFaceState.ExpressionWeights_30;
+		faceState.ExpressionWeights[31] = cachedFaceState.ExpressionWeights_31;
+		faceState.ExpressionWeights[32] = cachedFaceState.ExpressionWeights_32;
+		faceState.ExpressionWeights[33] = cachedFaceState.ExpressionWeights_33;
+		faceState.ExpressionWeights[34] = cachedFaceState.ExpressionWeights_34;
+		faceState.ExpressionWeights[35] = cachedFaceState.ExpressionWeights_35;
+		faceState.ExpressionWeights[36] = cachedFaceState.ExpressionWeights_36;
+		faceState.ExpressionWeights[37] = cachedFaceState.ExpressionWeights_37;
+		faceState.ExpressionWeights[38] = cachedFaceState.ExpressionWeights_38;
+		faceState.ExpressionWeights[39] = cachedFaceState.ExpressionWeights_39;
+		faceState.ExpressionWeights[40] = cachedFaceState.ExpressionWeights_40;
+		faceState.ExpressionWeights[41] = cachedFaceState.ExpressionWeights_41;
+		faceState.ExpressionWeights[42] = cachedFaceState.ExpressionWeights_42;
+		faceState.ExpressionWeights[43] = cachedFaceState.ExpressionWeights_43;
+		faceState.ExpressionWeights[44] = cachedFaceState.ExpressionWeights_44;
+		faceState.ExpressionWeights[45] = cachedFaceState.ExpressionWeights_45;
+		faceState.ExpressionWeights[46] = cachedFaceState.ExpressionWeights_46;
+		faceState.ExpressionWeights[47] = cachedFaceState.ExpressionWeights_47;
+		faceState.ExpressionWeights[48] = cachedFaceState.ExpressionWeights_48;
+		faceState.ExpressionWeights[49] = cachedFaceState.ExpressionWeights_49;
+		faceState.ExpressionWeights[50] = cachedFaceState.ExpressionWeights_50;
+		faceState.ExpressionWeights[51] = cachedFaceState.ExpressionWeights_51;
+		faceState.ExpressionWeights[52] = cachedFaceState.ExpressionWeights_52;
+		faceState.ExpressionWeights[53] = cachedFaceState.ExpressionWeights_53;
+		faceState.ExpressionWeights[54] = cachedFaceState.ExpressionWeights_54;
+		faceState.ExpressionWeights[55] = cachedFaceState.ExpressionWeights_55;
+		faceState.ExpressionWeights[56] = cachedFaceState.ExpressionWeights_56;
+		faceState.ExpressionWeights[57] = cachedFaceState.ExpressionWeights_57;
+		faceState.ExpressionWeights[58] = cachedFaceState.ExpressionWeights_58;
+		faceState.ExpressionWeights[59] = cachedFaceState.ExpressionWeights_59;
+		faceState.ExpressionWeights[60] = cachedFaceState.ExpressionWeights_60;
+		faceState.ExpressionWeights[61] = cachedFaceState.ExpressionWeights_61;
+		faceState.ExpressionWeights[62] = cachedFaceState.ExpressionWeights_62;
+		faceState.ExpressionWeightConfidences[0] = cachedFaceState.ExpressionWeightConfidences_0;
+		faceState.ExpressionWeightConfidences[1] = cachedFaceState.ExpressionWeightConfidences_1;
+		faceState.Status = cachedFaceState.Status.ToFaceExpressionStatus();
+		faceState.Time = cachedFaceState.Time;
+
+		return true;
+	}
 	public static bool GetFaceState(Step stepId, int frameIndex, ref FaceState faceState)
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -7193,104 +7808,16 @@ public static partial class OVRPlugin
 			stepId = Step.Render;
 		}
 
+
 		if (version >= OVRP_1_78_0.version)
 		{
-			Result res = OVRP_1_78_0.ovrp_GetFaceState(stepId, frameIndex, out cachedFaceState);
-			if (res == Result.Success)
-			{
-				// attempt to avoid allocations if client provides appropriately pre-initialized HandState
-				if (faceState.ExpressionWeights == null || faceState.ExpressionWeights.Length != (int)FaceConstants.MaxFaceExpressions)
-				{
-					faceState.ExpressionWeights = new float[(int)FaceConstants.MaxFaceExpressions];
-				}
-
-				if (faceState.ExpressionWeightConfidences == null || faceState.ExpressionWeightConfidences.Length != (int)FaceConstants.MaxFaceRegionConfidences)
-				{
-					faceState.ExpressionWeightConfidences = new float[(int)FaceConstants.MaxFaceRegionConfidences];
-				}
-
-				// unrolling the arrays is necessary to avoid per-frame allocations during marshaling
-				faceState.ExpressionWeights[0] = cachedFaceState.ExpressionWeights_0;
-				faceState.ExpressionWeights[1] = cachedFaceState.ExpressionWeights_1;
-				faceState.ExpressionWeights[2] = cachedFaceState.ExpressionWeights_2;
-				faceState.ExpressionWeights[3] = cachedFaceState.ExpressionWeights_3;
-				faceState.ExpressionWeights[4] = cachedFaceState.ExpressionWeights_4;
-				faceState.ExpressionWeights[5] = cachedFaceState.ExpressionWeights_5;
-				faceState.ExpressionWeights[6] = cachedFaceState.ExpressionWeights_6;
-				faceState.ExpressionWeights[7] = cachedFaceState.ExpressionWeights_7;
-				faceState.ExpressionWeights[8] = cachedFaceState.ExpressionWeights_8;
-				faceState.ExpressionWeights[9] = cachedFaceState.ExpressionWeights_9;
-				faceState.ExpressionWeights[10] = cachedFaceState.ExpressionWeights_10;
-				faceState.ExpressionWeights[11] = cachedFaceState.ExpressionWeights_11;
-				faceState.ExpressionWeights[12] = cachedFaceState.ExpressionWeights_12;
-				faceState.ExpressionWeights[13] = cachedFaceState.ExpressionWeights_13;
-				faceState.ExpressionWeights[14] = cachedFaceState.ExpressionWeights_14;
-				faceState.ExpressionWeights[15] = cachedFaceState.ExpressionWeights_15;
-				faceState.ExpressionWeights[16] = cachedFaceState.ExpressionWeights_16;
-				faceState.ExpressionWeights[17] = cachedFaceState.ExpressionWeights_17;
-				faceState.ExpressionWeights[18] = cachedFaceState.ExpressionWeights_18;
-				faceState.ExpressionWeights[19] = cachedFaceState.ExpressionWeights_19;
-				faceState.ExpressionWeights[20] = cachedFaceState.ExpressionWeights_20;
-				faceState.ExpressionWeights[21] = cachedFaceState.ExpressionWeights_21;
-				faceState.ExpressionWeights[22] = cachedFaceState.ExpressionWeights_22;
-				faceState.ExpressionWeights[23] = cachedFaceState.ExpressionWeights_23;
-				faceState.ExpressionWeights[24] = cachedFaceState.ExpressionWeights_24;
-				faceState.ExpressionWeights[25] = cachedFaceState.ExpressionWeights_25;
-				faceState.ExpressionWeights[26] = cachedFaceState.ExpressionWeights_26;
-				faceState.ExpressionWeights[27] = cachedFaceState.ExpressionWeights_27;
-				faceState.ExpressionWeights[28] = cachedFaceState.ExpressionWeights_28;
-				faceState.ExpressionWeights[29] = cachedFaceState.ExpressionWeights_29;
-				faceState.ExpressionWeights[30] = cachedFaceState.ExpressionWeights_30;
-				faceState.ExpressionWeights[31] = cachedFaceState.ExpressionWeights_31;
-				faceState.ExpressionWeights[32] = cachedFaceState.ExpressionWeights_32;
-				faceState.ExpressionWeights[33] = cachedFaceState.ExpressionWeights_33;
-				faceState.ExpressionWeights[34] = cachedFaceState.ExpressionWeights_34;
-				faceState.ExpressionWeights[35] = cachedFaceState.ExpressionWeights_35;
-				faceState.ExpressionWeights[36] = cachedFaceState.ExpressionWeights_36;
-				faceState.ExpressionWeights[37] = cachedFaceState.ExpressionWeights_37;
-				faceState.ExpressionWeights[38] = cachedFaceState.ExpressionWeights_38;
-				faceState.ExpressionWeights[39] = cachedFaceState.ExpressionWeights_39;
-				faceState.ExpressionWeights[40] = cachedFaceState.ExpressionWeights_40;
-				faceState.ExpressionWeights[41] = cachedFaceState.ExpressionWeights_41;
-				faceState.ExpressionWeights[42] = cachedFaceState.ExpressionWeights_42;
-				faceState.ExpressionWeights[43] = cachedFaceState.ExpressionWeights_43;
-				faceState.ExpressionWeights[44] = cachedFaceState.ExpressionWeights_44;
-				faceState.ExpressionWeights[45] = cachedFaceState.ExpressionWeights_45;
-				faceState.ExpressionWeights[46] = cachedFaceState.ExpressionWeights_46;
-				faceState.ExpressionWeights[47] = cachedFaceState.ExpressionWeights_47;
-				faceState.ExpressionWeights[48] = cachedFaceState.ExpressionWeights_48;
-				faceState.ExpressionWeights[49] = cachedFaceState.ExpressionWeights_49;
-				faceState.ExpressionWeights[50] = cachedFaceState.ExpressionWeights_50;
-				faceState.ExpressionWeights[51] = cachedFaceState.ExpressionWeights_51;
-				faceState.ExpressionWeights[52] = cachedFaceState.ExpressionWeights_52;
-				faceState.ExpressionWeights[53] = cachedFaceState.ExpressionWeights_53;
-				faceState.ExpressionWeights[54] = cachedFaceState.ExpressionWeights_54;
-				faceState.ExpressionWeights[55] = cachedFaceState.ExpressionWeights_55;
-				faceState.ExpressionWeights[56] = cachedFaceState.ExpressionWeights_56;
-				faceState.ExpressionWeights[57] = cachedFaceState.ExpressionWeights_57;
-				faceState.ExpressionWeights[58] = cachedFaceState.ExpressionWeights_58;
-				faceState.ExpressionWeights[59] = cachedFaceState.ExpressionWeights_59;
-				faceState.ExpressionWeights[60] = cachedFaceState.ExpressionWeights_60;
-				faceState.ExpressionWeights[61] = cachedFaceState.ExpressionWeights_61;
-				faceState.ExpressionWeights[62] = cachedFaceState.ExpressionWeights_62;
-				faceState.ExpressionWeightConfidences[0] = cachedFaceState.ExpressionWeightConfidences_0;
-				faceState.ExpressionWeightConfidences[1] = cachedFaceState.ExpressionWeightConfidences_1;
-				faceState.Status = cachedFaceState.Status.ToFaceExpressionStatus();
-				faceState.Time = cachedFaceState.Time;
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
+			return GetFaceStateInternal(stepId, frameIndex, ref faceState);
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 #endif
 	}
+
 
 	/// <summary>
 	/// True if eye tracking is enabled, otherwise false.
@@ -8237,6 +8764,8 @@ public static partial class OVRPlugin
 	}
 
 
+
+
 	public static string[] GetRenderModelPaths()
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -8477,6 +9006,7 @@ public static partial class OVRPlugin
 #endif
 		}
 	}
+
 
 
 
@@ -9889,6 +10419,33 @@ public static partial class OVRPlugin
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result ovrp_GetSpaceUuid(in UInt64 space, out Guid uuid);
 
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_CreateVirtualKeyboard(VirtualKeyboardCreateInfo createInfo);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_DestroyVirtualKeyboard();
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_SendVirtualKeyboardInput(VirtualKeyboardInputInfo inputInfo, ref Posef interactorRootPose);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_ChangeVirtualKeyboardTextContext(string textContext);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_CreateVirtualKeyboardSpace(VirtualKeyboardSpaceCreateInfo createInfo, out UInt64 keyboardSpace);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_SuggestVirtualKeyboardLocation(VirtualKeyboardLocationInfo locationInfo);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetVirtualKeyboardScale(out float location);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetVirtualKeyboardSound(ref VirtualKeyboardSoundInternal sound);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetVirtualKeyboardSwipeTrailState(ref VirtualKeyboardSwipeTrailState swipeTrailState);
+
 
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result ovrp_GetRenderModelProperties2(string path, RenderModelFlags flags, out RenderModelPropertiesInternal properties);
@@ -10039,6 +10596,33 @@ public static partial class OVRPlugin
 	{
 		public static readonly System.Version version = new System.Version(1, 81, 0);
 
+	}
+
+	private static class OVRP_1_82_0
+	{
+		public static readonly System.Version version = new System.Version(1, 82, 0);
+
+
+
+
+	}
+
+	private static class OVRP_1_83_0
+	{
+		public static readonly System.Version version = new System.Version(1, 83, 0);
+
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetVirtualKeyboardModelAnimationStates(ref VirtualKeyboardModelAnimationStatesInternal animationStates);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetVirtualKeyboardDirtyTextures(ref VirtualKeyboardTextureIdsInternal textureIds);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetVirtualKeyboardTextureData(UInt64 textureId, ref VirtualKeyboardTextureData textureData);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_SetVirtualKeyboardModelVisibility(ref VirtualKeyboardModelVisibility visibility);
 	}
 	/* INSERT NEW OVRP CLASS ABOVE THIS LINE */
 }

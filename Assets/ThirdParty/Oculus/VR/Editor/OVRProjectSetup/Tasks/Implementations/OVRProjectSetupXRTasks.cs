@@ -39,13 +39,13 @@ internal static class OVRProjectSetupXRTasks
     internal const string XRPluginManagementPackageName = "com.unity.xr.management";
     internal const string UnityXRPackage = "com.unity.xr.openxr";
 
-    private const OVRConfigurationTask.TaskGroup XRTaskGroup = OVRConfigurationTask.TaskGroup.Packages;
+    private const OVRProjectSetup.TaskGroup XRTaskGroup = OVRProjectSetup.TaskGroup.Packages;
 
     static OVRProjectSetupXRTasks()
     {
 	    OVRProjectSetup.AddTask(
 		    conditionalValidity: buildTargetGroup => OVRProjectSetupUtils.PackageManagerListAvailable,
-		    level: OVRConfigurationTask.TaskLevel.Required,
+		    level: OVRProjectSetup.TaskLevel.Required,
 		    group: XRTaskGroup,
 		    isDone: buildTargetGroup => OVRProjectSetupUtils.IsPackageInstalled(OculusXRPackageName),
 		    message: "The Oculus XR Plug-in package must be installed",
@@ -55,7 +55,7 @@ internal static class OVRProjectSetupXRTasks
 
 	    OVRProjectSetup.AddTask(
 		    conditionalValidity: buildTargetGroup => OVRProjectSetupUtils.PackageManagerListAvailable,
-		    level: OVRConfigurationTask.TaskLevel.Required,
+		    level: OVRProjectSetup.TaskLevel.Required,
 		    group: XRTaskGroup,
 		    isDone: buildTargetGroup => OVRProjectSetupUtils.IsPackageInstalled(XRPluginManagementPackageName),
 		    message: "The XR Plug-in Management package must be installed",
@@ -65,7 +65,7 @@ internal static class OVRProjectSetupXRTasks
 
 	    OVRProjectSetup.AddTask(
 		    conditionalValidity: buildTargetGroup => OVRProjectSetupUtils.PackageManagerListAvailable,
-		    level: OVRConfigurationTask.TaskLevel.Recommended,
+		    level: OVRProjectSetup.TaskLevel.Recommended,
 		    group: XRTaskGroup,
 		    isDone: buildTargetGroup => !OVRProjectSetupUtils.IsPackageInstalled(UnityXRPackage),
 		    message: "Unity's OpenXR Plugin is not recommended when using the Oculus SDK, please use Oculus XR Plug-in instead",
@@ -81,7 +81,7 @@ internal static class OVRProjectSetupXRTasks
 #if USING_XR_MANAGEMENT && USING_XR_SDK_OCULUS
         OVRProjectSetup.AddTask(
             conditionalValidity: buildTargetGroup => OVRProjectSetupUtils.IsPackageInstalled(XRPluginManagementPackageName),
-            level: OVRConfigurationTask.TaskLevel.Required,
+            level: OVRProjectSetup.TaskLevel.Required,
             group: XRTaskGroup,
             isDone: buildTargetGroup =>
             {

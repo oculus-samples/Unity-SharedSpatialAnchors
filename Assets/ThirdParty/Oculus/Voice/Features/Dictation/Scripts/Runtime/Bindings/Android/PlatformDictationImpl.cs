@@ -22,6 +22,7 @@ using System;
 using Meta.WitAi.Configuration;
 using Meta.WitAi.Dictation;
 using Meta.WitAi.Dictation.Events;
+using Meta.WitAi.Events;
 using Meta.WitAi.Interfaces;
 using Meta.WitAi.Utilities;
 using Oculus.Voice.Core.Bindings.Android;
@@ -53,6 +54,12 @@ namespace Oculus.Voice.Dictation.Bindings.Android
         {
             get => _baseService.DictationEvents;
             set => _baseService.DictationEvents = value;
+        }
+
+        public TelemetryEvents TelemetryEvents
+        {
+            get => _baseService.TelemetryEvents;
+            set => _baseService.TelemetryEvents = value;
         }
 
         public Action OnServiceNotAvailableEvent;
@@ -96,6 +103,12 @@ namespace Oculus.Voice.Dictation.Bindings.Android
 
         public void Deactivate()
         {
+            service.StopDictation();
+        }
+
+        public void Cancel()
+        {
+            // TODO: T141779167
             service.StopDictation();
         }
 

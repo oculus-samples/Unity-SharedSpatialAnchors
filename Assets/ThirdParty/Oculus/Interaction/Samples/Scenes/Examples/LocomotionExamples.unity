@@ -124,7 +124,7 @@ NavMeshSettings:
     preserveTilesOutsideBounds: 0
     debug:
       m_Flags: 0
-  m_NavMeshData: {fileID: 23800000, guid: 9c6f3a30b5266074daba9f9d51a31aa7, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 3c5f28d4801b36744961bf4c1bcacab8, type: 2}
 --- !u!1 &13179572
 GameObject:
   m_ObjectHideFlags: 0
@@ -713,7 +713,7 @@ PrefabInstance:
     - target: {fileID: 3781053401772173420, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
       propertyPath: m_NavMeshLayer
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3781053401772173420, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
@@ -833,7 +833,7 @@ PrefabInstance:
     - target: {fileID: 5209648465181802593, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
       propertyPath: m_NavMeshLayer
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5209648465181802593, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
@@ -908,7 +908,7 @@ PrefabInstance:
     - target: {fileID: 5557438971914500719, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
       propertyPath: m_NavMeshLayer
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5557438971914500719, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
@@ -1043,7 +1043,7 @@ PrefabInstance:
     - target: {fileID: 6485588652474700090, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
       propertyPath: m_NavMeshLayer
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6485588652474700090, guid: 9ea3c3bd7f7fe1043a0bb52ecda39ce6,
         type: 3}
@@ -1643,7 +1643,7 @@ MonoBehaviour:
   _maxInteractors: -1
   _maxSelectingInteractors: -1
   _data: {fileID: 0}
-  _allowTeleport: 1
+  _allowTeleport: 0
   _equalDistanceToBlockerOverride: 0
   _tieBreakerScore: -10
   _surface: {fileID: 20058828}
@@ -1772,7 +1772,7 @@ GameObject:
   m_Name: RoundCarpet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
-  m_NavMeshLayer: 3
+  m_NavMeshLayer: 0
   m_StaticEditorFlags: 8
   m_IsActive: 1
 --- !u!23 &58483423
@@ -2367,7 +2367,7 @@ GameObject:
   m_Name: Balcony
   m_TagString: Untagged
   m_Icon: {fileID: 0}
-  m_NavMeshLayer: 3
+  m_NavMeshLayer: 0
   m_StaticEditorFlags: 40
   m_IsActive: 1
 --- !u!23 &231068323
@@ -2801,7 +2801,7 @@ Transform:
   - {fileID: 226226667}
   - {fileID: 1538528634}
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &422165663 stripped
 MonoBehaviour:
@@ -3623,93 +3623,6 @@ MonoBehaviour:
   - Finger: 4
     StateThresholds: {fileID: 11400000, guid: 8b470e0c4b48d474c9a42d7f661d48c7, type: 2}
   _disableProactiveEvaluation: 0
---- !u!1 &890175328
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 890175332}
-  - component: {fileID: 890175331}
-  - component: {fileID: 890175330}
-  - component: {fileID: 890175329}
-  m_Layer: 0
-  m_Name: NavMeshHotspotUpstairs
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 8
-  m_IsActive: 1
---- !u!114 &890175329
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 890175328}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e617737c781e534eb8e2c4ace64b133, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _snapPoint: {fileID: 0}
-  _renderer: {fileID: 0}
-  _reticleMode: 1
---- !u!114 &890175330
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 890175328}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b93a936a8e8dc744b82caa2502ffc5ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _areaName: Upstairs
-  _snapDistance: 0
-  _voxelSize: 0.05
-  _calculateNormals: 0
---- !u!114 &890175331
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 890175328}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4462db6b836045640a882a2a4e4022f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _interactorFilters: []
-  _maxInteractors: -1
-  _maxSelectingInteractors: -1
-  _data: {fileID: 0}
-  _allowTeleport: 1
-  _equalDistanceToBlockerOverride: 0
-  _tieBreakerScore: 0
-  _surface: {fileID: 890175330}
-  _targetPoint: {fileID: 0}
-  _faceTargetDirection: 0
-  _eyeLevel: 0
---- !u!4 &890175332
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 890175328}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.08, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &902317368 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2962587743956723741, guid: 7554c31b8982af447ace36d015744ef2,
@@ -4343,7 +4256,7 @@ Transform:
   - {fileID: 5625013631662714733}
   - {fileID: 6384523394669410205}
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1141679168 stripped
 GameObject:
@@ -4787,7 +4700,7 @@ GameObject:
   - component: {fileID: 1402142815}
   - component: {fileID: 1402142813}
   m_Layer: 0
-  m_Name: NavMeshHotspotDownstairs
+  m_Name: NavMeshHotspotWalkable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5527,7 +5440,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!114 &1711840152
 MonoBehaviour:

@@ -123,7 +123,7 @@ namespace Oculus.Interaction.Input.Filter
         #endregion Oculus Library Methods and Constants
 
         #region Tuneable Values
-        [Header("Settings")]
+        [Header("Settings", order =-1)]
         [Tooltip("Applies a One Euro Filter when filter parameters are provided")]
         [SerializeField, Optional]
         private HandFilterParameterBlock _filterParameters = null;

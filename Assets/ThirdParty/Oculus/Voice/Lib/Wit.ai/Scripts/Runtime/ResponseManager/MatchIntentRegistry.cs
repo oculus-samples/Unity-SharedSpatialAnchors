@@ -73,19 +73,19 @@ namespace Meta.WitAi
                                                 matchIntent = mi
                                             });
                                         } catch (Exception e) {
-                                            Debug.LogError(e);
+                                            VLog.E(e);
                                         }
                                     }
                                 } catch (Exception e) {
-                                    Debug.LogError(e);
+                                    VLog.E(e);
                                 }
                             }
                         } catch (Exception e) {
-                            Debug.LogError(e);
+                            VLog.E(e);
                         }
                     }
                 } catch (Exception e) {
-                    Debug.LogError(e);
+                    VLog.E(e);
                 }
             }
 

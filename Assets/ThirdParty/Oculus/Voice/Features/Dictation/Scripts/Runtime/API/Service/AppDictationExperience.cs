@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
@@ -19,21 +19,24 @@
  */
 
 using System;
+using System.Globalization;
 using Meta.WitAi;
 using Meta.WitAi.Json;
 using Meta.WitAi.Configuration;
+using Meta.WitAi.Data.Configuration;
 using Meta.WitAi.Dictation;
 using Meta.WitAi.Dictation.Data;
+using Meta.WitAi.Events;
 using Meta.WitAi.Interfaces;
 using Oculus.Voice.Dictation.Bindings.Android;
-using Oculus.VoiceSDK.Dictation.Utilities;
+using Oculus.VoiceSDK.Utilities;
 using Oculus.Voice.Core.Bindings.Android.PlatformLogger;
 using Oculus.Voice.Core.Bindings.Interfaces;
 using UnityEngine;
 
 namespace Oculus.Voice.Dictation
 {
-    public class AppDictationExperience : DictationService, IWitRuntimeConfigProvider
+    public class AppDictationExperience : DictationService, IWitRuntimeConfigProvider, IWitConfigurationProvider
     {
         [SerializeField] private WitDictationRuntimeConfiguration runtimeConfiguration;
         [Tooltip("Uses platform dictation service instead of accessing wit directly from within the application.")]
@@ -47,15 +50,24 @@ namespace Oculus.Voice.Dictation
             get => runtimeConfiguration;
             set => runtimeConfiguration = value;
         }
+        public WitConfiguration Configuration => RuntimeConfiguration?.witConfiguration;
 
         private IDictationService _dictationServiceImpl;
         private IVoiceSDKLogger _voiceSDKLogger;
+        /// <summary>
+        /// True if the user currently has requested dictation to be active. This will remain true until a Deactivate
+        /// method is called and we will reactivate when the mic stops as a result.
+        /// </summary>
+        private bool _isActive;
+
+        private DictationSession _activeSession;
+        private WitRequestOptions _activeRequestOptions;
 
         public event Action OnInitialized;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         // This version is auto-updated for a release build
-        private readonly string PACKAGE_VERSION = "49.0.0.180.358";
+        private readonly string PACKAGE_VERSION = "51.0.0.154.269";
 #endif
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -75,7 +87,7 @@ namespace Oculus.Voice.Dictation
                 {
                     usePlatformServices = value;
 #if UNITY_ANDROID && !UNITY_EDITOR
-                    Debug.Log($"{(usePlatformServices ? "Enabling" : "Disabling")} platform integration.");
+                    VLog.D($"{(usePlatformServices ? "Enabling" : "Disabling")} platform integration.");
                     InitDictation();
 #endif
                 }
@@ -100,7 +112,7 @@ namespace Oculus.Voice.Dictation
 
             if (UsePlatformIntegrations)
             {
-                Debug.Log("Checking platform dictation capabilities...");
+                VLog.D("Checking platform dictation capabilities...");
                 var platformDictationImpl = new PlatformDictationImpl(this);
                 platformDictationImpl.OnServiceNotAvailableEvent += RevertToWitDictation;
                 platformDictationImpl.Connect(PACKAGE_VERSION);
@@ -108,13 +120,14 @@ namespace Oculus.Voice.Dictation
                 {
                     _dictationServiceImpl = platformDictationImpl;
                     _dictationServiceImpl.DictationEvents = DictationEvents;
+                    _dictationServiceImpl.TelemetryEvents = TelemetryEvents;
                     platformDictationImpl.SetDictationRuntimeConfiguration(RuntimeDictationConfiguration);
-                    Debug.Log("Dictation platform init complete");
+                    VLog.D("Dictation platform init complete");
                     _voiceSDKLogger.IsUsingPlatformIntegration = true;
                 }
                 else
                 {
-                    Debug.Log("Platform dictation service unavailable. Falling back to WitDictation");
+                    VLog.D("Platform dictation service unavailable. Falling back to WitDictation");
                     RevertToWitDictation();
                 }
             }
@@ -143,8 +156,9 @@ namespace Oculus.Voice.Dictation
 
             witDictation.RuntimeConfiguration = RuntimeDictationConfiguration;
             witDictation.DictationEvents = DictationEvents;
+            witDictation.TelemetryEvents = TelemetryEvents;
             _dictationServiceImpl = witDictation;
-            Debug.Log("WitDictation init complete");
+            VLog.D("WitDictation init complete");
             _voiceSDKLogger.IsUsingPlatformIntegration = false;
         }
 
@@ -157,14 +171,19 @@ namespace Oculus.Voice.Dictation
             }
             else
             {
-                MicPermissionsManager.RequestMicPermission();
+                MicPermissionsManager.RequestMicPermission((e) => InitDictation());
             }
 
+            DictationEvents.OnRequestCompleted.AddListener(OnRequestComplete);
+            DictationEvents.OnAborted.AddListener(OnAborted);
             DictationEvents.onStart.AddListener(OnStarted);
             DictationEvents.onStopped.AddListener(OnStopped);
             DictationEvents.onResponse.AddListener(OnWitResponseListener);
             DictationEvents.onError.AddListener(OnError);
             DictationEvents.onDictationSessionStarted.AddListener(OnDictationSessionStarted);
+            DictationEvents.OnFullTranscription.AddListener(OnFullTranscription);
+            DictationEvents.onPartialTranscription.AddListener(OnPartialTranscription);
+            TelemetryEvents.OnAudioTrackerFinished.AddListener(OnAudioDurationTrackerFinished);
         }
 
         protected override void OnDisable()
@@ -187,6 +206,9 @@ namespace Oculus.Voice.Dictation
             DictationEvents.onResponse.RemoveListener(OnWitResponseListener);
             DictationEvents.onError.RemoveListener(OnError);
             DictationEvents.onDictationSessionStarted.RemoveListener(OnDictationSessionStarted);
+            DictationEvents.OnFullTranscription.RemoveListener(OnFullTranscription);
+            DictationEvents.onPartialTranscription.RemoveListener(OnPartialTranscription);
+            TelemetryEvents.OnAudioTrackerFinished.RemoveListener(OnAudioDurationTrackerFinished);
             base.OnDisable();
         }
 
@@ -207,36 +229,87 @@ namespace Oculus.Voice.Dictation
         #endregion
 
         #region DictationService APIs
+        /// <summary>
+        /// Toggle dictation activation from on->off or off->on depending on the current active state.
+        /// </summary>
+        public void Toggle()
+        {
+            if(Active) Deactivate();
+            else Activate();
+        }
+
+        /// <summary>
+        /// Activate the microphone and send data to Wit for NLU processing.
+        /// </summary>
         public override void Activate()
         {
             Activate(new WitRequestOptions());
         }
 
+        /// <summary>
+        /// Activate the microphone and send data to Wit for NLU processing.
+        /// </summary>
         public override void Activate(WitRequestOptions requestOptions)
         {
-            _voiceSDKLogger.LogInteractionStart(requestOptions.requestID, "dictation");
+            if (null == requestOptions) requestOptions = new WitRequestOptions();
+
+            if (!_isActive)
+            {
+                _activeSession = new DictationSession();
+                DictationEvents.onDictationSessionStarted.Invoke(_activeSession);
+            }
+
+            _activeRequestOptions = requestOptions;
+            _isActive = true;
+            _voiceSDKLogger.LogInteractionStart(requestOptions.RequestId, "dictation");
+            LogRequestConfig();
             _dictationServiceImpl.Activate(requestOptions);
         }
 
+        /// <summary>
+        /// Activates immediately and starts sending data to the server. This will not wait for min wake threshold
+        /// </summary>
         public override void ActivateImmediately()
         {
             ActivateImmediately(new WitRequestOptions());
         }
 
+        /// <summary>
+        /// Activates immediately and starts sending data to the server. This will not wait for min wake threshold
+        /// </summary>
+        /// <param name="options"></param>
         public override void ActivateImmediately(WitRequestOptions requestOptions)
         {
-            _voiceSDKLogger.LogInteractionStart(requestOptions.requestID, "dictation");
+            if (!_isActive)
+            {
+                _activeSession = new DictationSession();
+                DictationEvents.onDictationSessionStarted.Invoke(_activeSession);
+            }
+
+            _activeRequestOptions = requestOptions;
+            _isActive = true;
+            _voiceSDKLogger.LogInteractionStart(requestOptions.RequestId, "dictation");
+            LogRequestConfig();
             _dictationServiceImpl.ActivateImmediately(requestOptions);
         }
 
+        /// <summary>
+        /// Deactivates. If a transcription is in progress the network request will complete and any additional
+        /// transcription values will be returned.
+        /// </summary>
         public override void Deactivate()
         {
+            _isActive = false;
             _dictationServiceImpl.Deactivate();
         }
 
+        /// <summary>
+        /// Deactivates and ignores any pending transcription content.
+        /// </summary>
         public override void Cancel()
         {
-            _dictationServiceImpl.Deactivate();
+            _dictationServiceImpl.Cancel();
+            CleanupSession();
         }
         #endregion
 
@@ -269,9 +342,10 @@ namespace Oculus.Voice.Dictation
         void OnStopped()
         {
             _voiceSDKLogger.LogInteractionPoint("stoppedListening");
-            if (_voiceSDKLogger.IsUsingPlatformIntegration)
+
+            if (RuntimeDictationConfiguration.dictationConfiguration.multiPhrase && _isActive)
             {
-                _voiceSDKLogger.LogInteractionEndSuccess();
+                Activate(_activeRequestOptions);
             }
         }
 
@@ -279,8 +353,66 @@ namespace Oculus.Voice.Dictation
         {
             if (session is PlatformDictationSession platformDictationSession)
             {
+                _activeSession = session;
                 _voiceSDKLogger.LogAnnotation("platformInteractionId", platformDictationSession.platformSessionId);
             }
+        }
+
+        void OnAudioDurationTrackerFinished(long timestamp, double audioDuration)
+        {
+            _voiceSDKLogger.LogAnnotation("adt_duration", audioDuration.ToString(CultureInfo.InvariantCulture));
+            _voiceSDKLogger.LogAnnotation("adt_finished", timestamp.ToString());
+        }
+
+        void OnPartialTranscription(string text)
+        {
+            _voiceSDKLogger.LogFirstTranscriptionTime();
+        }
+
+        void OnFullTranscription(string text)
+        {
+            _voiceSDKLogger.LogInteractionPoint("fullTranscriptionTime");
+        }
+
+        void LogRequestConfig()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            _voiceSDKLogger.LogAnnotation("clientSDKVersion", PACKAGE_VERSION);
+#endif
+            _voiceSDKLogger.LogAnnotation("minWakeThreshold",
+                RuntimeConfiguration?.soundWakeThreshold.ToString(CultureInfo.InvariantCulture));
+            _voiceSDKLogger.LogAnnotation("minKeepAliveTimeSec",
+                RuntimeConfiguration?.minKeepAliveTimeInSeconds.ToString(CultureInfo.InvariantCulture));
+            _voiceSDKLogger.LogAnnotation("minTranscriptionKeepAliveTimeSec",
+                RuntimeConfiguration?.minTranscriptionKeepAliveTimeInSeconds.ToString(CultureInfo.InvariantCulture));
+            _voiceSDKLogger.LogAnnotation("maxRecordingTime",
+                RuntimeConfiguration?.maxRecordingTime.ToString(CultureInfo.InvariantCulture));
+        }
+        #endregion
+
+        #region Listeners for Session
+        private void OnAborted()
+        {
+            DictationEvents.onDictationSessionStopped?.Invoke(_activeSession);
+        }
+
+        private void OnRequestComplete()
+        {
+            if (!_isActive)
+            {
+                DictationEvents.onDictationSessionStopped?.Invoke(_activeSession);
+                CleanupSession();
+            }
+        }
+        #endregion
+
+        #region Cleanup
+
+        private void CleanupSession()
+        {
+            _activeSession = null;
+            _activeRequestOptions = null;
+            _isActive = false;
         }
 
         #endregion

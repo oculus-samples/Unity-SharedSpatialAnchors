@@ -8,6 +8,8 @@
 
 using System;
 using System.Reflection;
+using Lib.Conduit.Editor;
+using Meta.Conduit;
 using UnityEngine;
 using UnityEditor;
 
@@ -30,7 +32,11 @@ namespace Meta.WitAi.Windows
         protected virtual bool FoldoutEnabled => true;
         // Determine edit type for this drawer
         protected virtual WitPropertyEditType EditType => WitPropertyEditType.NoEdit;
-
+        // The manifest loader
+        internal static readonly ManifestLoader ManifestLoader = new ManifestLoader();
+        // Used to map type names to their source code
+        internal static readonly SourceCodeMapper CodeMapper = new SourceCodeMapper();
+        
         // Remove padding
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -52,7 +58,10 @@ namespace Meta.WitAi.Windows
             string titleText = GetLocalizedText(property, LocalizedTitleKey);
             if (FoldoutEnabled)
             {
+                GUILayout.BeginHorizontal();
                 property.isExpanded = WitEditorUI.LayoutFoldout(new GUIContent(titleText), property.isExpanded);
+                OnDrawLabelInline(property);
+                GUILayout.EndHorizontal();
                 if (!property.isExpanded)
                 {
                     return;
@@ -96,6 +105,13 @@ namespace Meta.WitAi.Windows
             EditorGUI.indentLevel--;
             GUILayout.EndVertical();
         }
+
+        // Called per line
+        protected virtual void OnDrawLabelInline(SerializedProperty property)
+        {
+            
+        }
+
         // Override pre fields
         protected virtual void OnGUIPreFields(Rect position, SerializedProperty property, GUIContent label)
         {

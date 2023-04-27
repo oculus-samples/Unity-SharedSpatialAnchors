@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+using System;
 using System.Reflection;
 using System.Text;
 using Meta.WitAi.Data;
@@ -14,10 +15,9 @@ using Meta.Conduit;
 
 namespace Meta.WitAi
 {
+    [Obsolete ("Use ParameterProvider.SetSpecializedParameter() instead of this class")]
     internal class WitConduitParameterProvider : ParameterProvider
     {
-        public const string WitResponseNodeReservedName = "@WitResponseNode";
-        public const string VoiceSessionReservedName = "@VoiceSession";
         protected override object GetSpecializedParameter(ParameterInfo formalParameter)
         {
             if (formalParameter.ParameterType == typeof(WitResponseNode) && ActualParameters.ContainsKey(WitResponseNodeReservedName.ToLower()))

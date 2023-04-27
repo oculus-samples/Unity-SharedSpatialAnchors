@@ -119,7 +119,14 @@ public static partial class OVRExtensions
 	/// </summary>
 	public static OVRPose ToHeadSpacePose(this Transform transform, Camera camera)
 	{
-		return camera.transform.ToOVRPose().Inverse() * transform.ToOVRPose();
+		// The Quaternion used in OVRPose is not 1-1 mapped with the Transform[0:3,0:3] (which is Scale * Rotation), need to calculate rotation and position separately.
+		Quaternion rotation = Quaternion.Inverse(camera.transform.rotation) * transform.rotation;
+		var position = (camera.transform.worldToLocalMatrix * transform.localToWorldMatrix).GetColumn(3);
+		return new OVRPose
+		{
+			orientation = rotation,
+			position = position
+		};
 	}
 
 	public static OVRPose ToOVRPose(this Transform t, bool isLocal = false)

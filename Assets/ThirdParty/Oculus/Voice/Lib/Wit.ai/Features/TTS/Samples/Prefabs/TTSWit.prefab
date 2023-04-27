@@ -60,6 +60,12 @@ MonoBehaviour:
       OnStreamReady:
         m_PersistentCalls:
           m_Calls: []
+      OnStreamClipUpdate:
+        m_PersistentCalls:
+          m_Calls: []
+      OnStreamComplete:
+        m_PersistentCalls:
+          m_Calls: []
       OnStreamCancel:
         m_PersistentCalls:
           m_Calls: []
@@ -80,7 +86,11 @@ MonoBehaviour:
         m_PersistentCalls:
           m_Calls: []
   RequestSettings:
-    configuration: {fileID: 0}
+    configuration: {fileID: 11400000, guid: 8ca721df475c92e4ca9167b74de4b2f6, type: 2}
+    audioType: 0
+    audioStream: 1
+    audioStreamReadyDuration: 0.1
+    audioStreamChunkLength: 5
   _presetVoiceSettings:
   - settingsID: CHARLIE
     voice: Charlie
@@ -100,6 +110,18 @@ MonoBehaviour:
     speed: 100
     pitch: 100
     gain: 50
+  - settingsID: VAMPIRE
+    voice: Vampire
+    style: default
+    speed: 100
+    pitch: 100
+    gain: 50
+  - settingsID: PROSPECTOR
+    voice: Prospector
+    style: default
+    speed: 100
+    pitch: 100
+    gain: 50
 --- !u!114 &3627599131962939471
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114,8 +136,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ClipLimit: 1
   ClipCapacity: 100
-  RamLimit: 1
-  RamCapacity: 2000
+  RamLimit: 0
+  RamCapacity: 20000
 --- !u!114 &4852061571279439022
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -136,6 +158,12 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls: []
     OnStreamReady:
+      m_PersistentCalls:
+        m_Calls: []
+    OnStreamClipUpdate:
+      m_PersistentCalls:
+        m_Calls: []
+    OnStreamComplete:
       m_PersistentCalls:
         m_Calls: []
     OnStreamCancel:

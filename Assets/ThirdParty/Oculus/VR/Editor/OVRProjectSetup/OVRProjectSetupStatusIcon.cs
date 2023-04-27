@@ -132,9 +132,9 @@ internal static class OVRProjectSetupStatusIcon
 
 	    var icon = summary.HighestFixLevel switch
 	    {
-		    OVRConfigurationTask.TaskLevel.Optional => _iconNeutral,
-		    OVRConfigurationTask.TaskLevel.Recommended => _iconWarning,
-		    OVRConfigurationTask.TaskLevel.Required => _iconError,
+		    OVRProjectSetup.TaskLevel.Optional => _iconNeutral,
+		    OVRProjectSetup.TaskLevel.Recommended => _iconWarning,
+		    OVRProjectSetup.TaskLevel.Required => _iconError,
 		    _ => _iconSuccess
 	    };
 
@@ -171,7 +171,7 @@ internal static class OVRProjectSetupStatusIcon
         GUILayout.BeginArea(currentRect);
         if (GUILayout.Button(_currentIcon, _iconStyle))
         {
-            OVRProjectSetupSettingsProvider.OpenSettingsWindow();
+            OVRProjectSetupSettingsProvider.OpenSettingsWindow(OVRProjectSetupSettingsProvider.Origins.Icon);
         }
         var buttonRect = GUILayoutUtility.GetLastRect();
         EditorGUIUtility.AddCursorRect(buttonRect, MouseCursor.Link);

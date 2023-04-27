@@ -30,8 +30,11 @@ using rtprops = Oculus.Interaction.UnityCanvas.CanvasRenderTexture.Properties;
 namespace Oculus.Interaction.UnityCanvas.Editor
 {
     [CustomEditor(typeof(OVRCanvasMeshRenderer))]
-    public class OVRCanvasMeshRendererEditor : EditorBase
+    public class OVRCanvasMeshRendererEditor : UnityEditor.Editor
     {
+        private EditorBase _editorDrawer;
+        private const string DeferredSection = "Deferred";
+
         public new OVRCanvasMeshRenderer target
         {
             get
@@ -40,9 +43,10 @@ namespace Oculus.Interaction.UnityCanvas.Editor
             }
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            Defer(baseProps.UseAlphaToMask, baseProps.AlphaCutoutThreshold);
+            _editorDrawer = new EditorBase(serializedObject);
+            _editorDrawer.AddToSection(DeferredSection, baseProps.UseAlphaToMask, baseProps.AlphaCutoutThreshold);
             var renderingMode = serializedObject.FindProperty(baseProps.RenderingMode);
 
             bool CheckIsOVR()
@@ -51,7 +55,7 @@ namespace Oculus.Interaction.UnityCanvas.Editor
                        renderingMode.intValue == (int)OVRRenderingMode.Overlay;
             }
 
-            Draw(props.RuntimeOffset, (offsetProp) =>
+            _editorDrawer.Draw(props.RuntimeOffset, (offsetProp) =>
             {
                 if (CheckIsOVR())
                 {
@@ -59,7 +63,7 @@ namespace Oculus.Interaction.UnityCanvas.Editor
                 }
             });
 
-            Draw(baseProps.RenderingMode, props.CanvasMesh, (modeProp, meshProp) =>
+            _editorDrawer.Draw(baseProps.RenderingMode, props.CanvasMesh, (modeProp, meshProp) =>
             {
                 EditorGUILayout.PropertyField(meshProp);
                 OVRRenderingMode value = (OVRRenderingMode)modeProp.intValue;
@@ -67,7 +71,7 @@ namespace Oculus.Interaction.UnityCanvas.Editor
                 modeProp.intValue = (int)value;
             });
 
-            Draw(props.EnableSuperSampling, props.EmulateWhileInEditor, props.DoUnderlayAntiAliasing, (sampleProp, emulateProp, aaProp) =>
+            _editorDrawer.Draw(props.EnableSuperSampling, props.EmulateWhileInEditor, props.DoUnderlayAntiAliasing, (sampleProp, emulateProp, aaProp) =>
             {
                 if (CheckIsOVR())
                 {
@@ -80,7 +84,7 @@ namespace Oculus.Interaction.UnityCanvas.Editor
                 }
             });
 
-            Draw(baseProps.UseAlphaToMask, baseProps.AlphaCutoutThreshold, (maskProp, cutoutProp) =>
+            _editorDrawer.Draw(baseProps.UseAlphaToMask, baseProps.AlphaCutoutThreshold, (maskProp, cutoutProp) =>
             {
                 if (renderingMode.intValue == (int)OVRRenderingMode.AlphaCutout)
                 {
@@ -94,13 +98,22 @@ namespace Oculus.Interaction.UnityCanvas.Editor
             });
         }
 
-        protected override void OnBeforeInspector()
+        protected virtual void OnDisable()
         {
-            base.OnBeforeInspector();
-            AutoFix(AutoFixIsUsingMipMaps(), AutoFixDisableMipMaps, $"{nameof(CanvasRenderTexture)} " +
+        }
+
+        protected void BeforeInspector()
+        {
+            AutoFix(AutoFixIsUsingMipMaps(), AutoFixDisableMipMaps,
+                $"{nameof(CanvasRenderTexture)} " +
                 $"is generating mip maps, but these are ignored when using OVR Overlay/Underlay rendering.");
         }
 
+        public override void OnInspectorGUI()
+        {
+            BeforeInspector();
+            _editorDrawer.DrawFullInspector();
+        }
 
         private bool AutoFix(bool needsFix, Action fixAction, string message)
         {

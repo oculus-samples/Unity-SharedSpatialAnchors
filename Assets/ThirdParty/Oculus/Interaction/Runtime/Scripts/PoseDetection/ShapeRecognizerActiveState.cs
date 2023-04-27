@@ -28,11 +28,11 @@ namespace Oculus.Interaction.PoseDetection
     public class ShapeRecognizerActiveState : MonoBehaviour, IActiveState
     {
         [SerializeField, Interface(typeof(IHand))]
-        private MonoBehaviour _hand;
+        private UnityEngine.Object _hand;
         public IHand Hand { get; private set; }
 
         [SerializeField, Interface(typeof(IFingerFeatureStateProvider))]
-        private MonoBehaviour _fingerFeatureStateProvider;
+        private UnityEngine.Object _fingerFeatureStateProvider;
 
         protected IFingerFeatureStateProvider FingerFeatureStateProvider;
 
@@ -136,13 +136,13 @@ namespace Oculus.Interaction.PoseDetection
 
         public void InjectHand(IHand hand)
         {
-            _hand = hand as MonoBehaviour;
+            _hand = hand as UnityEngine.Object;
             Hand = hand;
         }
 
         public void InjectFingerFeatureStateProvider(IFingerFeatureStateProvider fingerFeatureStateProvider)
         {
-            _fingerFeatureStateProvider = fingerFeatureStateProvider as MonoBehaviour;
+            _fingerFeatureStateProvider = fingerFeatureStateProvider as UnityEngine.Object;
             FingerFeatureStateProvider = fingerFeatureStateProvider;
         }
 

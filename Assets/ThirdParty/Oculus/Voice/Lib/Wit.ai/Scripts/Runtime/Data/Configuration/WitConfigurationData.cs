@@ -42,7 +42,7 @@ namespace Meta.WitAi.Configuration
             }
             else
             {
-                Debug.LogError(request.StatusDescription);
+                VLog.E(request.StatusDescription);
             }
 
             onUpdateComplete?.Invoke();

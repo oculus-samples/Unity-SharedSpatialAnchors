@@ -27,30 +27,12 @@ internal class OVRConfigurationTask
 {
     internal static readonly string ConsoleLinkHref = "OpenOculusProjectSettings";
 
-    public enum TaskLevel
-    {
-        Optional = 0,
-        Recommended = 1,
-        Required = 2
-    }
-
-    public enum TaskGroup
-    {
-        All = 0,
-        Compatibility = 1,
-        Rendering = 2,
-        Quality = 3,
-        Physics = 4,
-        Packages = 5,
-        Features = 6
-    }
-
     public Hash128 Uid { get; }
-    public TaskGroup Group { get; }
+    public OVRProjectSetup.TaskGroup Group { get; }
     public BuildTargetGroup Platform { get; }
 
     public OptionalLambdaType<BuildTargetGroup, bool> Valid { get; }
-    public OptionalLambdaType<BuildTargetGroup, TaskLevel> Level { get; }
+    public OptionalLambdaType<BuildTargetGroup, OVRProjectSetup.TaskLevel> Level { get; }
     public OptionalLambdaType<BuildTargetGroup, string> Message { get; }
     public OptionalLambdaType<BuildTargetGroup, string> FixMessage { get; }
     public OptionalLambdaType<BuildTargetGroup, string> URL { get; }
@@ -70,11 +52,11 @@ internal class OVRConfigurationTask
     private readonly Dictionary<BuildTargetGroup, bool> _isDoneCache = new Dictionary<BuildTargetGroup, bool>();
 
     public OVRConfigurationTask(
-        TaskGroup group,
+        OVRProjectSetup.TaskGroup group,
         BuildTargetGroup platform,
         Func<BuildTargetGroup, bool> isDone,
         Action<BuildTargetGroup> fix,
-        OptionalLambdaType<BuildTargetGroup, TaskLevel> level,
+        OptionalLambdaType<BuildTargetGroup, OVRProjectSetup.TaskLevel> level,
         OptionalLambdaType<BuildTargetGroup, string> message,
         OptionalLambdaType<BuildTargetGroup, string> fixMessage,
         OptionalLambdaType<BuildTargetGroup, string> url,
@@ -107,10 +89,10 @@ internal class OVRConfigurationTask
 
     private void Validate()
     {
-	    if (Group == TaskGroup.All)
+	    if (Group == OVRProjectSetup.TaskGroup.All)
 	    {
 		    throw new ArgumentException(
-			    $"[{nameof(OVRConfigurationTask)}] {nameof(TaskGroup.All)} is not meant to be used as a {nameof(TaskGroup)} type");
+			    $"[{nameof(OVRConfigurationTask)}] {nameof(OVRProjectSetup.TaskGroup.All)} is not meant to be used as a {nameof(OVRProjectSetup.TaskGroup)} type");
 	    }
 
 	    if (_isDone == null)
@@ -172,15 +154,20 @@ internal class OVRConfigurationTask
 	    }
 
 	    var isDone = IsDone(buildTargetGroup);
+
+
 	    return isDone;
     }
+
+    public string ComputeIgnoreUid(BuildTargetGroup buildTargetGroup)
+	    => $"{OVRProjectSetup.KeyPrefix}.{GetType().Name}.{Uid}.Ignored.{buildTargetGroup.ToString()}";
 
     private OVRProjectSetupSettingBool GetIgnoreSetting(BuildTargetGroup buildTargetGroup)
     {
         if (!_ignoreSettings.TryGetValue(buildTargetGroup, out var item))
         {
-            var key = $"{OVRProjectSetup.KeyPrefix}.{GetType().Name}.{Uid}.Ignored.{buildTargetGroup.ToString()}";
-            item = new OVRProjectSetupProjectSettingBool(key, "", false);
+	        var uid = ComputeIgnoreUid(buildTargetGroup);
+            item = new OVRProjectSetupProjectSettingBool(uid, false);
             _ignoreSettings.Add(buildTargetGroup, item);
         }
 
@@ -207,12 +194,12 @@ internal class OVRConfigurationTask
 
         switch (Level.GetValue(buildTargetGroup))
         {
-            case TaskLevel.Optional:
+            case OVRProjectSetup.TaskLevel.Optional:
                 break;
-            case TaskLevel.Recommended:
+            case OVRProjectSetup.TaskLevel.Recommended:
                 Debug.LogWarning(logMessage);
                 break;
-            case TaskLevel.Required:
+            case OVRProjectSetup.TaskLevel.Required:
                 if (OVRProjectSetup.RequiredThrowErrors.Value)
                 {
                     Debug.LogError(logMessage);

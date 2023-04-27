@@ -31,7 +31,7 @@ namespace Oculus.Interaction
     public class HandPokeLimiterVisual : MonoBehaviour
     {
         [SerializeField, Interface(typeof(IHand))]
-        private MonoBehaviour _hand;
+        private UnityEngine.Object _hand;
         private IHand Hand;
 
         [SerializeField]
@@ -63,6 +63,7 @@ namespace Oculus.Interaction
             if (_started)
             {
                 _pokeInteractor.WhenStateChanged += HandleStateChanged;
+                _pokeInteractor.WhenPassedSurfaceChanged += HandlePassedSurfaceChanged;
             }
         }
 
@@ -76,10 +77,21 @@ namespace Oculus.Interaction
                 }
 
                 _pokeInteractor.WhenStateChanged -= HandleStateChanged;
+                _pokeInteractor.WhenPassedSurfaceChanged -= HandlePassedSurfaceChanged;
             }
         }
 
+        private void HandlePassedSurfaceChanged(bool passed)
+        {
+            CheckPassedSurface();
+        }
+
         private void HandleStateChanged(InteractorStateChangeArgs args)
+        {
+            CheckPassedSurface();
+        }
+
+        private void CheckPassedSurface()
         {
             if (_pokeInteractor.IsPassedSurface)
             {
@@ -138,7 +150,7 @@ namespace Oculus.Interaction
 
         public void InjectHand(IHand hand)
         {
-            _hand = hand as MonoBehaviour;
+            _hand = hand as UnityEngine.Object;
             Hand = hand;
         }
 

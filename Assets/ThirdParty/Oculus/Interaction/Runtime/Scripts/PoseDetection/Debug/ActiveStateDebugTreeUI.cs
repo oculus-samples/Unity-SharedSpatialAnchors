@@ -34,11 +34,11 @@ namespace Oculus.Interaction.PoseDetection.Debug
     {
         [Tooltip("The IActiveState to debug.")]
         [SerializeField, Interface(typeof(IActiveState))]
-        private MonoBehaviour _activeState;
+        private UnityEngine.Object _activeState;
 
         [Tooltip("The node prefab which will be used to build the visual tree.")]
         [SerializeField, Interface(typeof(IActiveStateNodeUI))]
-        private MonoBehaviour _nodePrefab;
+        private UnityEngine.Object _nodePrefab;
 
         [Tooltip("Node prefabs will be instantiated inside of this content area.")]
         [SerializeField]
@@ -119,7 +119,7 @@ namespace Oculus.Interaction.PoseDetection.Debug
             if (_title != null)
             {
                 _title.text = _activeState != null ?
-                    _activeState.gameObject.name : "";
+                    _activeState.name : "";
             }
         }
 

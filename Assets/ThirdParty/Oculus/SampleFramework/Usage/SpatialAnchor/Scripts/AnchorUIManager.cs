@@ -1,5 +1,6 @@
 // (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -67,6 +68,8 @@ public class AnchorUIManager : MonoBehaviour
 
     private bool _isFocused = true;
 
+
+
     #region Monobehaviour Methods
 
     private void Awake()
@@ -91,8 +94,10 @@ public class AnchorUIManager : MonoBehaviour
         _lineRenderer.startWidth = 0.005f;
         _lineRenderer.endWidth = 0.005f;
 
+
         ToggleCreateMode();
     }
+
 
     private void Update()
     {
@@ -138,6 +143,8 @@ public class AnchorUIManager : MonoBehaviour
     {
         GetComponent<SpatialAnchorLoader>().LoadAnchorsByUuid();
     }
+
+
 
     #endregion // Menu UI Callbacks
 
@@ -206,6 +213,7 @@ public class AnchorUIManager : MonoBehaviour
         {
             _selectedButton.OnSubmit(null);
         }
+
     }
 
     private void NavigateToIndexInMenu(bool moveNext)

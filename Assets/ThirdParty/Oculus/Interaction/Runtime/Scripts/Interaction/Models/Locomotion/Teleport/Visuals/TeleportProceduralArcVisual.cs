@@ -20,10 +20,7 @@
 
 using Oculus.Interaction.DistanceReticles;
 using Oculus.Interaction.Input;
-using System.Runtime.InteropServices;
-using Unity.Collections;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Oculus.Interaction.Locomotion
 {
@@ -32,14 +29,12 @@ namespace Oculus.Interaction.Locomotion
         [SerializeField]
         private TeleportInteractor _interactor;
 
-        [SerializeField, Optional, Interface(typeof(IAxis1D))]
-        private MonoBehaviour _progress;
-        private IAxis1D Progress;
+        [SerializeField]
+        private TubeRenderer _tubeRenderer;
 
-        [SerializeField]
-        private MeshFilter _arcFilter;
-        [SerializeField]
-        private MeshRenderer _renderer;
+        [SerializeField, Optional, Interface(typeof(IAxis1D))]
+        private UnityEngine.Object _progress;
+        private IAxis1D Progress;
 
         [SerializeField, Min(2)]
         private int _arcPointsCount = 30;
@@ -52,48 +47,6 @@ namespace Oculus.Interaction.Locomotion
             set
             {
                 _arcPointsCount = value;
-            }
-        }
-
-        [SerializeField]
-        private int _divisions = 6;
-        public int Divisions
-        {
-            get
-            {
-                return _divisions;
-            }
-            set
-            {
-                _divisions = value;
-            }
-        }
-
-        [SerializeField]
-        private float _radius = 0.005f;
-        public float Radius
-        {
-            get
-            {
-                return _radius;
-            }
-            set
-            {
-                _radius = value;
-            }
-        }
-
-        [SerializeField]
-        private Gradient _gradient;
-        public Gradient Gradient
-        {
-            get
-            {
-                return _gradient;
-            }
-            set
-            {
-                _gradient = value;
             }
         }
 
@@ -111,57 +64,7 @@ namespace Oculus.Interaction.Locomotion
             }
         }
 
-        [SerializeField, Range(0f, 1f)]
-        private float _progressFade = 0.2f;
-        public float ProgressFade
-        {
-            get
-            {
-                return _progressFade;
-            }
-            set
-            {
-                _progressFade = value;
-            }
-        }
-
-        [SerializeField, Range(0f, 1f)]
-        private float _endFadeThresold = 0.2f;
-        public float EndFadeThresold
-        {
-            get
-            {
-                return _endFadeThresold;
-            }
-            set
-            {
-                _endFadeThresold = value;
-            }
-        }
-
-        [SerializeField]
-        private bool _mirrorTexture;
-        public bool MirrorTexture
-        {
-            get
-            {
-                return _mirrorTexture;
-            }
-            set
-            {
-                _mirrorTexture = value;
-            }
-        }
-
-        private ArcPoint[] _arcPoints;
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct VertexLayout
-        {
-            public Vector3 pos;
-            public Color32 color;
-            public Vector2 uv;
-        }
+        private TubePoint[] _arcPoints;
 
         private static float[,] MIDPOINT_FACTOR = new float[,]
         {
@@ -182,12 +85,6 @@ namespace Oculus.Interaction.Locomotion
             { 0.9998476952f, 28.65f }
         };
 
-        private VertexAttributeDescriptor[] _dataLayout;
-        private NativeArray<VertexLayout> _vertsData;
-        private VertexLayout _layout = new VertexLayout();
-        private Mesh _mesh;
-        private int[] _tris;
-
         private IReticleData _reticleData;
 
         protected bool _started;
@@ -200,16 +97,9 @@ namespace Oculus.Interaction.Locomotion
         protected virtual void Start()
         {
             this.BeginStart(ref _started);
-            InitializeMeshData();
+            this.AssertField(_interactor, nameof(_interactor));
+            this.AssertField(_tubeRenderer, nameof(_tubeRenderer));
             this.EndStart(ref _started);
-        }
-
-        protected virtual void OnDestroy()
-        {
-            if (_started)
-            {
-                _vertsData.Dispose();
-            }
         }
 
         protected virtual void OnEnable()
@@ -251,11 +141,7 @@ namespace Oculus.Interaction.Locomotion
         {
             if (stateChange.NewState == InteractorState.Disabled)
             {
-                _renderer.enabled = false;
-            }
-            else
-            {
-                _renderer.enabled = true;
+                _tubeRenderer.Hide();
             }
         }
 
@@ -278,35 +164,20 @@ namespace Oculus.Interaction.Locomotion
                 _interactor.ArcEnd.Point;
 
             UpdateVisualArcPoints(_interactor.ArcOrigin, target);
-            UpdateMeshData(_arcPoints, Divisions, Radius, tint);
+
+            _tubeRenderer.Tint = tint;
+            _tubeRenderer.Progress = Progress != null ? Progress.Value() : 0f;
+            _tubeRenderer.RenderTube(_arcPoints);
         }
 
-        private void InitializeMeshData()
-        {
-            _dataLayout = new VertexAttributeDescriptor[]
-            {
-                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
-                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
-            };
 
-            int steps = _interactor.TeleportArc.ArcPointsCount;
-            int vertsCount = SetVertexCount(steps, _divisions);
-            _vertsData = new NativeArray<VertexLayout>(vertsCount, Allocator.Persistent);
-
-            _mesh = new Mesh();
-            _mesh.SetVertexBufferParams(vertsCount, _dataLayout);
-            _mesh.SetTriangles(_tris, 0);
-            _arcFilter.mesh = _mesh;
-        }
-
-        private ArcPoint[] UpdateVisualArcPoints(Pose origin, Vector3 target)
+        private TubePoint[] UpdateVisualArcPoints(Pose origin, Vector3 target)
         {
             float maxDistance = _interactor.TeleportArc.MaxDistance;
             if (_arcPoints == null
                 || _arcPoints.Length != ArcPointsCount)
             {
-                _arcPoints = new ArcPoint[ArcPointsCount];
+                _arcPoints = new TubePoint[ArcPointsCount];
             }
 
             float pitchDot = Vector3.Dot(origin.forward, Vector3.up);
@@ -373,114 +244,11 @@ namespace Oculus.Interaction.Locomotion
             return 0.5f;
         }
 
-        private void UpdateMeshData(ArcPoint[] points, int divisions, float width, Color tint)
-        {
-            Quaternion rotation = Quaternion.identity;
-            int steps = points.Length;
-
-            float endFade = points[steps - 1].relativeLength - EndFadeThresold;
-            for (int i = 0; i < steps; i++)
-            {
-                Vector3 point = points[i].position;
-                float progress = points[i].relativeLength;
-                Color color = Gradient.Evaluate(progress) * tint;
-                if (Progress != null
-                    && i / (steps - 1f) < Progress.Value())
-                {
-                    color.a *= ProgressFade;
-                }
-                else if (progress > endFade)
-                {
-                    float dif = 1f - ((progress - endFade) / EndFadeThresold);
-                    color.a *= dif;
-                }
-                _layout.color = color;
-
-                if (i < steps - 1)
-                {
-                    rotation = Quaternion.LookRotation(points[i].direction);
-                }
-
-                for (int j = 0; j <= divisions; j++)
-                {
-                    float radius = 2 * Mathf.PI * j / divisions;
-                    Vector3 circle = new Vector3(Mathf.Sin(radius), Mathf.Cos(radius), 0);
-                    Vector3 normal = rotation * circle;
-
-                    _layout.pos = point + normal * width;
-                    if (_mirrorTexture)
-                    {
-                        float x = (j / (float)divisions) * 2f;
-                        if (j >= divisions * 0.5f)
-                        {
-                            x = 2 - x;
-                        }
-                        _layout.uv = new Vector2(x, progress);
-                    }
-                    else
-                    {
-                        _layout.uv = new Vector2(j / (float)divisions, progress);
-                    }
-                    int vertIndex = i * (divisions + 1) + j;
-                    _vertsData[vertIndex] = _layout;
-                }
-            }
-
-            _mesh.bounds = new Bounds(
-                (points[0].position + points[steps - 1].position) * 0.5f,
-                points[steps - 1].position - points[0].position);
-            _mesh.SetVertexBufferData(_vertsData, 0, 0, _vertsData.Length, 0, MeshUpdateFlags.DontRecalculateBounds);
-        }
-
-        private int SetVertexCount(int positionCount, int divisions)
-        {
-            int vertsPerPosition = divisions + 1;
-            int vertCount = positionCount * vertsPerPosition;
-
-            int tubeTriangles = (positionCount - 1) * divisions * 6;
-            int capTriangles = (divisions - 2) * 3;
-            _tris = new int[tubeTriangles + capTriangles * 2];
-
-            // handle triangulation
-            for (int i = 0; i < positionCount - 1; i++)
-            {
-                // add faces
-                for (int j = 0; j < divisions; j++)
-                {
-                    int vert0 = i * vertsPerPosition + j;
-                    int vert1 = (i + 1) * vertsPerPosition + j;
-                    int t = (i * divisions + j) * 6;
-                    _tris[t] = vert0;
-                    _tris[t + 1] = _tris[t + 4] = vert1;
-                    _tris[t + 2] = _tris[t + 3] = vert0 + 1;
-                    _tris[t + 5] = vert1 + 1;
-                }
-            }
-
-            // triangulate the ends
-            Cap(tubeTriangles, 0, divisions - 1, true);
-            Cap(tubeTriangles + capTriangles, vertCount - divisions, vertCount - 1);
-
-            void Cap(int t, int firstVert, int lastVert, bool clockwise = false)
-            {
-                for (int i = firstVert + 1; i < lastVert; i++)
-                {
-                    _tris[t++] = firstVert;
-                    _tris[t++] = clockwise ? i : i + 1;
-                    _tris[t++] = clockwise ? i + 1 : i;
-                }
-            }
-
-            return vertCount;
-        }
-
         #region Inject
 
-        public void InjectAllTeleportProceduralArcVisual(TeleportInteractor interactor,
-            MeshFilter arcFilter)
+        public void InjectAllTeleportProceduralArcVisual(TeleportInteractor interactor)
         {
             InjectTeleportInteractor(interactor);
-            InjectArcFilter(arcFilter);
         }
 
         public void InjectTeleportInteractor(TeleportInteractor interactor)
@@ -488,14 +256,9 @@ namespace Oculus.Interaction.Locomotion
             _interactor = interactor;
         }
 
-        public void InjectArcFilter(MeshFilter arcFilter)
-        {
-            _arcFilter = arcFilter;
-        }
-
         public void InjectOptionalProgress(IAxis1D progress)
         {
-            _progress = progress as MonoBehaviour;
+            _progress = progress as UnityEngine.Object;
             Progress = progress;
         }
         #endregion

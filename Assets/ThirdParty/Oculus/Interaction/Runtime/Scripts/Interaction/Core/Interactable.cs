@@ -37,7 +37,7 @@ namespace Oculus.Interaction
                                         where TInteractable : Interactable<TInteractor, TInteractable>
     {
         [SerializeField, Interface(typeof(IGameObjectFilter)), Optional]
-        private List<MonoBehaviour> _interactorFilters = new List<MonoBehaviour>();
+        private List<UnityEngine.Object> _interactorFilters = new List<UnityEngine.Object>();
         private List<IGameObjectFilter> InteractorFilters = null;
 
         /// <summary>
@@ -365,7 +365,7 @@ namespace Oculus.Interaction
         {
             InteractorFilters = interactorFilters;
             _interactorFilters = interactorFilters.ConvertAll(interactorFilter =>
-                                    interactorFilter as MonoBehaviour);
+                                    interactorFilter as UnityEngine.Object);
         }
 
         public void InjectOptionalData(object data)

@@ -20,21 +20,20 @@
 
 using Oculus.Interaction.Editor;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
+using System.Linq;
 using UnityEditor;
-
+using UnityEngine;
 using props = Oculus.Interaction.UnityCanvas.CanvasRenderTexture.Properties;
 
 namespace Oculus.Interaction.UnityCanvas.Editor
 {
     [CustomEditor(typeof(CanvasRenderTexture))]
-    public class CanvasRenderTextureEditor : EditorBase
+    public class CanvasRenderTextureEditor : UnityEditor.Editor
     {
+        private EditorBase _editorDrawer;
+
         private static List<CanvasRenderer> _tmpRenderers = new List<CanvasRenderer>();
-        private static List<Graphic> _tmpGraphics = new List<Graphic>();
 
         public new CanvasRenderTexture target
         {
@@ -44,11 +43,12 @@ namespace Oculus.Interaction.UnityCanvas.Editor
             }
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
+            _editorDrawer = new EditorBase(serializedObject);
             var canvasProp = serializedObject.FindProperty(props.Canvas);
 
-            Draw(props.Resolution, props.DimensionDriveMode, (resProp, modeProp) =>
+            _editorDrawer.Draw(props.Resolution, props.DimensionDriveMode, (resProp, modeProp) =>
             {
                 Rect rect = GUILayoutUtility.GetRect(0, EditorGUIUtility.singleLineHeight);
 
@@ -80,7 +80,7 @@ namespace Oculus.Interaction.UnityCanvas.Editor
                 EditorGUI.PropertyField(dropdownRect, modeProp, GUIContent.none);
             });
 
-            Draw(props.PixelsPerUnit, props.GenerateMipMaps, (pixelsPerUnit, mipmaps) =>
+            _editorDrawer.Draw(props.PixelsPerUnit, props.GenerateMipMaps, (pixelsPerUnit, mipmaps) =>
             {
                 var driveMode = serializedObject.FindProperty(props.DimensionDriveMode);
                 if (driveMode.intValue == (int)CanvasRenderTexture.DriveMode.Auto)
@@ -91,21 +91,33 @@ namespace Oculus.Interaction.UnityCanvas.Editor
             });
         }
 
-        protected override void OnBeforeInspector()
+        protected virtual void OnDisable()
         {
-            base.OnBeforeInspector();
+        }
 
+        protected void BeforeInspector()
+        {
             bool isEmpty;
 
-            AutoFix(AutoFixIsUsingScreenSpaceCanvas(), AutoFixSetToWorldSpaceCamera, "The OverlayRenderer only supports Canvases that are set to World Space.");
+            AutoFix(AutoFixIsUsingScreenSpaceCanvas(), AutoFixSetToWorldSpaceCamera,
+                "The OverlayRenderer only supports Canvases that are set to World Space.");
 
-            AutoFix(isEmpty = AutoFixIsMaskEmpty(), AutoFixAssignUIToMask, "The rendering Mask is empty, it needs to contain at least one layer for rendering to function.");
+            AutoFix(isEmpty = AutoFixIsMaskEmpty(), AutoFixAssignUIToMask,
+                "The rendering Mask is empty, it needs to contain at least one layer for rendering to function.");
 
             if (!isEmpty)
             {
-                AutoFix(AutoFixAnyCamerasRenderingTargetLayers(), AutoFixRemoveRenderingMaskFromCameras, "Some cameras are rendering using a layer that is specified here as a Rendering layer. This can cause the UI to be rendered twice.");
-                AutoFix(AutoFixAnyRenderersOnUnrenderedLayers(), AutoFixMoveRenderersToMaskedLayers, "Some CanvasRenderers are using a layer that is not included in the rendered LayerMask.");
+                AutoFix(AutoFixAnyCamerasRenderingTargetLayers(),AutoFixRemoveRenderingMaskFromCameras,
+                    "Some cameras are rendering using a layer that is specified here as a Rendering layer. This can cause the UI to be rendered twice.");
+                AutoFix(AutoFixAnyRenderersOnUnrenderedLayers(), AutoFixMoveRenderersToMaskedLayers,
+                    "Some CanvasRenderers are using a layer that is not included in the rendered LayerMask.");
             }
+        }
+
+        public override void OnInspectorGUI()
+        {
+            BeforeInspector();
+            _editorDrawer.DrawFullInspector();
         }
 
         #region AutoFix

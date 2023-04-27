@@ -75,6 +75,7 @@ namespace Meta.WitAi
             // that this component has its own dedicated WitService
             witService = gameObject.AddComponent<WitService>();
             witService.VoiceEventProvider = this;
+            witService.TelemetryEventsProvider = this;
             witService.ConfigurationProvider = this;
         }
     }

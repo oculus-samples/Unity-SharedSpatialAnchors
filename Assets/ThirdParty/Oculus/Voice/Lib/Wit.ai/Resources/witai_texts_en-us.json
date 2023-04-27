@@ -1,6 +1,8 @@
 {
   "LanguageID": "en-us",
   "WitAppsUrl": "/apps",
+  "WitDocsTitle": "Documentation",
+  "WitDocsUrl": "https://wit.ai/docs",
   "WitAppSettingsEndpoint": "/[APP_ID]/settings",
   "WitAppUnderstandingEndpoint": "/[APP_ID]/understanding",
   "WitOpenButtonLabel": "Open Wit.ai",

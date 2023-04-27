@@ -37,7 +37,7 @@ namespace Oculus.Interaction.HandGrab
         , IHandGrabState, IHandGrabber, IDistanceInteractor
     {
         [SerializeField, Interface(typeof(IHand))]
-        private MonoBehaviour _hand;
+        private UnityEngine.Object _hand;
         public IHand Hand { get; private set; }
 
         [SerializeField]
@@ -57,12 +57,12 @@ namespace Oculus.Interaction.HandGrab
         private Transform _pinchPoint;
 
         [SerializeField, Interface(typeof(IVelocityCalculator)), Optional]
-        private MonoBehaviour _velocityCalculator;
+        private UnityEngine.Object _velocityCalculator;
         public IVelocityCalculator VelocityCalculator { get; set; }
 
         [SerializeField]
-        private DistantCandidateComputer<DistanceHandGrabInteractable> _distantCandidateComputer
-            = new DistantCandidateComputer<DistanceHandGrabInteractable>();
+        private DistantCandidateComputer<DistanceHandGrabInteractor, DistanceHandGrabInteractable> _distantCandidateComputer
+            = new DistantCandidateComputer<DistanceHandGrabInteractor, DistanceHandGrabInteractable>();
 
         private HandGrabTarget _currentTarget = new HandGrabTarget();
         private HandGrabResult _cachedResult = new HandGrabResult();
@@ -372,8 +372,7 @@ namespace Oculus.Interaction.HandGrab
         protected override DistanceHandGrabInteractable ComputeCandidate()
         {
             DistanceHandGrabInteractable interactable = _distantCandidateComputer.ComputeCandidate(
-                () => DistanceHandGrabInteractable.Registry.List(this),
-                out Vector3 bestHitPoint);
+               DistanceHandGrabInteractable.Registry, this,out Vector3 bestHitPoint);
             HitPoint = bestHitPoint;
 
             if (interactable == null)
@@ -405,7 +404,7 @@ namespace Oculus.Interaction.HandGrab
             }
 
             Pose offset = GetGrabAnchorOffset(anchorMode, grabPose);
-            _cachedResult.SnapPose = PoseUtils.Multiply(_cachedResult.SnapPose, offset);
+            _cachedResult.RelativePose = PoseUtils.Multiply(_cachedResult.RelativePose, offset);
             _currentTarget.Set(interactable.RelativeTo, interactable.HandAlignment, anchorMode, _cachedResult);
 
             return interactable;
@@ -413,7 +412,7 @@ namespace Oculus.Interaction.HandGrab
 
         #region Inject
         public void InjectAllDistanceHandGrabInteractor(HandGrabAPI handGrabApi,
-            DistantCandidateComputer<DistanceHandGrabInteractable> distantCandidateComputer,
+            DistantCandidateComputer<DistanceHandGrabInteractor, DistanceHandGrabInteractable> distantCandidateComputer,
             Transform grabOrigin,
             IHand hand, GrabTypeFlags supportedGrabTypes)
         {
@@ -429,7 +428,8 @@ namespace Oculus.Interaction.HandGrab
             _handGrabApi = handGrabApi;
         }
 
-        public void InjectDistantCandidateComputer(DistantCandidateComputer<DistanceHandGrabInteractable> distantCandidateComputer)
+        public void InjectDistantCandidateComputer(
+            DistantCandidateComputer<DistanceHandGrabInteractor, DistanceHandGrabInteractable> distantCandidateComputer)
         {
             _distantCandidateComputer = distantCandidateComputer;
         }
@@ -441,7 +441,7 @@ namespace Oculus.Interaction.HandGrab
 
         public void InjectHand(IHand hand)
         {
-            _hand = hand as MonoBehaviour;
+            _hand = hand as UnityEngine.Object;
             Hand = hand;
         }
 
@@ -462,7 +462,7 @@ namespace Oculus.Interaction.HandGrab
 
         public void InjectOptionalVelocityCalculator(IVelocityCalculator velocityCalculator)
         {
-            _velocityCalculator = velocityCalculator as MonoBehaviour;
+            _velocityCalculator = velocityCalculator as UnityEngine.Object;
             VelocityCalculator = velocityCalculator;
         }
         #endregion

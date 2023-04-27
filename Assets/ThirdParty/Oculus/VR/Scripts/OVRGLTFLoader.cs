@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Linq;
 using UnityEngine;
 using OVRSimpleJSON;
 
@@ -73,6 +74,8 @@ public struct OVRMeshData
 {
 	public Mesh mesh;
 	public Material material;
+	public OVRMeshAttributes baseAttributes;
+	public OVRMeshAttributes[] morphTargets;
 }
 
 public struct OVRMaterialData
@@ -80,6 +83,7 @@ public struct OVRMaterialData
 	public Shader shader;
 	public int textureId;
 	public OVRTextureData texture;
+	public Color baseColorFactor;
 }
 
 public struct OVRGLTFScene
@@ -87,6 +91,8 @@ public struct OVRGLTFScene
 	public GameObject root;
 	public List<GameObject> nodes;
 	public Dictionary<OVRGLTFInputNode, OVRGLTFAnimatinonNode> animationNodes;
+	public Dictionary<int, OVRGLTFAnimatinonNode> animationNodeLookup;
+	public List<OVRGLTFAnimationNodeMorphTargetHandler> morphTargetHandlers;
 }
 
 public struct OVRTextureData
@@ -96,6 +102,17 @@ public struct OVRTextureData
 	public int height;
 	public OVRTextureFormat format;
 	public TextureFormat transcodedFormat;
+	public string uri;
+}
+
+public struct OVRMeshAttributes
+{
+	public Vector3[] vertices;
+	public Vector3[] normals;
+	public Vector4[] tangents;
+	public Vector2[] texcoords;
+	public Color[] colors;
+	public BoneWeight[] boneWeights;
 }
 
 public class OVRGLTFLoader
@@ -105,7 +122,11 @@ public class OVRGLTFLoader
 	private OVRBinaryChunk m_binaryChunk;
 
 	private List<GameObject> m_Nodes;
-	private Dictionary<OVRGLTFInputNode, OVRGLTFAnimatinonNode> m_AnimationNodes;
+	private Dictionary<OVRGLTFInputNode, OVRGLTFAnimatinonNode> m_InputAnimationNodes;
+	// <animationIndex, OVRGLTFAnimatinonNode>
+	private Dictionary<int, OVRGLTFAnimatinonNode> m_AnimationLookup;
+	// <nodeIndex, OVRGLTFAnimatinonNodeMorphTargetHandler>
+	private Dictionary<int, OVRGLTFAnimationNodeMorphTargetHandler> m_morphTargetHandlers;
 
 	private Shader m_Shader = null;
 	private Shader m_AlphaBlendShader = null;
@@ -127,6 +148,8 @@ public class OVRGLTFLoader
 		{"thumbstick", OVRGLTFInputNode.ThumbStick },
 	};
 
+	public Func<string, Material, Texture2D> textureUriHandler;
+
 	public OVRGLTFLoader(string fileName)
 	{
 		m_glbStream = File.Open(fileName, FileMode.Open);
@@ -141,7 +164,9 @@ public class OVRGLTFLoader
 	{
 		OVRGLTFScene scene = new OVRGLTFScene();
 		m_Nodes = new List<GameObject>();
-		m_AnimationNodes = new Dictionary<OVRGLTFInputNode, OVRGLTFAnimatinonNode>();
+		m_InputAnimationNodes = new Dictionary<OVRGLTFInputNode, OVRGLTFAnimatinonNode>();
+		m_AnimationLookup = new Dictionary<int, OVRGLTFAnimatinonNode>();
+		m_morphTargetHandlers = new Dictionary<int, OVRGLTFAnimationNodeMorphTargetHandler>();
 
         int rootNodeId = 0;
 		if (ValidateGLB(m_glbStream))
@@ -184,7 +209,10 @@ public class OVRGLTFLoader
 
 		scene.nodes = m_Nodes;
 		scene.root = new GameObject("GLB Scene Root");
-		scene.animationNodes = m_AnimationNodes;
+		scene.animationNodes = m_InputAnimationNodes;
+		scene.animationNodeLookup = m_AnimationLookup;
+		scene.morphTargetHandlers = m_morphTargetHandlers.Values.ToList();
+
         foreach (GameObject node in m_Nodes)
 		{
 			if (node.transform.parent == null)
@@ -443,6 +471,10 @@ public class OVRGLTFLoader
 				var renderer = m_Nodes[nodeId].AddComponent<MeshRenderer>();
 				renderer.sharedMaterial = meshData.material;
 			}
+			if (meshData.morphTargets != null)
+			{
+				m_morphTargetHandlers[nodeId] = new OVRGLTFAnimationNodeMorphTargetHandler(meshData);
+			}
 		}
 
 		var translation = node["translation"].AsArray;
@@ -493,37 +525,6 @@ public class OVRGLTFLoader
 		}
 
 		int[][] indicies = new int[primitives.Count][];
-		Vector3[] vertices = new Vector3[totalVertexCount];
-
-		Vector3[] normals = null;
-		if (primitives[0]["attributes"]["NORMAL"] != null)
-		{
-			normals = new Vector3[totalVertexCount];
-		}
-
-		Vector4[] tangents = null;
-		if (primitives[0]["attributes"]["TANGENT"] != null)
-		{
-			tangents = new Vector4[totalVertexCount];
-		}
-
-		Vector2[] texcoords = null;
-		if (primitives[0]["attributes"]["TEXCOORD_0"] != null)
-		{
-			texcoords = new Vector2[totalVertexCount];
-		}
-
-		Color[] colors = null;
-		if (primitives[0]["attributes"]["COLOR_0"] != null)
-		{
-			colors = new Color[totalVertexCount];
-		}
-
-		BoneWeight[] boneWeights = null;
-		if (primitives[0]["attributes"]["WEIGHTS_0"] != null)
-		{
-			boneWeights = new BoneWeight[totalVertexCount];
-		}
 
 		// Begin async processing of material and its texture
 		OVRMaterialData matData = default(OVRMaterialData);
@@ -535,6 +536,9 @@ public class OVRGLTFLoader
 			matData.texture = ProcessTexture(matData.textureId);
 			transcodeTask = Task.Run(() => { TranscodeTexture(ref matData.texture); });
 		}
+
+		OVRMeshAttributes attributes = new OVRMeshAttributes();
+		OVRMeshAttributes[] morphTargetAttributes = null;
 
 		int vertexOffset = 0;
 		for (int i = 0; i < primitives.Count; i++)
@@ -549,73 +553,16 @@ public class OVRGLTFLoader
 			indicesReader.ReadAsInt(m_binaryChunk, ref indicies[i], 0);
 			FlipTraingleIndices(ref indicies[i]);
 
-			var jsonAttribute = jsonPrimitive["attributes"]["POSITION"];
+			attributes = ReadMeshAttributes(jsonPrimitive["attributes"], totalVertexCount, vertexOffset);
+
+			// morph targets
+			var jsonAttribute = jsonPrimitive["targets"];
 			if (jsonAttribute != null)
 			{
-				jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
-				OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
-				dataReader.ReadAsVector3(m_binaryChunk, ref vertices, vertexOffset, GLTFToUnitySpace);
-			}
-
-			jsonAttribute = jsonPrimitive["attributes"]["NORMAL"];
-			if (jsonAttribute != null)
-			{
-				jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
-				OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
-				dataReader.ReadAsVector3(m_binaryChunk, ref normals, vertexOffset, GLTFToUnitySpace);
-			}
-
-			jsonAttribute = jsonPrimitive["attributes"]["TANGENT"];
-			if (jsonAttribute != null)
-			{
-				jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
-				OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
-				dataReader.ReadAsVector4(m_binaryChunk, ref tangents, vertexOffset, GLTFToUnityTangent);
-			}
-
-			jsonAttribute = jsonPrimitive["attributes"]["TEXCOORD_0"];
-			if (jsonAttribute != null)
-			{
-				jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
-				OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
-				dataReader.ReadAsVector2(m_binaryChunk, ref texcoords, vertexOffset);
-			}
-
-			jsonAttribute = jsonPrimitive["attributes"]["COLOR_0"];
-			if (jsonAttribute != null)
-			{
-				jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
-				OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
-				dataReader.ReadAsColor(m_binaryChunk, ref colors, vertexOffset);
-			}
-
-			jsonAttribute = jsonPrimitive["attributes"]["WEIGHTS_0"];
-			if (jsonAttribute != null)
-			{
-				jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
-				OVRGLTFAccessor weightReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
-
-				var jointAttribute = jsonPrimitive["attributes"]["JOINTS_0"];
-				var jointAccessor = m_jsonData["accessors"][jointAttribute.AsInt];
-				OVRGLTFAccessor jointReader = new OVRGLTFAccessor(jointAccessor, m_jsonData);
-
-				Vector4[] weights = new Vector4[weightReader.GetDataCount()];
-				Vector4[] joints = new Vector4[jointReader.GetDataCount()];
-
-				weightReader.ReadAsBoneWeights(m_binaryChunk, ref weights, 0);
-				jointReader.ReadAsVector4(m_binaryChunk, ref joints, 0, Vector4.one);
-
-				for (int w = 0; w < weights.Length; w++)
+				morphTargetAttributes = new OVRMeshAttributes[jsonAttribute.Count];
+				for (var ii = 0; ii < jsonAttribute.Count; ii++)
 				{
-					boneWeights[vertexOffset + w].boneIndex0 = (int)joints[w].x;
-					boneWeights[vertexOffset + w].boneIndex1 = (int)joints[w].y;
-					boneWeights[vertexOffset + w].boneIndex2 = (int)joints[w].z;
-					boneWeights[vertexOffset + w].boneIndex3 = (int)joints[w].w;
-
-					boneWeights[vertexOffset + w].weight0 = weights[w].x;
-					boneWeights[vertexOffset + w].weight1 = weights[w].y;
-					boneWeights[vertexOffset + w].weight2 = weights[w].z;
-					boneWeights[vertexOffset + w].weight3 = weights[w].w;
+					morphTargetAttributes[ii] = ReadMeshAttributes(jsonAttribute[ii], totalVertexCount, vertexOffset);
 				}
 			}
 
@@ -623,12 +570,12 @@ public class OVRGLTFLoader
 		}
 
 		Mesh mesh = new Mesh();
-		mesh.vertices = vertices;
-		mesh.normals = normals;
-		mesh.tangents = tangents;
-		mesh.colors = colors;
-		mesh.uv = texcoords;
-		mesh.boneWeights = boneWeights;
+		mesh.vertices = attributes.vertices;
+		mesh.normals = attributes.normals;
+		mesh.tangents = attributes.tangents;
+		mesh.colors = attributes.colors;
+		mesh.uv = attributes.texcoords;
+		mesh.boneWeights = attributes.boneWeights;
 		mesh.subMeshCount = primitives.Count;
 
 		int baseVertex = 0;
@@ -640,6 +587,12 @@ public class OVRGLTFLoader
 
 		mesh.RecalculateBounds();
 		meshData.mesh = mesh;
+
+		meshData.morphTargets = morphTargetAttributes;
+		if (morphTargetAttributes != null)
+		{
+			meshData.baseAttributes = attributes;
+		}
 
 		if (transcodeTask != null)
 		{
@@ -657,6 +610,87 @@ public class OVRGLTFLoader
 			indices[i] = indices[i + 2];
 			indices[i + 2] = a;
 		}
+	}
+
+	private OVRMeshAttributes ReadMeshAttributes(JSONNode jsonAttributes, int totalVertexCount, int vertexOffset)
+	{
+		OVRMeshAttributes results = new OVRMeshAttributes();
+		var jsonAttribute = jsonAttributes["POSITION"];
+		if (jsonAttribute != null)
+		{
+			results.vertices = new Vector3[totalVertexCount];
+			var jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
+			OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
+			dataReader.ReadAsVector3(m_binaryChunk, ref results.vertices, vertexOffset, GLTFToUnitySpace);
+		}
+
+		jsonAttribute = jsonAttributes["NORMAL"];
+		if (jsonAttribute != null)
+		{
+			results.normals = new Vector3[totalVertexCount];
+			var jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
+			OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
+			dataReader.ReadAsVector3(m_binaryChunk, ref results.normals, vertexOffset, GLTFToUnitySpace);
+		}
+
+		jsonAttribute = jsonAttributes["TANGENT"];
+		if (jsonAttribute != null)
+		{
+			results.tangents = new Vector4[totalVertexCount];
+			var jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
+			OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
+			dataReader.ReadAsVector4(m_binaryChunk, ref results.tangents, vertexOffset, GLTFToUnityTangent);
+		}
+
+		jsonAttribute = jsonAttributes["TEXCOORD_0"];
+		if (jsonAttribute != null)
+		{
+			results.texcoords = new Vector2[totalVertexCount];
+			var jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
+			OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
+			dataReader.ReadAsVector2(m_binaryChunk, ref results.texcoords, vertexOffset);
+		}
+
+		jsonAttribute = jsonAttributes["COLOR_0"];
+		if (jsonAttribute != null)
+		{
+			results.colors = new Color[totalVertexCount];
+			var jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
+			OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
+			dataReader.ReadAsColor(m_binaryChunk, ref results.colors, vertexOffset);
+		}
+
+		jsonAttribute = jsonAttributes["WEIGHTS_0"];
+		if (jsonAttribute != null)
+		{
+			results.boneWeights = new BoneWeight[totalVertexCount];
+			var jsonAccessor = m_jsonData["accessors"][jsonAttribute.AsInt];
+			OVRGLTFAccessor weightReader = new OVRGLTFAccessor(jsonAccessor, m_jsonData);
+
+			var jointAttribute = jsonAttributes["JOINTS_0"];
+			var jointAccessor = m_jsonData["accessors"][jointAttribute.AsInt];
+			OVRGLTFAccessor jointReader = new OVRGLTFAccessor(jointAccessor, m_jsonData);
+
+			Vector4[] weights = new Vector4[weightReader.GetDataCount()];
+			Vector4[] joints = new Vector4[jointReader.GetDataCount()];
+
+			weightReader.ReadAsBoneWeights(m_binaryChunk, ref weights, 0);
+			jointReader.ReadAsVector4(m_binaryChunk, ref joints, 0, Vector4.one);
+
+			for (int w = 0; w < weights.Length; w++)
+			{
+				results.boneWeights[vertexOffset + w].boneIndex0 = (int)joints[w].x;
+				results.boneWeights[vertexOffset + w].boneIndex1 = (int)joints[w].y;
+				results.boneWeights[vertexOffset + w].boneIndex2 = (int)joints[w].z;
+				results.boneWeights[vertexOffset + w].boneIndex3 = (int)joints[w].w;
+
+				results.boneWeights[vertexOffset + w].weight0 = weights[w].x;
+				results.boneWeights[vertexOffset + w].weight1 = weights[w].y;
+				results.boneWeights[vertexOffset + w].weight2 = weights[w].z;
+				results.boneWeights[vertexOffset + w].weight3 = weights[w].w;
+			}
+		}
+		return results;
 	}
 
 	private void ProcessSkin(JSONNode skinNode, SkinnedMeshRenderer renderer)
@@ -705,6 +739,14 @@ public class OVRGLTFLoader
 
 		var jsonPbrDetails = jsonMaterial["pbrMetallicRoughness"];
 
+		matData.baseColorFactor = Color.white; // GLTF Default
+		var jsonBaseColorFactor = jsonPbrDetails["baseColorFactor"];
+		if (jsonBaseColorFactor != null)
+		{
+			matData.baseColorFactor = new Color(jsonBaseColorFactor[0].AsFloat, jsonBaseColorFactor[1].AsFloat,
+				jsonBaseColorFactor[2].AsFloat, jsonBaseColorFactor[3].AsFloat);
+		}
+
 		var jsonBaseColor = jsonPbrDetails["baseColorTexture"];
 		if (jsonBaseColor != null)
 		{
@@ -745,6 +787,15 @@ public class OVRGLTFLoader
 		}
 		var jsonSource = m_jsonData["images"][imageSource];
 
+		OVRTextureData textureData = new OVRTextureData();
+
+		var jsonSourceUri = jsonSource["uri"].Value;
+		if (!String.IsNullOrEmpty(jsonSourceUri))
+		{
+			textureData.uri = jsonSourceUri;
+			return textureData;
+		}
+
 		int sampler = jsonTexture["sampler"].AsInt;
 		var jsonSampler = m_jsonData["samplers"][sampler];
 
@@ -752,24 +803,37 @@ public class OVRGLTFLoader
 		var jsonBufferView = m_jsonData["bufferViews"][bufferViewId];
 		OVRGLTFAccessor dataReader = new OVRGLTFAccessor(jsonBufferView, m_jsonData, true);
 
-		OVRTextureData textureData = new OVRTextureData();
-		if (jsonSource["mimeType"].Value == "image/ktx2")
+
+		switch (jsonSource["mimeType"].Value)
 		{
-			textureData.data = dataReader.ReadAsKtxTexture(m_binaryChunk);
-			textureData.format = OVRTextureFormat.KTX2;
-		}
-		else
-		{
-			Debug.LogWarning("Unsupported image mimeType.");
+			case "image/ktx2":
+				textureData.data = dataReader.ReadAsTexture(m_binaryChunk);
+				textureData.format = OVRTextureFormat.KTX2;
+				break;
+			case "image/png":
+				textureData.data = dataReader.ReadAsTexture(m_binaryChunk);
+				textureData.format = OVRTextureFormat.PNG;
+				break;
+			default:
+				Debug.LogWarning($"Unsupported image mimeType '{jsonSource["mimeType"].Value}'");
+				break;
 		}
 		return textureData;
 	}
 
 	private void TranscodeTexture(ref OVRTextureData textureData)
 	{
+		if (!String.IsNullOrEmpty(textureData.uri))
+		{
+			return;
+		}
 		if (textureData.format == OVRTextureFormat.KTX2)
 		{
 			OVRKtxTexture.Load(textureData.data, ref textureData);
+		}
+		else if (textureData.format == OVRTextureFormat.PNG)
+		{
+			// fall back to unity Texture2D.LoadImage, which will override dimensions & format.
 		}
 		else
 		{
@@ -781,17 +845,34 @@ public class OVRGLTFLoader
 	{
 		Material mat = new Material(matData.shader);
 
+		mat.color = matData.baseColorFactor;
+
+		if (loadMips && mat.HasProperty("_MainTexMMBias"))
+			mat.SetFloat("_MainTexMMBias", m_TextureMipmapBias);
+
+		Texture2D texture = null;
+
 		if (matData.texture.format == OVRTextureFormat.KTX2)
 		{
-			Texture2D texture;
 			texture = new Texture2D(matData.texture.width, matData.texture.height, matData.texture.transcodedFormat, loadMips);
 			texture.LoadRawTextureData(matData.texture.data);
-			ApplyTextureQuality(m_TextureQuality, ref texture);
-			if (loadMips && mat.HasProperty("_MainTexMMBias"))
-				mat.SetFloat("_MainTexMMBias", m_TextureMipmapBias);
-			texture.Apply(updateMipmaps: false, makeNoLongerReadable: true);
-			mat.mainTexture = texture;
+
 		}
+		else if (matData.texture.format == OVRTextureFormat.PNG)
+		{
+			texture = new Texture2D(2,2, TextureFormat.RGBA32, loadMips);
+			texture.LoadImage(matData.texture.data);
+		}
+		else if (!String.IsNullOrEmpty(matData.texture.uri))
+		{
+			texture = textureUriHandler?.Invoke(matData.texture.uri, mat);
+		}
+
+		if (!texture) return mat;
+
+		ApplyTextureQuality(m_TextureQuality, ref texture);
+		texture.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+		mat.mainTexture = texture;
 
 		return mat;
 	}
@@ -810,17 +891,8 @@ public class OVRGLTFLoader
 
 	private void ProcessAnimations()
 	{
-		Dictionary<int, OVRGLTFInputNode> inputNodeIDTypeMap = new Dictionary<int, OVRGLTFInputNode>();
-		for(int id=0; id<m_Nodes.Count; id++)
-		{
-			GameObject obj = m_Nodes[id];
-			OVRGLTFInputNode inputNodeType = GetInputNodeType(obj.name);
-			if (inputNodeType == OVRGLTFInputNode.None)
-				continue;
-			inputNodeIDTypeMap.Add(id, inputNodeType);
-		}
-
 		var animations = m_jsonData["animations"];
+		var animationIndex = 0;
 		foreach (JSONNode animation in animations.AsArray)
 		{
 			//We don't need animation name at this moment
@@ -829,13 +901,21 @@ public class OVRGLTFLoader
 			foreach (JSONNode channel in channels)
 			{
 				int nodeId = channel["target"]["node"].AsInt;
-				OVRGLTFInputNode inputNodeType = inputNodeIDTypeMap[nodeId];
-				if (!m_AnimationNodes.ContainsKey(inputNodeType))
+
+				OVRGLTFInputNode inputNodeType = GetInputNodeType(m_Nodes[nodeId].name);
+				if (!m_AnimationLookup.TryGetValue(animationIndex, out var animationNode))
 				{
-					m_AnimationNodes.Add(inputNodeType, new OVRGLTFAnimatinonNode(m_jsonData, m_binaryChunk, inputNodeType, m_Nodes[nodeId]));
+					m_morphTargetHandlers.TryGetValue(nodeId, out var morphTargetHandler);
+					animationNode = new OVRGLTFAnimatinonNode(m_jsonData, m_binaryChunk, inputNodeType, m_Nodes[nodeId], morphTargetHandler);
+					m_AnimationLookup[animationIndex] = animationNode;
+					if (inputNodeType != OVRGLTFInputNode.None)
+					{
+						m_InputAnimationNodes.Add(inputNodeType, animationNode);
+					}
 				}
-				m_AnimationNodes[inputNodeType].AddChannel(channel, animation["samplers"]);
+				animationNode.AddChannel(channel, animation["samplers"]);
 			}
+			animationIndex++;
 		}
 	}
 }

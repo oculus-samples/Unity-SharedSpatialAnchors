@@ -607,6 +607,22 @@ PrefabInstance:
       propertyPath: referencePoint
       value: 
       objectReference: {fileID: 414526145}
+    - target: {fileID: 6257580317666572168, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6257580317666572168, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6257580317666572168, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6257580317666572168, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6257580318292221794, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
       propertyPath: m_BlockingMask.m_Bits
       value: 55
@@ -619,6 +635,22 @@ PrefabInstance:
       propertyPath: anchorManager
       value: 
       objectReference: {fileID: 543581506}
+    - target: {fileID: 6257580319406750961, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6257580319406750961, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6257580319406750961, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6257580319406750961, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 28ff349badfc1f94c834e85be888575a, type: 3}
 --- !u!114 &1571661967 stripped

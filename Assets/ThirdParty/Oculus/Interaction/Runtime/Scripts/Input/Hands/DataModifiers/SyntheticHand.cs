@@ -364,7 +364,8 @@ namespace Oculus.Interaction.Input
         /// <param name="skipAnimation">Whether to skip the animation curve for this override.</param>
         public void LockWristPose(Pose wristPose, float overrideFactor = 1f, WristLockMode lockMode = WristLockMode.Full, bool worldPose = false, bool skipAnimation = false)
         {
-            Pose desiredWristPose = (worldPose && TrackingToWorldTransformer != null ) ? TrackingToWorldTransformer.ToTrackingPose(wristPose) : wristPose;
+            Pose desiredWristPose = (worldPose && TrackingToWorldTransformer != null ) ?
+                TrackingToWorldTransformer.ToTrackingPose(wristPose): wristPose;
 
             if ((lockMode & WristLockMode.Position) != 0)
             {

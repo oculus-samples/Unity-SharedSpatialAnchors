@@ -9,6 +9,7 @@
 using Meta.WitAi.Data.Entities;
 using Meta.WitAi.Data.Intents;
 using Meta.WitAi.Json;
+using UnityEngine;
 
 namespace Meta.WitAi
 {
@@ -304,6 +305,50 @@ namespace Meta.WitAi
             }
 
             return node.Value;
+        }
+        public static void SetString(this WitResponseNode response, string path, string value)
+        {
+
+            string[] nodes = path.Trim('.').Split('.');
+
+            var node = response;
+            int nodeIndex;
+            
+            for(nodeIndex = 0; nodeIndex < nodes.Length - 1; nodeIndex++)
+            {
+                var nodeName = nodes[nodeIndex];
+                string[] arrayElements = SplitArrays(nodeName);
+
+                node = node[arrayElements[0]];
+                for (int i = 1; i < arrayElements.Length; i++)
+                {
+                    node = node[int.Parse(arrayElements[i])];
+                }
+            }
+
+
+            node[nodes[nodeIndex]] = value;
+        }
+        public static void RemovePath(this WitResponseNode response, string path)
+        {
+            string[] nodes = path.Trim('.').Split('.');
+
+            var node = response;
+            WitResponseNode parent = null;
+
+            foreach (var nodeName in nodes)
+            {
+                string[] arrayElements = SplitArrays(nodeName);
+
+                parent = node;
+                node = node[arrayElements[0]];
+                for (int i = 1; i < arrayElements.Length; i++)
+                {
+                    node = node[int.Parse(arrayElements[i])];
+                }
+            }
+
+            if (null != parent) parent.Remove(node);
         }
 
         public static WitResponseReference GetWitResponseReference(string path)

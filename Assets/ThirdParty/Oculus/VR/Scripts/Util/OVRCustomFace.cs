@@ -18,7 +18,9 @@
  * limitations under the License.
  */
 
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -45,13 +47,17 @@ public sealed class OVRCustomFace : OVRFace
     [Tooltip("The mapping between Face Expressions to the blendshapes available on the shared mesh of the skinned mesh renderer")]
     internal OVRFaceExpressions.FaceExpression[] _mappings;
 
+    [SerializeField, HideInInspector]
+    internal RetargetingType retargetingType;
+
     /// <inheritdoc/>
     protected override void Start()
     {
         base.Start();
 
         Assert.IsNotNull(_mappings);
-        Assert.IsTrue(_mappings.Length != GetComponent<SkinnedMeshRenderer>().sharedMesh.blendShapeCount, "Mapping out of sync with shared mesh.");
+        Assert.AreEqual(_mappings.Length, GetComponent<SkinnedMeshRenderer>().sharedMesh.blendShapeCount,
+	        "Mapping out of sync with shared mesh.");
     }
 
     /// <inheritdoc/>
@@ -60,4 +66,9 @@ public sealed class OVRCustomFace : OVRFace
         Assert.IsTrue(blendShapeIndex < _mappings.Length && blendShapeIndex >= 0);
         return _mappings[blendShapeIndex];
     }
+
+	public enum RetargetingType
+	{
+		OculusFace,
+	}
 }

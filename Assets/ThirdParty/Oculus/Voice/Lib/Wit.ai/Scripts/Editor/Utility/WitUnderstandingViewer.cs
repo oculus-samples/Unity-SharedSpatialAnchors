@@ -648,36 +648,36 @@ namespace Meta.WitAi.Windows
             AddVoiceListeners(service);
         }
         // Remove listeners
-        private void RemoveVoiceListeners(VoiceService v)
+        private void RemoveVoiceListeners(VoiceService voiceService)
         {
             // Ignore
-            if (v == null)
+            if (voiceService == null)
             {
                 return;
             }
             // Remove delegates
-            v.events.OnRequestCreated.RemoveListener(OnRequestCreated);
-            v.events.OnError.RemoveListener(OnError);
-            v.events.OnResponse.RemoveListener(OnResponse);
-            v.events.OnFullTranscription.RemoveListener(ShowTranscription);
-            v.events.OnPartialTranscription.RemoveListener(ShowTranscription);
-            v.events.OnStoppedListening.RemoveListener(ResetStartTime);
+            voiceService.VoiceEvents.OnRequestCreated.RemoveListener(OnRequestCreated);
+            voiceService.VoiceEvents.OnError.RemoveListener(OnError);
+            voiceService.VoiceEvents.OnResponse.RemoveListener(OnResponse);
+            voiceService.VoiceEvents.OnFullTranscription.RemoveListener(ShowTranscription);
+            voiceService.VoiceEvents.OnPartialTranscription.RemoveListener(ShowTranscription);
+            voiceService.VoiceEvents.OnStoppedListening.RemoveListener(ResetStartTime);
         }
         // Add listeners
-        private void AddVoiceListeners(VoiceService v)
+        private void AddVoiceListeners(VoiceService voiceService)
         {
             // Ignore
-            if (v == null)
+            if (voiceService == null)
             {
                 return;
             }
             // Add delegates
-            v.events.OnRequestCreated.AddListener(OnRequestCreated);
-            v.events.OnError.AddListener(OnError);
-            v.events.OnResponse.AddListener(OnResponse);
-            v.events.OnPartialTranscription.AddListener(ShowTranscription);
-            v.events.OnFullTranscription.AddListener(ShowTranscription);
-            v.events.OnStoppedListening.AddListener(ResetStartTime);
+            voiceService.VoiceEvents.OnRequestCreated.AddListener(OnRequestCreated);
+            voiceService.VoiceEvents.OnError.AddListener(OnError);
+            voiceService.VoiceEvents.OnResponse.AddListener(OnResponse);
+            voiceService.VoiceEvents.OnPartialTranscription.AddListener(ShowTranscription);
+            voiceService.VoiceEvents.OnFullTranscription.AddListener(ShowTranscription);
+            voiceService.VoiceEvents.OnStoppedListening.AddListener(ResetStartTime);
         }
         #endregion
     }

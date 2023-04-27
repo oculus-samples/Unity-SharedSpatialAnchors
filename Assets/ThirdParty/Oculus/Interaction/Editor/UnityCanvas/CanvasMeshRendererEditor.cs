@@ -26,8 +26,10 @@ using props = Oculus.Interaction.UnityCanvas.CanvasMeshRenderer.Properties;
 namespace Oculus.Interaction.UnityCanvas.Editor
 {
     [CustomEditor(typeof(CanvasMeshRenderer))]
-    public class CanvasMeshRendererEditor : EditorBase
+    public class CanvasMeshRendererEditor : UnityEditor.Editor
     {
+        private EditorBase _editorDrawer;
+
         public new CanvasMeshRenderer target
         {
             get
@@ -36,18 +38,19 @@ namespace Oculus.Interaction.UnityCanvas.Editor
             }
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
+            _editorDrawer = new EditorBase(serializedObject);
             var renderingModeProp = serializedObject.FindProperty(props.RenderingMode);
 
-            Draw(props.RenderingMode, (modeProp) =>
+            _editorDrawer.Draw(props.RenderingMode, (modeProp) =>
             {
                 RenderingMode value = (RenderingMode)modeProp.intValue;
                 value = (RenderingMode)EditorGUILayout.EnumPopup("Rendering Mode", value);
                 modeProp.intValue = (int)value;
             });
 
-            Draw(props.UseAlphaToMask, props.AlphaCutoutThreshold, (maskProp, cutoutProp) =>
+            _editorDrawer.Draw(props.UseAlphaToMask, props.AlphaCutoutThreshold, (maskProp, cutoutProp) =>
             {
                 if (renderingModeProp.intValue == (int)RenderingMode.AlphaCutout)
                 {
@@ -60,5 +63,11 @@ namespace Oculus.Interaction.UnityCanvas.Editor
                 }
             });
         }
+
+        public override void OnInspectorGUI()
+        {
+            _editorDrawer.DrawFullInspector();
+        }
+
     }
 }

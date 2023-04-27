@@ -56,6 +56,7 @@ GameObject:
   - component: {fileID: 333833536}
   - component: {fileID: 333833538}
   - component: {fileID: 333833537}
+  - component: {fileID: 1223652228095746865}
   m_Layer: 2
   m_Name: PinchPointRange
   m_TagString: Untagged
@@ -107,6 +108,19 @@ CapsuleCollider:
   m_Height: 0.06
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1223652228095746865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 333833535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a52cc62b98662b4e9ac356027b2b070, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _hand: {fileID: 4479476189240411809}
 --- !u!1 &1647942638
 GameObject:
   m_ObjectHideFlags: 0
@@ -422,7 +436,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _hand: {fileID: 4479476189240411809}
   _offset: {x: -0.1091, y: -0.0222, z: -0.043}
-  _rotation: {x: 0.1598225, y: 0.6888081, z: -0.68880856, w: -0.15982178}
+  _rotation: {x: 0.29883647, y: 0.640856, z: -0.6408568, w: -0.298836}
   _relativeTransform: {fileID: 0}
 --- !u!1 &4897006678491505480
 GameObject:
@@ -867,7 +881,7 @@ MonoBehaviour:
   _minLength: 0.05
   _maxLength: 5
   _radiusStart: 0.03
-  _apertureDegrees: 4
+  _apertureDegrees: 10
 --- !u!1 &7590733698742639281
 GameObject:
   m_ObjectHideFlags: 0

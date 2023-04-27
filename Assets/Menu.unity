@@ -3345,8 +3345,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 915791350}
-  - component: {fileID: 915791349}
   - component: {fileID: 915791351}
+  - component: {fileID: 915791349}
   m_Layer: 0
   m_Name: BoxProximityField
   m_TagString: Untagged
@@ -3363,9 +3363,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 915791348}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 901cc0853dbecd74d98375722eb8c7c0, type: 3}
+  m_Script: {fileID: 11500000, guid: efd927768041afd4d90e5d822283f0f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _planeSurface: {fileID: 520644594}
+  _clippers: []
 --- !u!4 &915791350
 Transform:
   m_ObjectHideFlags: 0
@@ -5774,6 +5776,7 @@ MonoBehaviour:
     Enabled: 0
     ExitDistance: 0.02
     ReEnterDistance: 0.02
+  _closeDistanceThreshold: 0.001
   _tiebreakerScore: 0
 --- !u!114 &1353586329
 MonoBehaviour:
@@ -8385,30 +8388,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3545893600332898333
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6818260453549054030}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 901cc0853dbecd74d98375722eb8c7c0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &3545893600374905923
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6818260453440070672}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 901cc0853dbecd74d98375722eb8c7c0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &4233851766670442594
 Transform:
   m_ObjectHideFlags: 0
@@ -8671,6 +8650,7 @@ MonoBehaviour:
     Enabled: 0
     ExitDistance: 0.02
     ReEnterDistance: 0.02
+  _closeDistanceThreshold: 0.001
   _tiebreakerScore: 0
 --- !u!114 &6609430561828680758
 MonoBehaviour:
@@ -8736,6 +8716,7 @@ MonoBehaviour:
     Enabled: 0
     ExitDistance: 0.02
     ReEnterDistance: 0.02
+  _closeDistanceThreshold: 0.001
   _tiebreakerScore: 0
 --- !u!1 &6818260453440070672
 GameObject:
@@ -8746,8 +8727,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1547402186197830907}
-  - component: {fileID: 3545893600374905923}
   - component: {fileID: 3537707068690220411}
+  - component: {fileID: 6818260453440070673}
   m_Layer: 0
   m_Name: BoxProximityField
   m_TagString: Untagged
@@ -8755,6 +8736,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &6818260453440070673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6818260453440070672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd927768041afd4d90e5d822283f0f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _planeSurface: {fileID: 7896607433285992814}
+  _clippers: []
 --- !u!1 &6818260453549054030
 GameObject:
   m_ObjectHideFlags: 0
@@ -8764,8 +8759,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1547402186290180261}
-  - component: {fileID: 3545893600332898333}
   - component: {fileID: 3537707068648225061}
+  - component: {fileID: 6818260453549054031}
   m_Layer: 0
   m_Name: BoxProximityField
   m_TagString: Untagged
@@ -8773,6 +8768,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &6818260453549054031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6818260453549054030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd927768041afd4d90e5d822283f0f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _planeSurface: {fileID: 7896607433177021744}
+  _clippers: []
 --- !u!114 &7410389674451533812
 MonoBehaviour:
   m_ObjectHideFlags: 0

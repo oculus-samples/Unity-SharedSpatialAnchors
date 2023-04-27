@@ -6,8 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-
-using System.Text;
+using Meta.WitAi;
 using Meta.WitAi.Json;
 
 namespace Meta.Conduit.Editor
@@ -56,6 +55,7 @@ namespace Meta.Conduit.Editor
         /// <returns>A JSON representation of the manifest.</returns>
         public string GenerateManifest(string domain, string id)
         {
+            VLog.D($"Generate Manifest: {domain}");
             return GenerateManifest(_assemblyWalker.GetTargetAssemblies(), domain, id);
         }
 
@@ -76,10 +76,10 @@ namespace Meta.Conduit.Editor
         /// <returns>Extracted Intents list</returns>
         public List<string> ExtractManifestData()
         {
-            Debug.Log("Extracting manifest actions and entities.");
+            VLog.D("Extracting manifest actions and entities.");
 
-            var (entities, actions) = ExtractAssemblyData(_assemblyWalker.GetTargetAssemblies());
-            Debug.Log($"Extracted {actions.Count} actions and {entities.Count} entities.");
+            var (entities, actions, errorHandlers) = ExtractAssemblyData(_assemblyWalker.GetTargetAssemblies());
+            VLog.D($"Extracted {actions.Count} actions and {entities.Count} entities.");
 
             List<string> transformedActions = new HashSet<string>(actions.Select(v => v.Name).Where(v => !string.IsNullOrEmpty(v))).ToList();
 
@@ -97,9 +97,9 @@ namespace Meta.Conduit.Editor
         /// <returns>A JSON representation of the manifest.</returns>
         private string GenerateManifest(IEnumerable<IConduitAssembly> assemblies, string domain, string id)
         {
-            Debug.Log($"Generating manifest.");
+            VLog.D($"Generating manifest.");
 
-            var (entities, actions) = ExtractAssemblyData(assemblies);
+            var (entities, actions, errorHandlers) = ExtractAssemblyData(assemblies);
 
             var manifest = new Manifest()
             {
@@ -107,26 +107,36 @@ namespace Meta.Conduit.Editor
                 Version = CurrentVersion,
                 Domain = domain,
                 Entities = entities,
-                Actions = actions
+                Actions = actions,
+                ErrorHandlers = errorHandlers
             };
 
             return JsonConvert.SerializeObject(manifest);
         }
-
-        private (List<ManifestEntity>, List<ManifestAction>) ExtractAssemblyData(IEnumerable<IConduitAssembly> assemblies)
+ 
+        private (List<ManifestEntity>, List<ManifestAction>, List<ManifestErrorHandler>) ExtractAssemblyData(IEnumerable<IConduitAssembly> assemblies)
         {
             var entities = new List<ManifestEntity>();
             var actions = new List<ManifestAction>();
+            var errorHandlers = new List<ManifestErrorHandler>();
             _assemblyMiner.Initialize();
             foreach (var assembly in assemblies)
             {
                 actions.AddRange(this._assemblyMiner.ExtractActions(assembly));
                 entities.AddRange(this._assemblyMiner.ExtractEntities(assembly));
+                try
+                {
+                    errorHandlers.AddRange(this._assemblyMiner.ExtractErrorHandlers(assembly));
+                }
+                catch (Exception)
+                {
+                    VLog.W("Conduit App found no error handlers");
+                }
             }
 
             this.PruneUnreferencedEntities(ref entities, actions);
 
-            return (entities, actions);
+            return (entities, actions, errorHandlers);
         }
 
         /// <summary>

@@ -52,7 +52,8 @@ namespace Oculus.Voice.Demo.LightTraitsDemo
 
             SetLightState((LightState.Off));
         }
-
+        
+        [MatchIntent("wit_change_state")]
         public void OnResponse(WitResponseNode commandResult)
         {
             var traitValue = commandResult.GetTraitValue("wit$on_off").Replace('o', 'O');

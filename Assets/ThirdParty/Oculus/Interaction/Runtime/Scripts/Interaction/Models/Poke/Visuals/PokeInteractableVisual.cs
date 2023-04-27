@@ -36,6 +36,10 @@ namespace Oculus.Interaction
         private Vector2 _planarOffset;
 
         private HashSet<PokeInteractor> _pokeInteractors;
+        private PokeInteractor _postProcessInteractor;
+
+        private Action _postProcessHandler => UpdateComponentPosition;
+
 
         protected bool _started = false;
 
@@ -49,7 +53,7 @@ namespace Oculus.Interaction
             Vector3 pointOnPlane = transform.position - _maxOffsetAlongNormal * _buttonBaseTransform.forward;
             _planarOffset = new Vector2(
                                 Vector3.Dot(pointOnPlane - _buttonBaseTransform.position, _buttonBaseTransform.right),
-                                Vector3.Dot(pointOnPlane - _buttonBaseTransform.position, _buttonBaseTransform.up));
+                Vector3.Dot(pointOnPlane - _buttonBaseTransform.position, _buttonBaseTransform.up));
             this.EndStart(ref _started);
         }
 
@@ -63,6 +67,7 @@ namespace Oculus.Interaction
                 _pokeInteractable.WhenInteractorRemoved.Action += HandleInteractorRemoved;
             }
         }
+
         protected virtual void OnDisable()
         {
             if (_started)
@@ -70,19 +75,54 @@ namespace Oculus.Interaction
                 _pokeInteractors.Clear();
                 _pokeInteractable.WhenInteractorAdded.Action -= HandleInteractorAdded;
                 _pokeInteractable.WhenInteractorRemoved.Action -= HandleInteractorRemoved;
+
+                if (_postProcessInteractor)
+                {
+                    _postProcessInteractor.WhenPostprocessed -= _postProcessHandler;
+                    _postProcessInteractor = null;
+                }
             }
         }
 
         private void HandleInteractorAdded(PokeInteractor pokeInteractor)
         {
             _pokeInteractors.Add(pokeInteractor);
+
+            if (_postProcessInteractor == null)
+            {
+                _postProcessInteractor = pokeInteractor;
+                _postProcessInteractor.WhenPostprocessed += _postProcessHandler;
+            }
         }
+
         private void HandleInteractorRemoved(PokeInteractor pokeInteractor)
         {
             _pokeInteractors.Remove(pokeInteractor);
+
+            if (pokeInteractor == _postProcessInteractor)
+            {
+                _postProcessInteractor.WhenPostprocessed -= _postProcessHandler;
+
+                // Subscribe to any remaining poke interactor that is hovering. It doesn't really
+                // matter which, so take the first in the unordered enumeration of the hashset.
+                using var enumerator = _pokeInteractors.GetEnumerator();
+                if (enumerator.MoveNext() && enumerator.Current != null)
+                {
+                    _postProcessInteractor = enumerator.Current;
+                    _postProcessInteractor.WhenPostprocessed += _postProcessHandler;
+                }
+                else
+                {
+                    _postProcessInteractor = null;
+                    
+                    // There are no interactors in hover state. Update component position one last
+                    // time to put it at the max offset.
+                    UpdateComponentPosition();
+                }
+            }
         }
 
-        private void Update()
+        private void UpdateComponentPosition()
         {
             // To create a pressy button visual, we check each near poke interactor's
             // depth against the base of the button and use the most pressed-in
@@ -101,6 +141,7 @@ namespace Oculus.Interaction
                 {
                     pokeDistance = 0f;
                 }
+
                 closestDistance = Math.Min(pokeDistance, closestDistance);
             }
 
@@ -108,7 +149,7 @@ namespace Oculus.Interaction
             // the most pressed in distance along the normal plus
             // the original planar offset of the button from the button base
             transform.position = _buttonBaseTransform.position +
-                                 _buttonBaseTransform.forward * -1f * closestDistance +
+                                 _buttonBaseTransform.forward * (-1f * closestDistance) +
                                  _buttonBaseTransform.right * _planarOffset.x +
                                  _buttonBaseTransform.up * _planarOffset.y;
         }

@@ -107,6 +107,7 @@ internal class OVRConfigurationTaskSourceCode
 		    OpenAssetDelegate?.Invoke(_object, Line);
 	    }
 
+	
 	    return Valid;
     }
 
