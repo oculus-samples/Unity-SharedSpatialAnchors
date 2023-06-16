@@ -28,52 +28,22 @@ namespace Oculus.Interaction.Locomotion
         [SerializeField]
         private LocomotionTurnerInteractor _turner;
 
-        [SerializeField, Optional, Interface(typeof(IAxis1D))]
-        private UnityEngine.Object _progress;
-        private IAxis1D Progress;
-
-        [SerializeField, Interface(typeof(IActiveState)), Optional]
-        private UnityEngine.Object _highlight;
-        private IActiveState Highlight;
-
         [SerializeField]
         private Transform _ring;
         [SerializeField]
         private Transform _pointer;
-
-        [SerializeField]
-        private float _signalsDistance = 0.1f;
-        public float SignalsDistance
-        {
-            get
-            {
-                return _signalsDistance;
-            }
-            set
-            {
-                _signalsDistance = value;
-            }
-        }
 
         [SerializeField, Optional]
         private Renderer _ringRenderer;
         [SerializeField, Optional]
         private Renderer _pointerRenderer;
 
-        private Vector3 _originalPointerScale;
-        private bool _highlighted;
-
-        private static readonly Vector3 TINY_SCALE_FACTOR = new Vector3(0.4f, 0.4f, 0.4f);
         private static readonly Quaternion RING_ROTATION = Quaternion.Euler(0f, 90f, 180f);
-
-        private static readonly int _highlightShaderID = Shader.PropertyToID("_Highlight");
 
         protected bool _started;
 
         protected virtual void Awake()
         {
-            Progress = _progress as IAxis1D;
-            Highlight = _highlight as IActiveState;
         }
 
         protected virtual void Start()
@@ -82,8 +52,6 @@ namespace Oculus.Interaction.Locomotion
             this.AssertField(_turner, nameof(_turner));
             this.AssertField(_ring, nameof(_ring));
             this.AssertField(_pointer, nameof(_pointer));
-
-            _originalPointerScale = _pointer.localScale;
 
             if (_ringRenderer == null)
             {
@@ -133,8 +101,6 @@ namespace Oculus.Interaction.Locomotion
         private void HandleTurnerPostprocessed()
         {
             UpdatePoses();
-            UpdateScale();
-            UpdateHighlight();
         }
 
         private void UpdatePoses()
@@ -148,34 +114,7 @@ namespace Oculus.Interaction.Locomotion
 
             _pointer.SetPositionAndRotation(
                 _turner.Origin.position,
-                Quaternion.LookRotation(offset < 0 ? -origin.right : origin.right, origin.up));
-        }
-
-        private void UpdateScale()
-        {
-            if (Highlight != null && Highlight.Active)
-            {
-                _pointer.localScale = _originalPointerScale;
-            }
-            else
-            {
-                float pointerScaleFactor = Progress != null ? Progress.Value() : 1f;
-                _pointer.localScale = Vector3.Lerp(_originalPointerScale, TINY_SCALE_FACTOR, pointerScaleFactor);
-            }
-        }
-
-        private void UpdateHighlight()
-        {
-            if (Highlight == null
-                || Highlight.Active == _highlighted)
-            {
-                return;
-            }
-
-            _highlighted = Highlight.Active;
-            float highlightFactor = _highlighted ? 1f : 0f;
-            _ringRenderer.material.SetFloat(_highlightShaderID, highlightFactor);
-            _pointerRenderer.material.SetFloat(_highlightShaderID, highlightFactor);
+                Quaternion.LookRotation(Mathf.Sign(offset) * origin.right, origin.up));
         }
 
         #region Inject
@@ -201,12 +140,6 @@ namespace Oculus.Interaction.Locomotion
             _pointer = pointer;
         }
 
-        public void InjectOptionalHighlight(IActiveState highlight)
-        {
-            _highlight = highlight as UnityEngine.Object;
-            Highlight = highlight;
-        }
-
         public void InjectOptionalRingRenderer(Renderer ringRenderer)
         {
             _ringRenderer = ringRenderer;
@@ -217,11 +150,6 @@ namespace Oculus.Interaction.Locomotion
             _pointerRenderer = pointerRenderer;
         }
 
-        public void InjectOptionalProgress(IAxis1D progress)
-        {
-            _progress = progress as UnityEngine.Object;
-            Progress = progress;
-        }
         #endregion
     }
 }

@@ -52,25 +52,30 @@ public class OVRGLTFAnimatinonNode
     private List<float> m_weights = new List<float>();
     private int m_additiveWeightIndex = -1;
 
-    private static Dictionary<OVRGLTFInputNode, int> InputNodeKeyFrames = new Dictionary<OVRGLTFInputNode, int>{
-        {OVRGLTFInputNode.Button_A_X, 5},
-        {OVRGLTFInputNode.Button_B_Y, 8},
-        {OVRGLTFInputNode.Button_Oculus_Menu, 24},
-        {OVRGLTFInputNode.Trigger_Grip, 21},
-        {OVRGLTFInputNode.Trigger_Front, 16},
-        {OVRGLTFInputNode.ThumbStick, 0}
+    private static Dictionary<OVRGLTFInputNode, int> InputNodeKeyFrames = new Dictionary<OVRGLTFInputNode, int>
+    {
+        { OVRGLTFInputNode.Button_A_X, 5 },
+        { OVRGLTFInputNode.Button_B_Y, 8 },
+        { OVRGLTFInputNode.Button_Oculus_Menu, 24 },
+        { OVRGLTFInputNode.Trigger_Grip, 21 },
+        { OVRGLTFInputNode.Trigger_Front, 16 },
+        { OVRGLTFInputNode.ThumbStick, 0 }
     };
+
     private static List<int> ThumbStickKeyFrames = new List<int> { 29, 39, 34, 40, 31, 36, 32, 37 };
-    private static Vector2[] CardDirections = new[]{
-      new Vector2(0.0f, 0.0f), // none
-      new Vector2(0.0f, 1.0f), // N
-      new Vector2(1.0f, 1.0f), // NE
-      new Vector2(1.0f, 0.0f), // E
-      new Vector2(1.0f, -1.0f), // SE
-      new Vector2(0.0f, -1.0f), // S
-      new Vector2(-1.0f, -1.0f), // SW
-      new Vector2(-1.0f, 0.0f), // W
-      new Vector2(-1.0f, 1.0f)}; // NW
+
+    private static Vector2[] CardDirections = new[]
+    {
+        new Vector2(0.0f, 0.0f), // none
+        new Vector2(0.0f, 1.0f), // N
+        new Vector2(1.0f, 1.0f), // NE
+        new Vector2(1.0f, 0.0f), // E
+        new Vector2(1.0f, -1.0f), // SE
+        new Vector2(0.0f, -1.0f), // S
+        new Vector2(-1.0f, -1.0f), // SW
+        new Vector2(-1.0f, 0.0f), // W
+        new Vector2(-1.0f, 1.0f) // NW
+    };
 
     private enum ThumbstickDirection
     {
@@ -139,7 +144,7 @@ public class OVRGLTFAnimatinonNode
             return;
         m_inputNodeState.down = down;
 
-        if(m_translations.Count > 1)
+        if (m_translations.Count > 1)
             m_gameObj.transform.localPosition = (down ? m_translations[1] : m_translations[0]);
         if (m_rotations.Count > 1)
             m_gameObj.transform.localRotation = (down ? m_rotations[1] : m_rotations[0]);
@@ -155,6 +160,7 @@ public class OVRGLTFAnimatinonNode
             if (Math.Abs(m_inputNodeState.t - t) < deadZone)
                 return;
         }
+
         m_inputNodeState.t = t;
 
         if (m_translations.Count > 1)
@@ -184,7 +190,6 @@ public class OVRGLTFAnimatinonNode
             // mark the geo as dirty
             m_morphTargetHandler.MarkModified();
         }
-
     }
 
     public void UpdatePose(Vector2 joystick)
@@ -195,7 +200,7 @@ public class OVRGLTFAnimatinonNode
         m_inputNodeState.vecT.x = joystick.x;
         m_inputNodeState.vecT.y = joystick.y;
 
-        if(m_rotations.Count != (int)ThumbstickDirection.NorthWest + 1)
+        if (m_rotations.Count != (int)ThumbstickDirection.NorthWest + 1)
         {
             Debug.LogError("Wrong joystick animation data.");
             return;
@@ -210,10 +215,11 @@ public class OVRGLTFAnimatinonNode
             if (t != 0)
             {
                 int poseIndex = (i == 0 ? (int)dir.Item1 : (int)dir.Item2) - (int)ThumbstickDirection.North;
-                Quaternion b = m_rotations[poseIndex+1];
+                Quaternion b = m_rotations[poseIndex + 1];
                 a = Quaternion.Slerp(a, b, t);
             }
         }
+
         m_gameObj.transform.localRotation = a;
         if (m_translations.Count > 1 || m_scales.Count > 1)
             Debug.LogError("Unsupported pose.");
@@ -225,7 +231,8 @@ public class OVRGLTFAnimatinonNode
         const float deadZone = 0.005f;
         if (joystick.magnitude < deadZone)
         {
-            return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.None, ThumbstickDirection.None);
+            return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.None,
+                ThumbstickDirection.None);
         }
 
         // East half
@@ -237,12 +244,14 @@ public class OVRGLTFAnimatinonNode
                 // North-Northeast
                 if (joystick.y > joystick.x)
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.North, ThumbstickDirection.NorthEast);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.North,
+                        ThumbstickDirection.NorthEast);
                 }
                 // East-Northeast
                 else
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.NorthEast, ThumbstickDirection.East);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.NorthEast,
+                        ThumbstickDirection.East);
                 }
             }
             // Southeast quadrant
@@ -251,12 +260,14 @@ public class OVRGLTFAnimatinonNode
                 // East-Southeast
                 if (joystick.x > -joystick.y)
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.East, ThumbstickDirection.SouthEast);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.East,
+                        ThumbstickDirection.SouthEast);
                 }
                 // South-southeast
                 else
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.SouthEast, ThumbstickDirection.South);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.SouthEast,
+                        ThumbstickDirection.South);
                 }
             }
         }
@@ -269,12 +280,14 @@ public class OVRGLTFAnimatinonNode
                 // South-Southwest
                 if (joystick.x > joystick.y)
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.South, ThumbstickDirection.SouthWest);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.South,
+                        ThumbstickDirection.SouthWest);
                 }
                 // West-Southwest
                 else
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.SouthWest, ThumbstickDirection.West);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.SouthWest,
+                        ThumbstickDirection.West);
                 }
             }
             // Northwest quadrant
@@ -283,12 +296,14 @@ public class OVRGLTFAnimatinonNode
                 // West-Northwest
                 if (-joystick.x > joystick.y)
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.West, ThumbstickDirection.NorthWest);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.West,
+                        ThumbstickDirection.NorthWest);
                 }
                 // North-Northwest
                 else
                 {
-                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.NorthWest, ThumbstickDirection.North);
+                    return new Tuple<ThumbstickDirection, ThumbstickDirection>(ThumbstickDirection.NorthWest,
+                        ThumbstickDirection.North);
                 }
             }
         }
@@ -323,11 +338,12 @@ public class OVRGLTFAnimatinonNode
         return new Vector2(weight1, weight2);
     }
 
-    private void ProcessAnimationSampler(JSONNode samplerNode, int nodeId, OVRGLTFTransformType transformType, JSONNode extras)
+    private void ProcessAnimationSampler(JSONNode samplerNode, int nodeId, OVRGLTFTransformType transformType,
+        JSONNode extras)
     {
         int outputId = samplerNode["output"].AsInt;
         OVRInterpolationType interpolationId = ToOVRInterpolationType(samplerNode["interpolation"].Value);
-        if(interpolationId == OVRInterpolationType.None)
+        if (interpolationId == OVRInterpolationType.None)
         {
             Debug.LogError("Unsupported interpolation type: " + samplerNode["interpolation"].Value);
             return;
@@ -361,6 +377,7 @@ public class OVRGLTFAnimatinonNode
                 {
                     m_rotations.Add(new Quaternion(v.x, v.y, v.z, v.w));
                 }
+
                 break;
             case OVRGLTFTransformType.Scale:
                 Vector3[] scales = new Vector3[outputReader.GetDataCount()];
@@ -375,10 +392,12 @@ public class OVRGLTFAnimatinonNode
                 {
                     m_additiveWeightIndex = extras["additiveWeightIndex"].AsInt;
                 }
+
                 if (m_morphTargetHandler != null)
                 {
                     m_morphTargetHandler.Weights = new float[weights.Length / inputFloats.Length];
                 }
+
                 break;
             default:
                 Debug.LogError("Unsupported transform type: " + transformType.ToString());
@@ -450,6 +469,7 @@ public class OVRGLTFAnimatinonNode
     {
         return new Vector3(v.x, v.y, v.z);
     }
+
     private Quaternion CloneQuaternion(Quaternion q)
     {
         return new Quaternion(q.x, q.y, q.z, q.w);

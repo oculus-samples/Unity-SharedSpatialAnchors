@@ -24,6 +24,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
+using UnityEngine.Assertions.Must;
 
 namespace Oculus.Interaction.GrabAPI
 {
@@ -105,10 +106,16 @@ namespace Oculus.Interaction.GrabAPI
         private static extern int isdk_Common_GetVersion(out IntPtr versionStringPtr);
 
         [DllImport("InteractionSdk")]
-        private static extern ReturnValue isdk_FingerPinchGrabAPI_GetPinchHasGoodVisibility(int handle, out bool isGood);
+        private static extern ReturnValue isdk_FingerPinchGrabAPI_GetPinchGrabParam(int handle, PinchGrabParam paramId, out float outParam);
+
+        [DllImport("InteractionSdk")]
+        private static extern ReturnValue isdk_FingerPinchGrabAPI_SetPinchGrabParam(int handle, PinchGrabParam paramId, float param);
+
+        [DllImport("InteractionSdk")]
+        private static extern ReturnValue isdk_FingerPinchGrabAPI_IsPinchVisibilityGood(int handle, out bool outVal);
         #endregion
 
-        private int _fingerPinchGrabAPIHandle = -1;
+        private int _fingerPinchGrabApiHandle = -1;
         private HandPinchData _pinchData = new HandPinchData();
 
         private IHmd _hmd = null;
@@ -120,13 +127,34 @@ namespace Oculus.Interaction.GrabAPI
 
         private int GetHandle()
         {
-            if (_fingerPinchGrabAPIHandle == -1)
+            if (_fingerPinchGrabApiHandle == -1)
             {
-                _fingerPinchGrabAPIHandle = isdk_FingerPinchGrabAPI_Create();
-                Debug.Assert(_fingerPinchGrabAPIHandle != -1, "FingerPinchGrabAPI: isdk_FingerPinchGrabAPI_Create failed");
+                _fingerPinchGrabApiHandle = isdk_FingerPinchGrabAPI_Create();
+                Debug.Assert(_fingerPinchGrabApiHandle != -1, "FingerPinchGrabAPI: isdk_FingerPinchGrabAPI_Create failed");
             }
 
-            return _fingerPinchGrabAPIHandle;
+            return _fingerPinchGrabApiHandle;
+        }
+
+        public void SetPinchGrabParam(PinchGrabParam paramId, float paramVal)
+        {
+            ReturnValue rc = isdk_FingerPinchGrabAPI_SetPinchGrabParam(GetHandle(), paramId, paramVal);
+            Debug.Assert(rc != ReturnValue.Failure, "FingerPinchGrabAPI: isdk_FingerPinchGrabAPI_SetPinchGrabParam failed");
+        }
+
+        public float GetPinchGrabParam(PinchGrabParam paramId)
+        {
+            ReturnValue rc = isdk_FingerPinchGrabAPI_GetPinchGrabParam(GetHandle(), paramId, out float paramVal);
+            Debug.Assert(rc != ReturnValue.Failure, "FingerPinchGrabAPI: isdk_FingerPinchGrabAPI_GetPinchGrabParam failed");
+            return paramVal;
+        }
+
+        public bool GetIsPinchVisibilityGood()
+        {
+            bool b;
+            ReturnValue rc = isdk_FingerPinchGrabAPI_IsPinchVisibilityGood(GetHandle(), out b);
+            Debug.Assert(rc != ReturnValue.Failure, "FingerPinchGrabAPI: isdk_FingerPinchGrabAPI_GetIsPinchVisibilityGood failed");
+            return b;
         }
 
         public bool GetFingerIsGrabbing(HandFinger finger)

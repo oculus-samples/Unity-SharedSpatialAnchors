@@ -53,8 +53,6 @@ namespace Oculus.Interaction
         private UnityEngine.Object _movementProvider;
         private IMovementProvider MovementProvider { get; set; }
 
-        private bool _started;
-
         private static CollisionInteractionRegistry<SnapInteractor, SnapInteractable> _registry = null;
 
         #region Editor events

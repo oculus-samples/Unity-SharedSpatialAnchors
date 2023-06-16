@@ -1046,6 +1046,11 @@ namespace Meta.WitAi.Json
             set { m_Data = value; }
         }
 
+        public WitResponseData()
+        {
+            m_Data = "";
+        }
+
         public WitResponseData(string aData)
         {
             m_Data = aData;

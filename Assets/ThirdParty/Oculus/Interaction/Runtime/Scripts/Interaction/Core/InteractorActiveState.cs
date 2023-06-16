@@ -58,7 +58,12 @@ namespace Oculus.Interaction
         {
             get
             {
-                if((_property & InteractorProperty.HasCandidate) != 0
+                if (!isActiveAndEnabled)
+                {
+                    return false;
+                }
+
+                if ((_property & InteractorProperty.HasCandidate) != 0
                     && Interactor.HasCandidate)
                 {
                     return true;

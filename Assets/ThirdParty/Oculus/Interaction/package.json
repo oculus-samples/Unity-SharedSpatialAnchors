@@ -1,7 +1,7 @@
 {
   "name": "com.oculus.integration.interaction",
   "displayName": "[SDK] Oculus Interaction",
-  "version": "0.51.0",
+  "version": "0.54.0",
   "unity": "2020.3",
   "keywords": [
     "Oculus",

@@ -22,3 +22,5 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Oculus.VR.Scripts.Editor")]
 [assembly: InternalsVisibleTo("Oculus.VR.Editor")]
+[assembly: InternalsVisibleTo("com.meta.photo3d")]
+[assembly: InternalsVisibleTo("com.meta.photo3d.generator")]

@@ -39,7 +39,7 @@ namespace Common {
 
     [Serializable]
     public enum ObstacleType {
-        Couch, Desk, Door, Window
+        Couch, Desk, Door, Window, Storage, Other, Table
     }
 
     [Serializable]

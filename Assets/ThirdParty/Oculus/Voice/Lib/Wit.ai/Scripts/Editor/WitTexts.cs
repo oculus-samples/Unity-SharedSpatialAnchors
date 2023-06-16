@@ -79,6 +79,9 @@ namespace Meta.WitAi
             public string ConfigurationEndpointSpeechLabel;
             public string ConfigurationEndpointMessageLabel;
             public string ConfigurationEndpointDictationLabel;
+            public string ConfigurationEndpointSynthesizeLabel;
+            public string ConfigurationEndpointComposerEventLabel;
+            public string ConfigurationEndpointComposerConverseLabel;
             [Header("Configuration Application Texts")]
             public string ConfigurationApplicationTabLabel;
             public string ConfigurationApplicationMissingLabel;
@@ -116,6 +119,11 @@ namespace Meta.WitAi
             [Header("Configuration Voice Texts")]
             public string ConfigurationVoicesTabLabel;
             public string ConfigurationVoicesMissingLabel;
+            [Header("Configuration Composer Texts")]
+            public string ConfigurationComposerTabLabel;
+            public string ConfigurationComposerMissingLabel;
+            [Header("Tooltip Texts")]
+            public string ShowTooltipsLabel;
         }
 
         // Wit

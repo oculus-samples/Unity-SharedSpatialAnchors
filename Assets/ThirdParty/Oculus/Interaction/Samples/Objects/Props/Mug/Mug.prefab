@@ -44,10 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.077258945, y: 0.014686227, z: -0.12890124}
-    rotation: {x: -0.37154788, y: -0.50300634, z: 0.4676759, w: -0.62467283}
   _surface: {fileID: 148500702}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -70,7 +68,6 @@ MonoBehaviour:
     - {x: 0.08583551, y: 0.070158616, z: -0.040644534, w: 0.9930046}
     - {x: -0.060891397, y: 0.029407125, z: -0.28231123, w: 0.95693666}
     - {x: 0.0024471423, y: -0.04856362, z: -0.16169244, w: 0.9856425}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &148500702
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86,9 +83,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.0026399456, z: 0}
     endPoint: {x: 0, y: 0.0002505742, z: 0}
-    referencePose:
-      position: {x: 0.077258945, y: 0.014686227, z: -0.12890124}
-      rotation: {x: -0.37154788, y: -0.50300634, z: 0.4676759, w: -0.62467283}
     arcOffset: 0
     arcLength: 98.05295
   _relativeTo: {fileID: 3292654313950918604}
@@ -135,10 +129,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: -0.13036686, y: 0.0031336546, z: 0.03725183}
-    rotation: {x: -0.33989227, y: 0.7024762, z: -0.56948406, w: -0.2582409}
   _surface: {fileID: 0}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -161,7 +153,6 @@ MonoBehaviour:
     - {x: 0.08692134, y: 0.01037894, z: -0.7297541, w: 0.6780825}
     - {x: -0.08755997, y: 0.005180148, z: -0.6714896, w: 0.73580444}
     - {x: 0.0025669953, y: -0.039946485, z: -0.57106394, w: 0.8199291}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!1 &617279254
 GameObject:
   m_ObjectHideFlags: 0
@@ -360,10 +351,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.06703949, y: 0.019115984, z: -0.08795655}
-    rotation: {x: -0.37154788, y: -0.50300634, z: 0.4676759, w: -0.62467283}
   _surface: {fileID: 1415229661}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -386,7 +375,6 @@ MonoBehaviour:
     - {x: 0.08583551, y: 0.070158616, z: -0.040644534, w: 0.9930046}
     - {x: -0.058141723, y: 0.034526717, z: -0.19910502, w: 0.9776424}
     - {x: 0.0011905832, y: -0.048610564, z: -0.13614994, w: 0.98949426}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &1415229661
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -402,9 +390,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.0026399456, z: 0}
     endPoint: {x: 0, y: 0.0002505742, z: 0}
-    referencePose:
-      position: {x: 0.06703949, y: 0.019115984, z: -0.08795655}
-      rotation: {x: -0.37154788, y: -0.50300634, z: 0.4676759, w: -0.62467283}
     arcOffset: 0
     arcLength: 98.05295
   _relativeTo: {fileID: 3292654313950918604}
@@ -451,10 +436,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: -0.16962323, y: -0.012896121, z: 0.05853167}
-    rotation: {x: -0.33989227, y: 0.7024762, z: -0.56948406, w: -0.2582409}
   _surface: {fileID: 0}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -477,7 +460,6 @@ MonoBehaviour:
     - {x: 0.08692134, y: 0.01037894, z: -0.7297541, w: 0.6780825}
     - {x: -0.08755997, y: 0.005180148, z: -0.6714896, w: 0.73580444}
     - {x: 0.0025669953, y: -0.039946485, z: -0.57106394, w: 0.8199291}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!1 &1436924617
 GameObject:
   m_ObjectHideFlags: 0
@@ -522,10 +504,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.022619307, y: 0.1266284, z: -0.06768873}
-    rotation: {x: -0.17090197, y: -0.6147533, z: -0.07364766, w: -0.76645094}
   _surface: {fileID: 1436924619}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -548,7 +528,6 @@ MonoBehaviour:
     - {x: 0.09131652, y: -0.021911055, z: -0.028749302, w: 0.9951657}
     - {x: -0.059004743, y: 0.039075393, z: -0.1445988, w: 0.9869563}
     - {x: 0.0012693066, y: -0.04842007, z: -0.15971956, w: 0.9859734}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &1436924619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -564,9 +543,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.12848479, z: 0}
     endPoint: {x: 0, y: 0.12678295, z: 0}
-    referencePose:
-      position: {x: 0.022619307, y: 0.1266284, z: -0.06768873}
-      rotation: {x: -0.17090197, y: -0.6147533, z: -0.07364766, w: -0.76645094}
     arcOffset: 0
     arcLength: 360
   _relativeTo: {fileID: 3292654313950918604}
@@ -614,10 +590,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.033268154, y: 0.15809381, z: -0.09942597}
-    rotation: {x: -0.17090197, y: -0.6147533, z: -0.07364766, w: -0.76645094}
   _surface: {fileID: 1909027518}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -640,7 +614,6 @@ MonoBehaviour:
     - {x: 0.09183576, y: -0.019621307, z: -0.053619556, w: 0.99413586}
     - {x: -0.06349345, y: 0.03125714, z: -0.26889426, w: 0.9605663}
     - {x: 0.0045701563, y: -0.04822064, z: -0.22662318, w: 0.9727774}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &1909027518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -656,9 +629,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.16992265, z: 0}
     endPoint: {x: 0, y: 0.16850531, z: 0}
-    referencePose:
-      position: {x: 0.033268154, y: 0.15809381, z: -0.09942597}
-      rotation: {x: -0.17090197, y: -0.6147533, z: -0.07364766, w: -0.76645094}
     arcOffset: 0
     arcLength: 360
   _relativeTo: {fileID: 3292654313950918604}
@@ -815,10 +785,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.06703949, y: 0.019115984, z: -0.08795655}
-    rotation: {x: 0.19190107, y: 0.59718055, z: 0.7787203, w: -0.01200196}
   _surface: {fileID: 1768232641807440568}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -841,7 +809,6 @@ MonoBehaviour:
     - {x: 0.08583551, y: 0.070158616, z: -0.040644534, w: 0.9930046}
     - {x: -0.058141723, y: 0.034526717, z: -0.19910502, w: 0.9776424}
     - {x: 0.0011905832, y: -0.048610564, z: -0.13614994, w: 0.98949426}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &1768232641807440568
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -857,9 +824,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.0026399456, z: 0}
     endPoint: {x: 0, y: 0.0002505742, z: 0}
-    referencePose:
-      position: {x: 0.06703949, y: 0.019115984, z: -0.08795655}
-      rotation: {x: 0.19190107, y: 0.59718055, z: 0.7787203, w: -0.01200196}
     arcOffset: 0
     arcLength: 98.05295
   _relativeTo: {fileID: 3292654313950918604}
@@ -907,10 +871,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.033268154, y: 0.15809381, z: -0.09942597}
-    rotation: {x: 0.5317742, y: -0.015612714, z: 0.826187, w: -0.18543923}
   _surface: {fileID: 8925208856141356221}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -933,7 +895,6 @@ MonoBehaviour:
     - {x: 0.09183576, y: -0.019621307, z: -0.053619556, w: 0.99413586}
     - {x: -0.06349345, y: 0.03125714, z: -0.26889426, w: 0.9605663}
     - {x: 0.0045701563, y: -0.04822064, z: -0.22662318, w: 0.9727774}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &8925208856141356221
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -949,9 +910,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.16992265, z: 0}
     endPoint: {x: 0, y: 0.16850531, z: 0}
-    referencePose:
-      position: {x: 0.033268154, y: 0.15809381, z: -0.09942597}
-      rotation: {x: 0.5317742, y: -0.015612714, z: 0.826187, w: -0.18543923}
     arcOffset: 0
     arcLength: 360
   _relativeTo: {fileID: 3292654313950918604}
@@ -998,10 +956,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: -0.1303668, y: 0.0031336546, z: -0.03725195}
-    rotation: {x: -0.7024759, y: -0.33989283, z: -0.2582407, w: 0.5694842}
   _surface: {fileID: 0}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -1024,7 +980,6 @@ MonoBehaviour:
     - {x: 0.08692134, y: 0.01037894, z: -0.7297541, w: 0.6780825}
     - {x: -0.08755997, y: 0.005180148, z: -0.6714896, w: 0.73580444}
     - {x: 0.0025669953, y: -0.039946485, z: -0.57106394, w: 0.8199291}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!1 &2616217838685449885
 GameObject:
   m_ObjectHideFlags: 0
@@ -1069,10 +1024,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.077258945, y: 0.014686227, z: -0.12890124}
-    rotation: {x: 0.2772092, y: 0.5921521, z: 0.7525865, w: -0.07825885}
   _surface: {fileID: 8241815224510189399}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -1095,7 +1048,6 @@ MonoBehaviour:
     - {x: 0.08583551, y: 0.070158616, z: -0.040644534, w: 0.9930046}
     - {x: -0.060891397, y: 0.029407125, z: -0.28231123, w: 0.95693666}
     - {x: 0.0024471423, y: -0.04856362, z: -0.16169244, w: 0.9856425}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &8241815224510189399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1111,9 +1063,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.0026399456, z: 0}
     endPoint: {x: 0, y: 0.0002505742, z: 0}
-    referencePose:
-      position: {x: 0.077258945, y: 0.014686227, z: -0.12890124}
-      rotation: {x: 0.2772092, y: 0.5921521, z: 0.7525865, w: -0.07825885}
     arcOffset: 0
     arcLength: 98.05295
   _relativeTo: {fileID: 3292654313950918604}
@@ -1268,6 +1217,7 @@ MonoBehaviour:
   _forwardElement: {fileID: 0}
   _oneGrabTransformer: {fileID: 0}
   _twoGrabTransformer: {fileID: 0}
+  _targetTransform: {fileID: 0}
   _maxGrabPoints: -1
 --- !u!114 &71988361970829675
 MonoBehaviour:
@@ -1566,10 +1516,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.027921379, y: 0.14511824, z: -0.083550006}
-    rotation: {x: 0.53208226, y: -0.015681894, z: 0.82598853, w: -0.18543339}
   _surface: {fileID: 5797712619702108194}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -1592,7 +1540,6 @@ MonoBehaviour:
     - {x: 0.09131652, y: -0.021911055, z: -0.028749302, w: 0.9951657}
     - {x: -0.06349345, y: 0.03125714, z: -0.26889426, w: 0.9605663}
     - {x: 0.0012693066, y: -0.04842007, z: -0.15971956, w: 0.9859734}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &5797712619702108194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1608,9 +1555,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.14765477, z: 0}
     endPoint: {x: 0, y: 0.14594954, z: 0}
-    referencePose:
-      position: {x: 0.027921379, y: 0.14511824, z: -0.083550006}
-      rotation: {x: 0.53208226, y: -0.015681894, z: 0.82598853, w: -0.18543339}
     arcOffset: 0
     arcLength: 360
   _relativeTo: {fileID: 3292654313950918604}
@@ -1658,10 +1602,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.022619307, y: 0.1266284, z: -0.06768873}
-    rotation: {x: 0.532098, y: -0.015685376, z: 0.8259784, w: -0.1854331}
   _surface: {fileID: 814098393727388769}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -1684,7 +1626,6 @@ MonoBehaviour:
     - {x: 0.09131652, y: -0.021911055, z: -0.028749302, w: 0.9951657}
     - {x: -0.059004743, y: 0.039075393, z: -0.1445988, w: 0.9869563}
     - {x: 0.0012693066, y: -0.04842007, z: -0.15971956, w: 0.9859734}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &814098393727388769
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1700,9 +1641,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.12848479, z: 0}
     endPoint: {x: 0, y: 0.12678295, z: 0}
-    referencePose:
-      position: {x: 0.022619307, y: 0.1266284, z: -0.06768873}
-      rotation: {x: 0.532098, y: -0.015685376, z: 0.8259784, w: -0.1854331}
     arcOffset: 0
     arcLength: 360
   _relativeTo: {fileID: 3292654313950918604}
@@ -1750,10 +1688,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.06942189, y: 0.016891122, z: -0.109338045}
-    rotation: {x: -0.37154788, y: -0.50300634, z: 0.4676759, w: -0.62467283}
   _surface: {fileID: 7680562257950644132}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -1776,7 +1712,6 @@ MonoBehaviour:
     - {x: -0.085835524, y: -0.07015864, z: 0.04064472, w: -0.9930045}
     - {x: -0.058141697, y: 0.034526728, z: -0.19910501, w: 0.9776424}
     - {x: -0.0011905786, y: 0.048610702, z: 0.13615008, w: -0.98949426}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &7680562257950644132
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1792,9 +1727,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.0026399456, z: 0}
     endPoint: {x: 0, y: 0.0002505742, z: 0}
-    referencePose:
-      position: {x: 0.06942189, y: 0.016891122, z: -0.109338045}
-      rotation: {x: -0.37154788, y: -0.50300634, z: 0.4676759, w: -0.62467283}
     arcOffset: 0
     arcLength: 98.05295
   _relativeTo: {fileID: 3292654313950918604}
@@ -1842,10 +1774,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.06942189, y: 0.016891122, z: -0.109338045}
-    rotation: {x: 0.2577368, y: 0.5939711, z: 0.7594756, w: -0.06298392}
   _surface: {fileID: 8059287788370323394}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -1868,7 +1798,6 @@ MonoBehaviour:
     - {x: 0.08583551, y: 0.070158616, z: -0.040644534, w: 0.9930046}
     - {x: -0.058141723, y: 0.034526717, z: -0.19910502, w: 0.9776424}
     - {x: 0.0011905832, y: -0.048610564, z: -0.13614994, w: 0.98949426}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &8059287788370323394
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1884,9 +1813,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.0026399456, z: 0}
     endPoint: {x: 0, y: 0.0002505742, z: 0}
-    referencePose:
-      position: {x: 0.06942189, y: 0.016891122, z: -0.109338045}
-      rotation: {x: 0.2577368, y: 0.5939711, z: 0.7594756, w: -0.06298392}
     arcOffset: 0
     arcLength: 98.05295
   _relativeTo: {fileID: 3292654313950918604}
@@ -1933,10 +1859,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: -0.14848703, y: -0.0026984215, z: -0.047829658}
-    rotation: {x: -0.7024759, y: -0.33989283, z: -0.2582407, w: 0.5694842}
   _surface: {fileID: 0}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -1959,7 +1883,6 @@ MonoBehaviour:
     - {x: 0.08692134, y: 0.01037894, z: -0.7297541, w: 0.6780825}
     - {x: -0.08755997, y: 0.005180148, z: -0.6714896, w: 0.73580444}
     - {x: 0.0025669953, y: -0.039946485, z: -0.57106394, w: 0.8199291}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!1 &4908552677716047478
 GameObject:
   m_ObjectHideFlags: 0
@@ -2013,7 +1936,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 46b708efc26c2494fabaf1ff5099ebd5, type: 2}
+  - {fileID: 2499915719094612071, guid: 3d497e3a0ce074b3cb67c627fe6e1cc7, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2298,10 +2221,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: -0.16962318, y: -0.012896121, z: -0.05853182}
-    rotation: {x: -0.7024759, y: -0.33989283, z: -0.2582407, w: 0.5694842}
   _surface: {fileID: 0}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 0
@@ -2324,7 +2245,6 @@ MonoBehaviour:
     - {x: 0.08692134, y: 0.01037894, z: -0.7297541, w: 0.6780825}
     - {x: -0.08755997, y: 0.005180148, z: -0.6714896, w: 0.73580444}
     - {x: 0.0025669953, y: -0.039946485, z: -0.57106394, w: 0.8199291}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!1 &6258604142128770386
 GameObject:
   m_ObjectHideFlags: 0
@@ -2368,10 +2288,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: -0.14848709, y: -0.0026984215, z: 0.04782954}
-    rotation: {x: -0.33989227, y: 0.7024762, z: -0.56948406, w: -0.2582409}
   _surface: {fileID: 0}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -2394,7 +2312,6 @@ MonoBehaviour:
     - {x: 0.086921215, y: 0.01037908, z: -0.72975427, w: 0.6780824}
     - {x: -0.08755997, y: 0.0051799975, z: -0.6714899, w: 0.7358042}
     - {x: -0.002566941, y: 0.039946545, z: 0.5710638, w: -0.8199291}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!1 &6776047464822081457
 GameObject:
   m_ObjectHideFlags: 0
@@ -2439,10 +2356,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622db80eec0bd344f920b1aa056ae8d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _relativePose:
-    position: {x: 0.027921379, y: 0.14511824, z: -0.083550006}
-    rotation: {x: -0.17090197, y: -0.6147533, z: -0.07364767, w: -0.76645094}
   _surface: {fileID: 6100688651792146590}
+  _relativeTo: {fileID: 3292654313950918604}
   _usesHandPose: 1
   _handPose:
     _handedness: 1
@@ -2465,7 +2380,6 @@ MonoBehaviour:
     - {x: 0.09131653, y: -0.021911101, z: -0.028749265, w: 0.99516565}
     - {x: -0.06349331, y: 0.03125718, z: -0.2688943, w: 0.9605662}
     - {x: -0.001269158, y: 0.04842035, z: 0.15971978, w: -0.9859733}
-  _relativeTo: {fileID: 3292654313950918604}
 --- !u!114 &6100688651792146590
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2481,9 +2395,6 @@ MonoBehaviour:
   _data:
     startPoint: {x: 0, y: 0.14765477, z: 0}
     endPoint: {x: 0, y: 0.14594954, z: 0}
-    referencePose:
-      position: {x: 0.027921379, y: 0.14511824, z: -0.083550006}
-      rotation: {x: -0.17090197, y: -0.6147533, z: -0.07364767, w: -0.76645094}
     arcOffset: 0
     arcLength: 360
   _relativeTo: {fileID: 3292654313950918604}
@@ -2494,68 +2405,55 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4290674848587602671}
     m_Modifications:
-    - target: {fileID: -1653022013273449393, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: -1653022013273449393, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_audioClip
       value: 
       objectReference: {fileID: 8300000, guid: 80fbb8c0c68727f429e4d50ddadd683b, type: 3}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_RootOrder
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4674537905600659506, guid: 4c10bc37c0e8b774387330f749138159,
-        type: 3}
+    - target: {fileID: 4674537905600659506, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
       propertyPath: m_Name
       value: BasicGrabReleaseAudio
       objectReference: {fileID: 0}
@@ -2563,14 +2461,12 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
 --- !u!4 &8992536162041996576 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 4658904325700070051, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
   m_PrefabInstance: {fileID: 4353898037336870787}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &6537776504637262874 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7410389675181900697, guid: 4c10bc37c0e8b774387330f749138159,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 7410389675181900697, guid: 4c10bc37c0e8b774387330f749138159, type: 3}
   m_PrefabInstance: {fileID: 4353898037336870787}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
@@ -2586,68 +2482,55 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4290674848587602671}
     m_Modifications:
-    - target: {fileID: -1653022013273449393, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: -1653022013273449393, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_audioClip
       value: 
       objectReference: {fileID: 8300000, guid: 452cab5cd4cc31a4bbda065fe1729e0d, type: 3}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_RootOrder
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalRotation.y
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4674537905600659506, guid: b47fbfedcfef5414580d99c9115e2b8a,
-        type: 3}
+    - target: {fileID: 4674537905600659506, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
       propertyPath: m_Name
       value: BasicGrabPickupAudio
       objectReference: {fileID: 0}
@@ -2655,14 +2538,12 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
 --- !u!4 &874778287196357727 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 4658904325700070051, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
   m_PrefabInstance: {fileID: 5513557113088143100}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &3049755940984384869 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7410389675181900697, guid: b47fbfedcfef5414580d99c9115e2b8a,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 7410389675181900697, guid: b47fbfedcfef5414580d99c9115e2b8a, type: 3}
   m_PrefabInstance: {fileID: 5513557113088143100}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}

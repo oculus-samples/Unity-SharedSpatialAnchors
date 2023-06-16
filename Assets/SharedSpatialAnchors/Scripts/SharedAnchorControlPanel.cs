@@ -18,10 +18,13 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
-using Photon.Pun;
+using PhotonPun = Photon.Pun;
+using PhotonRealtime = Photon.Realtime;
 
 public class SharedAnchorControlPanel : MonoBehaviour
 {
@@ -30,15 +33,25 @@ public class SharedAnchorControlPanel : MonoBehaviour
 
     [SerializeField]
     private GameObject cubePrefab;
+    [SerializeField]
+    private GameObject roomLayoutPanelRowPrefab;
 
     [SerializeField]
     private Transform spawnPoint;
 
     [SerializeField]
-    private Color grayColor;
+    protected GameObject menuPanel;
 
     [SerializeField]
-    private Color greenColor;
+    protected GameObject lobbyPanel;
+
+    [SerializeField]
+    private GameObject roomLayoutPanel;
+    [SerializeField]
+    private Button createRoomButton;
+
+    [SerializeField]
+    private Button joinRoomButton;
 
     [SerializeField]
     private Image anchorIcon;
@@ -55,9 +68,11 @@ public class SharedAnchorControlPanel : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI roomText;
 
+    List<GameObject> lobbyRowList = new List<GameObject>();
+
     public TextMeshProUGUI RoomText
     {
-        get {  return roomText; }
+        get { return roomText; }
     }
 
     [SerializeField]
@@ -75,15 +90,16 @@ public class SharedAnchorControlPanel : MonoBehaviour
         transform.parent = referencePoint;
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
-        if(renderStyleText != null)
+        if (renderStyleText != null)
         {
             renderStyleText.text = "Render: " + CoLocatedPassthroughManager.Instance.visualization.ToString();
         }
+        ToggleRoomButtons(false);
     }
 
     private void Update()
     {
-        statusText.text = "Status: " + PhotonNetwork.NetworkClientState;
+        statusText.text = "Status: " + PhotonPun.PhotonNetwork.NetworkClientState;
     }
 
     public void OnCreateModeButtonPressed()
@@ -93,13 +109,13 @@ public class SharedAnchorControlPanel : MonoBehaviour
         if (!_isCreateMode)
         {
             SampleController.Instance.StartPlacementMode();
-            anchorIcon.color = greenColor;
+            anchorIcon.color = Color.green;
             _isCreateMode = true;
         }
         else
         {
             SampleController.Instance.EndPlacementMode();
-            anchorIcon.color = grayColor;
+            anchorIcon.color = Color.white;
             _isCreateMode = false;
         }
     }
@@ -108,9 +124,12 @@ public class SharedAnchorControlPanel : MonoBehaviour
     {
         SampleController.Instance.Log("OnLoadAnchorsButtonPressed");
 
-        if (SampleController.Instance.cachedAnchorSample) {
+        if (SampleController.Instance.cachedAnchorSample)
+        {
             SharedAnchorLoader.Instance.LoadLastUsedCachedAnchor();
-        } else {
+        }
+        else
+        {
             SharedAnchorLoader.Instance.LoadLocalAnchors();
         }
     }
@@ -146,7 +165,7 @@ public class SharedAnchorControlPanel : MonoBehaviour
 
     private void SpawnCube()
     {
-        var networkedCube = PhotonNetwork.Instantiate(cubePrefab.name, spawnPoint.position, spawnPoint.rotation);
+        var networkedCube = PhotonPun.PhotonNetwork.Instantiate(cubePrefab.name, spawnPoint.position, spawnPoint.rotation);
         var photonGrabbable = networkedCube.GetComponent<PhotonGrabbableObject>();
         photonGrabbable.TransferOwnershipToLocalPlayer();
     }
@@ -157,6 +176,68 @@ public class SharedAnchorControlPanel : MonoBehaviour
         if (renderStyleText)
         {
             renderStyleText.text = "Render: " + CoLocatedPassthroughManager.Instance.visualization.ToString();
+        }
+    }
+
+    public void DisplayMenuPanel()
+    {
+        menuPanel.SetActive(true);
+        lobbyPanel.SetActive(false);
+    }
+
+    public void DisplayLobbyPanel()
+    {
+        lobbyPanel.SetActive(true);
+        menuPanel.SetActive(false);
+    }
+
+    public void ToggleRoomLayoutPanel(bool active)
+    {
+        roomLayoutPanel.SetActive(active);
+    }
+
+    public void ToggleRoomButtons(bool active)
+    {
+        if (createRoomButton)
+            createRoomButton.interactable = active;
+
+        if (joinRoomButton)
+            joinRoomButton.interactable = active;
+    }
+
+    public void SetRoomList(List<PhotonRealtime.RoomInfo> roomList)
+    {
+        foreach (Transform roomTransform in roomLayoutPanel.transform)
+        {
+            if (roomTransform.gameObject != roomLayoutPanelRowPrefab)
+                GameObject.Destroy(roomTransform.gameObject);
+        }
+        lobbyRowList.Clear();
+
+        if (roomList.Count > 0)
+        {
+            for (int i = 0; i < roomList.Count; i++)
+            {
+                if (roomList[i].PlayerCount == 0)
+                    continue;
+
+                GameObject newLobbyRow = GameObject.Instantiate(roomLayoutPanelRowPrefab, roomLayoutPanel.transform);
+                newLobbyRow.SetActive(true);
+                newLobbyRow.GetComponentInChildren<TextMeshProUGUI>().text = roomList[i].Name;
+                lobbyRowList.Add(newLobbyRow);
+            }
+        }
+    }
+
+    public void OnReturnToMenuButtonPressed()
+    {
+        if (PhotonPun.PhotonNetwork.IsConnected)
+        {
+            PhotonPun.PhotonNetwork.Disconnect();
+        }
+        else
+        {
+            SceneManager.LoadScene(0);
         }
     }
 }

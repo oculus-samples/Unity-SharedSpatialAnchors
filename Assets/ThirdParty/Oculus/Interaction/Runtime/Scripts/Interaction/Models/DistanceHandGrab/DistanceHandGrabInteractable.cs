@@ -36,7 +36,7 @@ namespace Oculus.Interaction.HandGrab
     /// </summary>
     [Serializable]
     public class DistanceHandGrabInteractable : PointerInteractable<DistanceHandGrabInteractor, DistanceHandGrabInteractable>,
-        IRigidbodyRef, IHandGrabbable, IRelativeToRef, ICollidersRef
+        IHandGrabInteractable, IRigidbodyRef, ICollidersRef
     {
         [SerializeField]
         private Rigidbody _rigidbody;
@@ -174,7 +174,7 @@ namespace Oculus.Interaction.HandGrab
             _physicsGrabbable.ApplyVelocities(linearVelocity, angularVelocity);
         }
 
-        public bool CalculateBestPose(in Pose userPose, float handScale, Handedness handedness,
+        public bool CalculateBestPose(Pose userPose, float handScale, Handedness handedness,
             ref HandGrabResult result)
         {
             GrabPoseFinder.FindResult findResult = _grabPoseFinder.FindBestPose(userPose,
@@ -189,10 +189,7 @@ namespace Oculus.Interaction.HandGrab
             return findResult != GrabPoseFinder.FindResult.NotCompatible;
         }
 
-        public bool UsesHandPose()
-        {
-            return _grabPoseFinder.UsesHandPose();
-        }
+        public bool UsesHandPose => _grabPoseFinder.UsesHandPose;
 
         public bool SupportsHandedness(Handedness handedness)
         {

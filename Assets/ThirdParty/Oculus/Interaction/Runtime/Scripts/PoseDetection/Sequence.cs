@@ -249,6 +249,9 @@ namespace Oculus.Interaction.PoseDetection
             // In case there is no RemainActiveWhile condition, start the cooldown
             // timer
             _cooldownExceededTime = time + _remainActiveCooldown;
+
+            // Activate native component
+            NativeMethods.isdk_NativeComponent_Activate(0x5365717565446574);
         }
 
         private void ResetState()

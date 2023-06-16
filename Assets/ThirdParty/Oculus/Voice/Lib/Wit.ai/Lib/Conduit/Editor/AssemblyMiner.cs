@@ -280,7 +280,7 @@ namespace Meta.Conduit.Editor
                 {
                     continue;
                 }
-
+                
                 var parameters = new List<ManifestParameter>();
 
                 var action = new ManifestErrorHandler()
@@ -288,6 +288,7 @@ namespace Meta.Conduit.Editor
                     ID = $"{method.DeclaringType.FullName}.{method.Name}",
                     // Name = actionName,
                     Assembly = assembly.FullName,
+                    Name = method.Name
                 };
 
                 var compatibleParameters = true;
@@ -301,17 +302,17 @@ namespace Meta.Conduit.Editor
                 var methodParameters = method.GetParameters();
                 if (methodParameters.Length < 2)
                 {
-                    VLog.E("Not enough parameters provided");
+                    VLog.E("Not enough parameters provided for error handler " + method.Name);
                     continue;
                 }
                 if (methodParameters[0].ParameterType != typeof(string))
                 {
-                    VLog.E("First parameter must be a string");
+                    VLog.E("First parameter must be a string for error handler " + method.Name);
                     continue;
                 }
                 if (methodParameters[1].ParameterType != typeof(Exception))
                 {
-                    VLog.E("Second parameter must be an exception");
+                    VLog.E("Second parameter must be an exception for error handler " + method.Name);
                     continue;
                 }
                 
@@ -352,7 +353,7 @@ namespace Meta.Conduit.Editor
 
         public List<ManifestErrorHandler> ExtractErrorHandlers(IConduitAssembly assembly)
         {
-            return ExtractErrorHandlersInternal(typeof(OnConduitFailedParameterResolutionAttribute), assembly);
+            return ExtractErrorHandlersInternal(typeof(HandleEntityResolutionFailureAttribute), assembly);
         }
 
         /// <summary>

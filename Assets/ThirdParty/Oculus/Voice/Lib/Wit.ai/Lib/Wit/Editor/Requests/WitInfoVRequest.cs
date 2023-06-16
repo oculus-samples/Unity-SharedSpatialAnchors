@@ -6,7 +6,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using UnityEngine;
 using Meta.WitAi.Json;
 using Meta.WitAi.Data.Info;
@@ -16,7 +19,7 @@ namespace Meta.WitAi.Requests
     internal class WitInfoVRequest : WitVRequest, IWitInfoVRequest
     {
         // Constructor
-        public WitInfoVRequest(IWitRequestConfiguration configuration, bool useServerToken = true) : base(configuration, useServerToken) {}
+        public WitInfoVRequest(IWitRequestConfiguration configuration, bool useServerToken = true) : base(configuration, null, useServerToken) {}
 
         // Get all apps & return the current app info
         public bool RequestAppId(RequestCompleteDelegate<string> onComplete,
@@ -25,7 +28,7 @@ namespace Meta.WitAi.Requests
             Dictionary<string, string> uriParameters = new Dictionary<string, string>();
             uriParameters[WitEditorConstants.ENDPOINT_APPS_LIMIT] = 10000.ToString();
             uriParameters[WitEditorConstants.ENDPOINT_APPS_OFFSET] = 0.ToString();
-            return RequestWit<WitResponseNode>(WitEditorConstants.ENDPOINT_APPS, uriParameters, (results, error) =>
+            return RequestWitGet<WitResponseNode>(WitEditorConstants.ENDPOINT_APPS, uriParameters, (results, error) =>
             {
                 if (string.IsNullOrEmpty(error) && results != null)
                 {
@@ -56,7 +59,7 @@ namespace Meta.WitAi.Requests
             Dictionary<string, string> uriParameters = new Dictionary<string, string>();
             uriParameters[WitEditorConstants.ENDPOINT_APPS_LIMIT] = Mathf.Max(limit, 1).ToString();
             uriParameters[WitEditorConstants.ENDPOINT_APPS_OFFSET] = Mathf.Max(offset, 0).ToString();
-            return RequestWit<WitAppInfo[]>(WitEditorConstants.ENDPOINT_APPS, uriParameters, onComplete, onProgress);
+            return RequestWitGet<WitAppInfo[]>(WitEditorConstants.ENDPOINT_APPS, uriParameters, onComplete, onProgress);
         }
 
         // Get app info request
@@ -64,8 +67,38 @@ namespace Meta.WitAi.Requests
             RequestCompleteDelegate<WitAppInfo> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitAppInfo>($"{WitEditorConstants.ENDPOINT_APPS}/{applicationId}", null,
+            return RequestWitGet<WitAppInfo>($"{WitEditorConstants.ENDPOINT_APPS}/{applicationId}", null,
                 onComplete, onProgress);
+        }
+
+        // Get the export url to download
+        public bool RequestAppExportInfo(string applicationId,
+            RequestCompleteDelegate<WitExportInfo> onComplete,
+            RequestProgressDelegate onProgress = null)
+        {
+            return RequestWitGet<WitExportInfo>(WitEditorConstants.ENDPOINT_EXPORT, null,
+                onComplete, onProgress);
+        }
+        // Download the export zip from provided url
+        public bool RequestAppExportZip(string downloadUri,
+            RequestCompleteDelegate<ZipArchive> onComplete,
+            RequestProgressDelegate onProgress = null)
+        {
+            var uri = new Uri(downloadUri);
+            var request = new VRequest();
+            request.RequestFile(uri, (result,error) =>
+            {
+                try
+                {
+                    var zip = new ZipArchive(new MemoryStream(result));
+                    onComplete(zip, null);
+                }
+                catch (Exception e)
+                {
+                    onComplete(null, e.ToString());
+                }
+            }, null);
+            return true;
         }
 
         // Obtain client app token
@@ -73,8 +106,12 @@ namespace Meta.WitAi.Requests
             RequestCompleteDelegate<string> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitResponseNode>($"{WitEditorConstants.ENDPOINT_APPS}/{applicationId}/{WitEditorConstants.ENDPOINT_CLIENTTOKENS}",
-                null, "{\"refresh\":false}",
+            var jsonNode = new WitResponseClass()
+            {
+                { "refresh", "false" }
+            };
+            return RequestWitPost<WitResponseNode>($"{WitEditorConstants.ENDPOINT_APPS}/{applicationId}/{WitEditorConstants.ENDPOINT_CLIENTTOKENS}",
+                null, jsonNode.ToString(),
                 (results, error) =>
                 {
                     if (string.IsNullOrEmpty(error))
@@ -96,7 +133,7 @@ namespace Meta.WitAi.Requests
         public bool RequestIntentList(RequestCompleteDelegate<WitIntentInfo[]> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitIntentInfo[]>(WitEditorConstants.ENDPOINT_INTENTS, null,
+            return RequestWitGet<WitIntentInfo[]>(WitEditorConstants.ENDPOINT_INTENTS, null,
                 onComplete, onProgress);
         }
 
@@ -105,7 +142,7 @@ namespace Meta.WitAi.Requests
             RequestCompleteDelegate<WitIntentInfo> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitIntentInfo>($"{WitEditorConstants.ENDPOINT_INTENTS}/{intentId}", null,
+            return RequestWitGet<WitIntentInfo>($"{WitEditorConstants.ENDPOINT_INTENTS}/{intentId}", null,
                 onComplete, onProgress);
         }
 
@@ -113,7 +150,7 @@ namespace Meta.WitAi.Requests
         public bool RequestEntityList(RequestCompleteDelegate<WitEntityInfo[]> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitEntityInfo[]>(WitEditorConstants.ENDPOINT_ENTITIES, null,
+            return RequestWitGet<WitEntityInfo[]>(WitEditorConstants.ENDPOINT_ENTITIES, null,
                 onComplete, onProgress);
         }
 
@@ -122,7 +159,7 @@ namespace Meta.WitAi.Requests
             RequestCompleteDelegate<WitEntityInfo> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitEntityInfo>($"{WitEditorConstants.ENDPOINT_ENTITIES}/{entityId}", null, onComplete,
+            return RequestWitGet<WitEntityInfo>($"{WitEditorConstants.ENDPOINT_ENTITIES}/{entityId}", null, onComplete,
                 onProgress);
         }
 
@@ -130,7 +167,7 @@ namespace Meta.WitAi.Requests
         public bool RequestTraitList(RequestCompleteDelegate<WitTraitInfo[]> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitTraitInfo[]>(WitEditorConstants.ENDPOINT_TRAITS, null, onComplete,
+            return RequestWitGet<WitTraitInfo[]>(WitEditorConstants.ENDPOINT_TRAITS, null, onComplete,
                 onProgress);
         }
 
@@ -139,7 +176,7 @@ namespace Meta.WitAi.Requests
             RequestCompleteDelegate<WitTraitInfo> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<WitTraitInfo>($"{WitEditorConstants.ENDPOINT_TRAITS}/{traitId}", null,
+            return RequestWitGet<WitTraitInfo>($"{WitEditorConstants.ENDPOINT_TRAITS}/{traitId}", null,
                 onComplete, onProgress);
         }
 
@@ -147,7 +184,7 @@ namespace Meta.WitAi.Requests
         public bool RequestVoiceList(RequestCompleteDelegate<Dictionary<string, WitVoiceInfo[]>> onComplete,
             RequestProgressDelegate onProgress = null)
         {
-            return RequestWit<Dictionary<string, WitVoiceInfo[]>>(WitEditorConstants.ENDPOINT_TTS_VOICES, null, onComplete,
+            return RequestWitGet<Dictionary<string, WitVoiceInfo[]>>(WitEditorConstants.ENDPOINT_TTS_VOICES, null, onComplete,
                 onProgress);
         }
     }

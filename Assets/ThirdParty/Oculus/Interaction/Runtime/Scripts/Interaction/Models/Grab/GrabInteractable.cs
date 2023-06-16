@@ -89,17 +89,17 @@ namespace Oculus.Interaction
         protected override void Awake()
         {
             base.Awake();
-            if (_grabRegistry == null)
-            {
-                _grabRegistry = new CollisionInteractionRegistry<GrabInteractor, GrabInteractable>();
-                SetRegistry(_grabRegistry);
-            }
         }
 
         protected override void Start()
         {
             this.BeginStart(ref _started, () => base.Start());
             this.AssertField(Rigidbody, nameof(Rigidbody));
+            if (_grabRegistry == null)
+            {
+                _grabRegistry = new CollisionInteractionRegistry<GrabInteractor, GrabInteractable>();
+                SetRegistry(_grabRegistry);
+            }
             _colliders = Rigidbody.GetComponentsInChildren<Collider>();
             this.AssertCollectionField(_colliders, nameof(_colliders),
                $"The associated {AssertUtils.Nicify(nameof(Rigidbody))} must have at least one Collider.");

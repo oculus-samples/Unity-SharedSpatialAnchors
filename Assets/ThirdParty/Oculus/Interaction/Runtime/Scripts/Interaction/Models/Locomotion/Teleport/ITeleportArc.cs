@@ -18,31 +18,12 @@
  * limitations under the License.
  */
 
-using UnityEngine;
+using System;
 
-namespace Oculus.Interaction.Locomotion
+namespace Oculus.Interaction.Deprecated
 {
-    /// <summary>
-    /// Defines an arc in 3D space as a series of straight segments
-    /// </summary>
+    [Obsolete ("Replaced by IPolyline")]
     public interface ITeleportArc
     {
-        /// <summary>
-        /// Max distance in the Y plane this arc can reach
-        /// </summary>
-        float MaxDistance { get; set; }
-        /// <summary>
-        /// Max number of points that define the arc
-        /// </summary>
-        int ArcPointsCount { get; }
-
-        /// <summary>
-        /// Calculates the position N vertex of the arc
-        /// </summary>
-        /// <param name="origin">The origin of the arc,
-        /// the position defines the start point and forward establishes the direction</param>
-        /// <param name="index">The N vertex of the arc been queried.</param>
-        /// <returns>The position of the arc at the index-th point</returns>
-        Vector3 PointAtIndex(Pose origin, int index);
     }
 }

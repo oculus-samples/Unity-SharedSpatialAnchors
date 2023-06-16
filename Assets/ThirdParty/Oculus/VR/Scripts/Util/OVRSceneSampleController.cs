@@ -59,11 +59,12 @@ public class OVRSceneSampleController : MonoBehaviour
     // of the menu RenderTarget
     OVRGridCube gridCube = null;
 
-#if	SHOW_DK2_VARIABLES
-	private string strVisionMode = "Vision Enabled: ON";
+#if SHOW_DK2_VARIABLES
+    private string strVisionMode = "Vision Enabled: ON";
 #endif
 
     #region MonoBehaviour Message Handlers
+
     /// <summary>
     /// Awake this instance.
     /// </summary>
@@ -112,8 +113,8 @@ public class OVRSceneSampleController : MonoBehaviour
         // Make sure to hide cursor
         if (Application.isEditor == false)
         {
-			Cursor.visible = false;
-			Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
         }
 
         // CameraController updates
@@ -141,14 +142,14 @@ public class OVRSceneSampleController : MonoBehaviour
         if (playerController != null)
             UpdateSpeedAndRotationScaleMultiplier();
 
-		//todo: enable for Unity Input System
+        //todo: enable for Unity Input System
 #if ENABLE_LEGACY_INPUT_MANAGER
-		// Toggle Fullscreen
-		if (Input.GetKeyDown(KeyCode.F11))
+        // Toggle Fullscreen
+        if (Input.GetKeyDown(KeyCode.F11))
             Screen.fullScreen = !Screen.fullScreen;
 
         if (Input.GetKeyDown(KeyCode.M))
-			UnityEngine.XR.XRSettings.showDeviceView = !UnityEngine.XR.XRSettings.showDeviceView;
+            UnityEngine.XR.XRSettings.showDeviceView = !UnityEngine.XR.XRSettings.showDeviceView;
 
 #if !UNITY_ANDROID || UNITY_EDITOR
         // Escape Application
@@ -157,16 +158,17 @@ public class OVRSceneSampleController : MonoBehaviour
 #endif
 #endif
     }
-#endregion
+
+    #endregion
 
     /// <summary>
     /// Updates the vision mode.
     /// </summary>
     void UpdateVisionMode()
     {
-		//todo: enable for Unity Input System
+        //todo: enable for Unity Input System
 #if ENABLE_LEGACY_INPUT_MANAGER
-		if (Input.GetKeyDown(KeyCode.F2))
+        if (Input.GetKeyDown(KeyCode.F2))
         {
             visionMode ^= visionMode;
             OVRManager.tracker.isEnabled = visionMode;
@@ -182,9 +184,9 @@ public class OVRSceneSampleController : MonoBehaviour
         float moveScaleMultiplier = 0.0f;
         playerController.GetMoveScaleMultiplier(ref moveScaleMultiplier);
 
-		//todo: enable for Unity Input System
+        //todo: enable for Unity Input System
 #if ENABLE_LEGACY_INPUT_MANAGER
-		if (Input.GetKeyDown(KeyCode.Alpha7))
+        if (Input.GetKeyDown(KeyCode.Alpha7))
         {
             moveScaleMultiplier -= speedRotationIncrement;
         }
@@ -199,9 +201,9 @@ public class OVRSceneSampleController : MonoBehaviour
         float rotationScaleMultiplier = 0.0f;
         playerController.GetRotationScaleMultiplier(ref rotationScaleMultiplier);
 
-		//todo: enable for Unity Input System
+        //todo: enable for Unity Input System
 #if ENABLE_LEGACY_INPUT_MANAGER
-		if (Input.GetKeyDown(KeyCode.Alpha9))
+        if (Input.GetKeyDown(KeyCode.Alpha9))
         {
             rotationScaleMultiplier -= speedRotationIncrement;
         }
@@ -219,9 +221,9 @@ public class OVRSceneSampleController : MonoBehaviour
     /// </summary>
     void UpdateRecenterPose()
     {
-		//todo: enable for Unity Input System
+        //todo: enable for Unity Input System
 #if ENABLE_LEGACY_INPUT_MANAGER
-		if (Input.GetKeyDown(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.R))
             OVRManager.display.RecenterPose();
 #endif
     }

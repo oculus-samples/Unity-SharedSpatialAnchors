@@ -66,6 +66,13 @@ namespace Meta.WitAi.TTS.Integrations
         /// </summary>
         public TTSClipData[] GetClips() => _clips.Values.ToArray();
 
+        // Remove all
+        protected virtual void OnDestroy()
+        {
+            _clips.Clear();
+            _clipOrder.Clear();
+        }
+
         /// <summary>
         /// Getter for a clip that also moves clip to the back of the queue
         /// </summary>

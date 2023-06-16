@@ -38,7 +38,7 @@ namespace Meta.WitAi.Windows
         protected virtual void OnGUI()
         {
             Vector2 size;
-            WitEditorUI.LayoutWindow(titleContent.text, HeaderIcon, HeaderUrl, DocsUrl, LayoutContent, ref ScrollOffset, out size);
+            WitEditorUI.LayoutWindow(Title.text, HeaderIcon, HeaderUrl, DocsUrl, LayoutContent, ref ScrollOffset, out size);
         }
         // Draw content of window
         protected abstract void LayoutContent();

@@ -159,7 +159,7 @@ public class SharedAnchor : MonoBehaviour
     }
 
     private bool IsReadyToShare()
-    {        
+    {
         if (!Photon.Pun.PhotonNetwork.IsConnected)
         {
             SampleController.Instance.Log("Can't share - no users to share with because you are no longer connected to the Photon network");
@@ -191,11 +191,15 @@ public class SharedAnchor : MonoBehaviour
         }
 
         IsSelectedForShare = true;
+        SaveToCloudThenShare();
+    }
 
+    private void SaveToCloudThenShare()
+    {
         OVRSpatialAnchor.SaveOptions saveOptions;
         saveOptions.Storage = OVRSpace.StorageLocation.Cloud;
         _spatialAnchor.Save(saveOptions, (spatialAnchor, isSuccessful) =>
-        {            
+        {
             if (isSuccessful)
             {
                 SampleController.Instance.Log("Successfully saved anchor(s) to the cloud");
@@ -213,7 +217,8 @@ public class SharedAnchor : MonoBehaviour
             }
             else
             {
-                SampleController.Instance.Log("Saving anchor(s) failed. Possible reasons include an unsupported device.");               
+                SampleController.Instance.Log("Saving anchor(s) failed. Retrying...");
+                SaveToCloudThenShare();
             }
         });
     }

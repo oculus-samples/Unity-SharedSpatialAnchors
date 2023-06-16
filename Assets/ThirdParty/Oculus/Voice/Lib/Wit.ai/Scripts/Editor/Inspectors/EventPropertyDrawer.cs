@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 
@@ -28,32 +29,70 @@ namespace Meta.WitAi.Events.Editor
 
         private int propertyOffset;
 
-        private static Dictionary<string, List<string>> eventCategories;
+        private static Dictionary<string, string[]> _eventCategories;
+
+        public virtual string DocumentationUrl => string.Empty;
+        public virtual string DocumentationTooltip => string.Empty;
+
+        private const BindingFlags FLAGS = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         private void InitializeEventCategories(Type eventsType)
         {
-            EventCategoryAttribute[] eventCategoryAttributes;
-
-            eventCategories = new Dictionary<string, List<string>>();
-
-            foreach (var field in eventsType.GetFields())
+            // Get all category events in type & base type
+            Dictionary<string, List<string>> categoryLists = new Dictionary<string, List<string>>();
+            foreach (var field in eventsType.GetFields(FLAGS))
             {
-                eventCategoryAttributes = field.GetCustomAttributes(
-                    typeof(EventCategoryAttribute), false) as EventCategoryAttribute[];
-
-                if (eventCategoryAttributes != null && eventCategoryAttributes.Length != 0)
-                {
-                    foreach (var eventCategory in eventCategoryAttributes)
-                    {
-                        if (!eventCategories.TryGetValue(eventCategory.Category, out var categories))
-                        {
-                            eventCategories[eventCategory.Category] = new List<string>();
-                        }
-
-                        eventCategories[eventCategory.Category].Add(field.Name);
-                    }
-                }
+                AddCustomField(field, categoryLists);
             }
+            foreach (var baseField in eventsType.BaseType.GetFields(FLAGS))
+            {
+                AddCustomField(baseField, categoryLists);
+            }
+
+            // Apply
+            _eventCategories = new Dictionary<string, string[]>();
+            foreach (var category in categoryLists.Keys)
+            {
+                _eventCategories[category] = categoryLists[category].ToArray();
+            }
+        }
+        private void AddCustomField(FieldInfo field, Dictionary<string, List<string>> categoryLists)
+        {
+            if (!ShouldShowField(field))
+            {
+                return;
+            }
+            EventCategoryAttribute[] attributes = field.GetCustomAttributes(
+                typeof(EventCategoryAttribute), false) as EventCategoryAttribute[];
+            if (attributes == null || attributes.Length == 0)
+            {
+                return;
+            }
+            foreach (var eventCategory in attributes)
+            {
+                List<string> values = categoryLists.ContainsKey(eventCategory.Category) ? categoryLists[eventCategory.Category] : new List<string>();
+                if (!values.Contains(field.Name))
+                {
+                    values.Add(field.Name);
+                }
+                categoryLists[eventCategory.Category] = values;
+            }
+        }
+        private bool ShouldShowField(FieldInfo field)
+        {
+            if (field.IsStatic)
+            {
+                return false;
+            }
+            if (!field.IsPublic && !Attribute.IsDefined(field, typeof(SerializeField)))
+            {
+                return false;
+            }
+            if (Attribute.IsDefined(field, typeof(HideInInspector)))
+            {
+                return false;
+            }
+            return Attribute.IsDefined(field, typeof(EventCategoryAttribute));
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -98,14 +137,36 @@ namespace Meta.WitAi.Events.Editor
         {
             showEvents = EditorGUI.Foldout(new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight), showEvents, "Events");
 
+            string url = DocumentationUrl;
+            if (!string.IsNullOrEmpty(url))
+            {
+                Texture texture = WitStyles.HelpIcon.image;
+                if (texture != null)
+                {
+                    // Add a ? button
+                    Vector2 textureSize = WitStyles.IconButton.CalcSize(WitStyles.HelpIcon);
+                    Rect buttonRect = new Rect(position.x + position.width - textureSize.x, position.y, textureSize.x, textureSize.y);
+                    if (GUI.Button(buttonRect,
+                        new GUIContent(WitStyles.HelpIcon.image, DocumentationTooltip), WitStyles.IconButton))
+                    {
+                        Application.OpenURL(url);
+                    }
+                    // Add a tooltip
+                    if (!string.IsNullOrEmpty(DocumentationTooltip))
+                    {
+                        GUI.Label(buttonRect, GUI.tooltip);
+                    }
+                }
+            }
+
             if (showEvents && Selection.activeTransform)
             {
-                if (eventCategories == null)
+                if (_eventCategories == null)
                     InitializeEventCategories(fieldInfo.FieldType);
 
                 var eventObject = fieldInfo.GetValue(property.serializedObject.targetObject) as EventRegistry;
 
-                var eventCategoriesKeyArray = eventCategories.Keys.ToArray();
+                var eventCategoriesKeyArray = _eventCategories.Keys.ToArray();
 
                 EditorGUI.indentLevel++;
 
@@ -118,7 +179,7 @@ namespace Meta.WitAi.Events.Editor
 
                 if (selectedCategoryIndex != UNSELECTED)
                 {
-                    var eventsArray = eventCategories[eventCategoriesKeyArray[selectedCategoryIndex]].ToArray();
+                    var eventsArray = _eventCategories[eventCategoriesKeyArray[selectedCategoryIndex]];
 
                     if (selectedEventIndex >= eventsArray.Length)
                         selectedEventIndex = 0;
@@ -140,7 +201,7 @@ namespace Meta.WitAi.Events.Editor
 
                     if (GUI.Button(selectedEventButtonPosition, "Add"))
                     {
-                        var eventName = eventCategories[eventCategoriesKeyArray[selectedCategoryIndex]][
+                        var eventName = _eventCategories[eventCategoriesKeyArray[selectedCategoryIndex]][
                             selectedEventIndex];
 
                         if (eventObject != null && selectedEventIndex != UNSELECTED &&

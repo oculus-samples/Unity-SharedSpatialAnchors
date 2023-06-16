@@ -8,8 +8,11 @@ public class CustomDebugUI : MonoBehaviour
 {
     [SerializeField]
     private RectTransform textPrefab = null;
+
     public static CustomDebugUI instance;
-    const System.Reflection.BindingFlags privateFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+
+    const System.Reflection.BindingFlags privateFlags =
+        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
 
     void Awake()
     {
@@ -25,7 +28,6 @@ public class CustomDebugUI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
     }
 
     public RectTransform AddTextField(string label, int targetCanvas = 0)
@@ -37,7 +39,7 @@ public class CustomDebugUI : MonoBehaviour
         DebugUIBuilder ui = DebugUIBuilder.instance;
         var addRect = typeof(DebugUIBuilder).GetMethod("AddRect", privateFlags);
         addRect.Invoke(ui, new object[] { textRT, targetCanvas });
-        
+
         return textRT;
     }
 
@@ -47,7 +49,7 @@ public class CustomDebugUI : MonoBehaviour
         var field = typeof(DebugUIBuilder).GetField("insertedElements", privateFlags);
         var relayout = typeof(DebugUIBuilder).GetMethod("Relayout", privateFlags);
         List<RectTransform>[] elements = (List<RectTransform>[])field.GetValue(ui);
-        if(targetCanvas > -1 && targetCanvas < elements.Length-1)
+        if (targetCanvas > -1 && targetCanvas < elements.Length - 1)
         {
             elements[targetCanvas].Remove(element);
             element.SetParent(null);

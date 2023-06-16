@@ -51,6 +51,9 @@
   "ConfigurationEndpointSpeechLabel": "Speech",
   "ConfigurationEndpointMessageLabel": "Message",
   "ConfigurationEndpointDictationLabel": "Dictation",
+  "ConfigurationEndpointSynthesizeLabel": "TTS",
+  "ConfigurationEndpointComposerEventLabel": "Composer Event",
+  "ConfigurationEndpointComposerConverseLabel": "Composer Speech",
   "ConfigurationApplicationTabLabel": "Application",
   "ConfigurationApplicationMissingLabel": "Loading Application Data",
   "ConfigurationApplicationNameLabel": "Name",
@@ -78,5 +81,8 @@
   "ConfigurationTraitsIdLabel": "Trait ID",
   "ConfigurationTraitsValuesLabel": "Values",
   "ConfigurationVoicesTabLabel": "Voices",
-  "ConfigurationVoicesMissingLabel": "No TTS voices found."
+  "ConfigurationVoicesMissingLabel": "No TTS voices found.",
+  "ConfigurationComposerTabLabel": "Composer",
+  "ConfigurationComposerMissingLabel": "No Composer graphs found.",
+  "ShowTooltipsLabel": "Show Tooltips"
 }

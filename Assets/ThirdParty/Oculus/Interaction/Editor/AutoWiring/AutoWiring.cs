@@ -57,6 +57,11 @@ namespace Oculus.Interaction.Editor
             _configs.Add(type, fieldConfigs);
         }
 
+        public static void Unregister(Type type)
+        {
+            _configs.Remove(type);
+        }
+
         public static bool AutoWireField(MonoBehaviour monoBehaviour,
             string fieldName,
             FieldWiringStrategy[] wiringMethods)

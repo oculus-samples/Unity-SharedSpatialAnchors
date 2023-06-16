@@ -39,7 +39,7 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
     private SharedAnchorControlPanel controlPanel;
 
     [SerializeField]
-    private PhotonLobbyPanel lobbyPanel;
+    private bool usePhotonMatchmaking = true;
 
     public static PhotonAnchorManager Instance;
 
@@ -59,6 +59,7 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
     private Guid _fakeUuid;
 
     private readonly HashSet<string> _usernameList = new HashSet<string>();
+    private List<GameObject> lobbyRowList = new List<GameObject>();
 
     #region [Monobehaviour Methods]
 
@@ -76,9 +77,9 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
     private void Start()
     {
-        SampleController.Instance.Log("System version: " + OVRPlugin.version);
-
         PhotonPun.PhotonNetwork.ConnectUsingSettings();
+
+        SampleController.Instance.Log("System version: " + OVRPlugin.version);
 
         Core.Initialize();
         Users.GetLoggedInUser().OnComplete(GetLoggedInUserCallback);
@@ -88,7 +89,6 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
         var offset = 1;
         var fakeBytes = new byte[] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
         _fakeUuid = new Guid(fakeBytes);
         PackUuid(_fakeUuid, _fakePacket, ref offset);
     }
@@ -146,10 +146,11 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
     {
         SampleController.Instance.Log("Photon::OnConnectedToMaster: successfully connected to photon: " + PhotonPun.PhotonNetwork.CloudRegion);
 
-        PhotonPun.PhotonNetwork.JoinLobby();
+        if (controlPanel)
+            controlPanel.ToggleRoomButtons(true);
 
-        if (lobbyPanel)
-            lobbyPanel.EnableRoomButtons();
+        if (usePhotonMatchmaking)
+            PhotonPun.PhotonNetwork.JoinLobby();
     }
 
     public override void OnDisconnected(PhotonRealtime.DisconnectCause cause)
@@ -160,16 +161,18 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         {
             Photon.Pun.PhotonNetwork.ReconnectAndRejoin();
         }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+        }
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
         SampleController.Instance.Log("Photon::OnJoinRoomFailed: " + message);
 
-        if (lobbyPanel)
-        {
-            lobbyPanel.DisplayLobbyPanel();
-        }
+        if (controlPanel)
+            controlPanel.DisplayLobbyPanel();
     }
 
     public override void OnJoinedRoom()
@@ -185,16 +188,16 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
             AddToUsernameList(player.NickName);
         }
 
-        if (lobbyPanel)
+        if (controlPanel)
         {
-            lobbyPanel.gameObject.SetActive(false);
+            controlPanel.DisplayMenuPanel();
         }
 
         if (SampleController.Instance.automaticCoLocation)
         {
             Photon.Pun.PhotonNetwork.Instantiate("PassthroughAvatarPhoton", Vector3.zero, Quaternion.identity);
 
-            if(PhotonPun.PhotonNetwork.IsMasterClient)
+            if (PhotonPun.PhotonNetwork.IsMasterClient)
             {
                 SampleController.Instance.PlaceAnchorAtRoot();
             }
@@ -220,9 +223,12 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
         AddToUsernameList(newPlayer.NickName);
 
-        if (SampleController.Instance.automaticCoLocation) {
+        if (SampleController.Instance.automaticCoLocation)
+        {
             Invoke(nameof(WaitToSendAnchor), 1);
-        } else if (SampleController.Instance.cachedAnchorSample) {
+        }
+        else if (SampleController.Instance.cachedAnchorSample)
+        {
             Invoke(nameof(WaitToReshareAnchor), 1);
         }
     }
@@ -234,7 +240,8 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
     private void WaitToReshareAnchor()
     {
-        if (SampleController.Instance.colocationCachedAnchor != null) {
+        if (SampleController.Instance.colocationCachedAnchor != null)
+        {
             SampleController.Instance.colocationCachedAnchor.ReshareAnchor();
         }
     }
@@ -253,29 +260,86 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
     public override void OnRoomListUpdate(List<PhotonRealtime.RoomInfo> roomList)
     {
-        if (lobbyPanel)
+        if (controlPanel)
         {
-            lobbyPanel.SetRoomList(roomList);
+            controlPanel.SetRoomList(roomList);
         }
     }
 
     #endregion
 
     #region [Room creation, P2P connection, and inviting others]
-    public void CreateNewRoomForLobby(string roomToJoin)
+
+    public void OnCreateRoomButtonPressed()
     {
-        var isValidRoomToJoin = !string.IsNullOrEmpty(roomToJoin);
+        SampleController.Instance.Log("OnCreateRoomButtonPressed");
+
+        if (PhotonPun.PhotonNetwork.IsConnected)
+        {
+            if (PhotonPun.PhotonNetwork.NickName != "")
+                CreateNewRoomForLobby(PhotonPun.PhotonNetwork.NickName);
+            else
+            {
+                UnityEngine.Random.InitState((int)(Time.time * 10000));
+                string testName = "TestUser" + UnityEngine.Random.Range(0, 1000);
+                PhotonPun.PhotonNetwork.NickName = testName;
+                CreateNewRoomForLobby(testName);
+            }
+            if (controlPanel)
+                controlPanel.DisplayMenuPanel();
+        }
+        else
+        {
+            SampleController.Instance.Log("Attempting to reconnect and rejoin a room");
+            PhotonPun.PhotonNetwork.ConnectUsingSettings();
+        }
+    }
+
+    public void CreateNewRoomForLobby(string roomToCreate)
+    {
+        var isValidRoomToJoin = !string.IsNullOrEmpty(roomToCreate);
 
         if (!isValidRoomToJoin)
         {
             return;
         }
 
-        SampleController.Instance.Log("JoinRoomFromLobby: attempting to create room: " + roomToJoin);
+        SampleController.Instance.Log("JoinRoomFromLobby: attempting to create room: " + roomToCreate);
 
         var roomOptions = new PhotonRealtime.RoomOptions { IsVisible = true, MaxPlayers = 16, EmptyRoomTtl = 0, PlayerTtl = 300000 };
 
-        PhotonPun.PhotonNetwork.JoinOrCreateRoom(roomToJoin, roomOptions, PhotonRealtime.TypedLobby.Default);
+        PhotonPun.PhotonNetwork.JoinOrCreateRoom(roomToCreate, roomOptions, PhotonRealtime.TypedLobby.Default);
+    }
+
+    public void OnJoinRoomButtonPressed(TMPro.TextMeshProUGUI roomName)
+    {
+        SampleController.Instance.Log("OnJoinRoomButtonPressed");
+
+        if (PhotonPun.PhotonNetwork.NickName == "")
+        {
+            string testName = "TestUser" + UnityEngine.Random.Range(0, 1000);
+            PhotonPun.PhotonNetwork.NickName = testName;
+        }
+
+        JoinRoomFromLobby(roomName.text);
+        if (controlPanel)
+            controlPanel.DisplayMenuPanel();
+    }
+
+
+    public void OnFindRoomButtonPressed()
+    {
+        if (PhotonPun.PhotonNetwork.IsConnected)
+        {
+            SampleController.Instance.Log("There are currently " + lobbyRowList.Count + " rooms in the lobby");
+            if (controlPanel)
+                controlPanel.ToggleRoomLayoutPanel(true);
+        }
+        else
+        {
+            SampleController.Instance.Log("Attempting to reconnect and rejoin a room");
+            PhotonPun.PhotonNetwork.ConnectUsingSettings();
+        }
     }
 
     public void JoinRoomFromLobby(string roomToJoin)
@@ -287,7 +351,7 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
             return;
         }
 
-        SampleController.Instance.Log("JoinRoomFromLobby: attempting to join room: " + roomToJoin);
+        SampleController.Instance.Log($"{nameof(JoinRoomFromLobby)}: Room Name: " + roomToJoin);
 
         var roomOptions = new PhotonRealtime.RoomOptions { IsVisible = true, MaxPlayers = 16, EmptyRoomTtl = 0, PlayerTtl = 300000 };
 
@@ -434,7 +498,6 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
     }
     #endregion
 
-
     #region [User list state handling]
 
     public static HashSet<ulong> GetUserList()
@@ -535,6 +598,10 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         return userIds;
     }
 
+    #endregion
+
+    #region [Automatic Colocation Support]
+
     //Two users are now confirmed to be on the same anchor
     public void SessionStart()
     {
@@ -548,5 +615,6 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
     {
         CoLocatedPassthroughManager.Instance.SessionStart();
     }
+
     #endregion
 }

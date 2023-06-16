@@ -20,6 +20,7 @@
 
 using Meta.WitAi;
 using Meta.WitAi.Json;
+using Meta.WitAi.Requests;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,7 +46,7 @@ namespace Oculus.Voice.Demo
         private void OnEnable()
         {
             textArea.text = freshStateText;
-            appVoiceExperience.VoiceEvents.OnRequestCreated.AddListener(OnRequestStarted);
+            appVoiceExperience.VoiceEvents.OnSend.AddListener(OnSend);
             appVoiceExperience.VoiceEvents.OnPartialTranscription.AddListener(OnRequestTranscript);
             appVoiceExperience.VoiceEvents.OnFullTranscription.AddListener(OnRequestTranscript);
             appVoiceExperience.VoiceEvents.OnStartListening.AddListener(OnListenStart);
@@ -58,7 +59,7 @@ namespace Oculus.Voice.Demo
         // Remove delegates
         private void OnDisable()
         {
-            appVoiceExperience.VoiceEvents.OnRequestCreated.RemoveListener(OnRequestStarted);
+            appVoiceExperience.VoiceEvents.OnSend.RemoveListener(OnSend);
             appVoiceExperience.VoiceEvents.OnPartialTranscription.RemoveListener(OnRequestTranscript);
             appVoiceExperience.VoiceEvents.OnFullTranscription.RemoveListener(OnRequestTranscript);
             appVoiceExperience.VoiceEvents.OnStartListening.RemoveListener(OnListenStart);
@@ -70,10 +71,10 @@ namespace Oculus.Voice.Demo
         }
 
         // Request began
-        private void OnRequestStarted(WitRequest r)
+        private void OnSend(VoiceServiceRequest request)
         {
             // Store json on completion
-            if (showJson) r.onRawResponse = (response) => textArea.text = response;
+            if (showJson && request is WitRequest witRequest) witRequest.onRawResponse = (response) => textArea.text = response;
             // Begin
             _active = true;
         }

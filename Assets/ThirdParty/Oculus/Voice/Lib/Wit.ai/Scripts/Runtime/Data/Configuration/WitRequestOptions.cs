@@ -10,12 +10,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Meta.WitAi.Json;
+using Meta.WitAi.Requests;
 using Meta.WitAi.Interfaces;
 using UnityEngine;
 
 namespace Meta.WitAi.Configuration
 {
-    public class WitRequestOptions
+    public class WitRequestOptions : VoiceServiceRequestOptions
     {
         /// <summary>
         /// An interface that provides a list of entities that should be used for nlu resolution.
@@ -33,16 +34,10 @@ namespace Meta.WitAi.Configuration
         public string tag;
 
         /// <summary>
-        /// A GUID - For internal use
+        /// Formerly used for request id
         /// </summary>
-        [JsonProperty("requestID")]
-        public string RequestId { get; set; } = Guid.NewGuid().ToString();
         [Obsolete("Use 'RequestId' property instead")] [JsonIgnore]
-        public string requestID
-        {
-            get => RequestId;
-            set => RequestId = value;
-        }
+        public string requestID => RequestId;
 
         /// <summary>
         /// Additional parameters to be used for custom

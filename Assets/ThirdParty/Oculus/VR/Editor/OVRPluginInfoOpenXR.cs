@@ -20,7 +20,6 @@
 
 
 #if OVR_UNITY_PACKAGE_MANAGER
-
 using System;
 using System.IO;
 using System.Linq;

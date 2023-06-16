@@ -1,5 +1,5 @@
 /*
- * Copyright(c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * Licensed under the Oculus SDK License Agreement (the "License");
@@ -248,12 +248,6 @@ namespace Oculus.Interaction.Editor.Generated
 {
     [CustomEditor(typeof(GrabInteractor), false, isFallback = true)]
     public class GrabInteractorEditorFallback : SimplifiedEditor { }
-}
-
-namespace Oculus.Interaction.Editor.Generated
-{
-    [CustomEditor(typeof(PitchRemap), false, isFallback = true)]
-    public class PitchRemapEditorFallback : SimplifiedEditor { }
 }
 
 namespace Oculus.Interaction.Editor.Generated
@@ -530,18 +524,6 @@ namespace Oculus.Interaction.Editor.Generated
 {
     [CustomEditor(typeof(ControllerSelector), false, isFallback = true)]
     public class ControllerSelectorEditorFallback : SimplifiedEditor { }
-}
-
-namespace Oculus.Interaction.Editor.Generated
-{
-    [CustomEditor(typeof(AimingStabilizedOrigin), false, isFallback = true)]
-    public class AimingStabilizedOriginEditorFallback : SimplifiedEditor { }
-}
-
-namespace Oculus.Interaction.Editor.Generated
-{
-    [CustomEditor(typeof(CenterEyeOffset), false, isFallback = true)]
-    public class CenterEyeOffsetEditorFallback : SimplifiedEditor { }
 }
 
 namespace Oculus.Interaction.Editor.Generated
@@ -846,12 +828,6 @@ namespace Oculus.Interaction.Locomotion.Editor.Generated
 
 namespace Oculus.Interaction.Locomotion.Editor.Generated
 {
-    [CustomEditor(typeof(ArcRangeModifier), false, isFallback = true)]
-    public class ArcRangeModifierEditorFallback : SimplifiedEditor { }
-}
-
-namespace Oculus.Interaction.Locomotion.Editor.Generated
-{
     [CustomEditor(typeof(TeleportArcGravity), false, isFallback = true)]
     public class TeleportArcGravityEditorFallback : SimplifiedEditor { }
 }
@@ -870,7 +846,7 @@ namespace Oculus.Interaction.Locomotion.Editor.Generated
 
 namespace Oculus.Interaction.Locomotion.Editor.Generated
 {
-    [CustomEditor(typeof(TeleportTurningGate), false, isFallback = true)]
+    [CustomEditor(typeof(LocomotionGate), false, isFallback = true)]
     public class TeleportTurningGateEditorFallback : SimplifiedEditor { }
 }
 

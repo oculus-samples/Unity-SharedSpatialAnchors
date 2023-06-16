@@ -61,8 +61,6 @@ public class DirectionalPassthrough : MonoBehaviour
             target = right;
         }
         Vector3 dir = target.position - transform.position;
-        //dir for testing purposes
-        //Vector3 dir = Vector3.up * 1.5f - transform.position;
         float forward = Vector3.Angle(dir.normalized, transform.forward);
         dir = transform.InverseTransformDirection(dir);
         float dist = dir.magnitude;

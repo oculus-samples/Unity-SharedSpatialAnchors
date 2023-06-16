@@ -49,6 +49,9 @@ namespace Oculus.Interaction.PoseDetection
 
         private List<FingerFeatureStateUsage> _allFingerStates = new List<FingerFeatureStateUsage>();
 
+        // keeps track of native state
+        private bool _nativeActive = false;
+
         protected virtual void Awake()
         {
             Hand = _hand as IHand;
@@ -108,7 +111,7 @@ namespace Oculus.Interaction.PoseDetection
             {
                 if (!isActiveAndEnabled || _allFingerStates.Count == 0)
                 {
-                    return false;
+                    return (_nativeActive = false);
                 }
 
                 foreach (FingerFeatureStateUsage stateUsage in _allFingerStates)
@@ -116,11 +119,18 @@ namespace Oculus.Interaction.PoseDetection
                     if (!FingerFeatureStateProvider.IsStateActive(stateUsage.handFinger,
                         stateUsage.config.Feature, stateUsage.config.Mode, stateUsage.config.State))
                     {
-                        return false;
+                        return (_nativeActive = false);
                     }
                 }
 
-                return true;
+                if (!_nativeActive)
+                {
+                    // Activate native component
+                    int result = NativeMethods.isdk_NativeComponent_Activate(0x48506f7365446574);
+                    this.AssertIsTrue(result == NativeMethods.IsdkSuccess, "Unable to Activate native recognizer!");
+                }
+
+                return (_nativeActive = true);
             }
         }
 

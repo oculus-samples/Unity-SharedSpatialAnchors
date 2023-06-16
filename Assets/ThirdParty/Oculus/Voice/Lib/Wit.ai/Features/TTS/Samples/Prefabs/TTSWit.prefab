@@ -91,6 +91,7 @@ MonoBehaviour:
     audioStream: 1
     audioStreamReadyDuration: 0.1
     audioStreamChunkLength: 5
+    audioStreamPreloadCount: 3
   _presetVoiceSettings:
   - settingsID: CHARLIE
     voice: Charlie

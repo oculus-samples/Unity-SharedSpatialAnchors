@@ -11,6 +11,7 @@ using Meta.WitAi.Dictation.Events;
 using Meta.WitAi.Events;
 using Meta.WitAi.Events.UnityEventListeners;
 using Meta.WitAi.Interfaces;
+using Meta.WitAi.Requests;
 using UnityEngine;
 
 namespace Meta.WitAi.Dictation
@@ -47,7 +48,7 @@ namespace Meta.WitAi.Dictation
         /// </summary>
         public abstract bool MicActive { get; }
 
-        public DictationEvents DictationEvents
+        public virtual DictationEvents DictationEvents
         {
             get => dictationEvents;
             set => dictationEvents = value;
@@ -70,26 +71,48 @@ namespace Meta.WitAi.Dictation
         /// </summary>
         protected abstract bool ShouldSendMicData { get; }
 
-        /// <summary>
-        /// Start listening for sound or speech from the user and start sending data to Wit.ai once sound or speech has been detected.
-        /// </summary>
-        public abstract void Activate();
 
         /// <summary>
         /// Activate the microphone and send data for NLU processing. Includes optional additional request parameters like dynamic entities and maximum results.
         /// </summary>
-        /// <param name="requestOptions"></param>
-        public abstract void Activate(WitRequestOptions requestOptions);
-
+        public void Activate() => Activate(new WitRequestOptions(), new VoiceServiceRequestEvents());
         /// <summary>
-        /// Activate the microphone and send data for NLU processing immediately without waiting for sound/speech from the user to begin.
+        /// Activate the microphone and send data for NLU processing. Includes optional additional request parameters like dynamic entities and maximum results.
         /// </summary>
-        public abstract void ActivateImmediately();
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        public void Activate(WitRequestOptions requestOptions) => Activate(requestOptions, new VoiceServiceRequestEvents());
+        /// <summary>
+        /// Activate the microphone and send data for NLU processing. Includes optional additional request parameters like dynamic entities and maximum results.
+        /// </summary>
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        public VoiceServiceRequest Activate(VoiceServiceRequestEvents requestEvents) => Activate(new WitRequestOptions(), requestEvents);
+        /// <summary>
+        /// Activate the microphone and send data for NLU processing. Includes optional additional request parameters like dynamic entities and maximum results.
+        /// </summary>
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        /// <param name="requestEvents">Events specific to the request's lifecycle</param>
+        public abstract VoiceServiceRequest Activate(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents);
 
         /// <summary>
         /// Activate the microphone and send data for NLU processing immediately without waiting for sound/speech from the user to begin.  Includes optional additional request parameters like dynamic entities and maximum results.
         /// </summary>
-        public abstract void ActivateImmediately(WitRequestOptions requestOptions);
+        public void ActivateImmediately() => ActivateImmediately(new WitRequestOptions(), new VoiceServiceRequestEvents());
+        /// <summary>
+        /// Activate the microphone and send data for NLU processing immediately without waiting for sound/speech from the user to begin.  Includes optional additional request parameters like dynamic entities and maximum results.
+        /// </summary>
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        public void ActivateImmediately(WitRequestOptions requestOptions) => ActivateImmediately(requestOptions, new VoiceServiceRequestEvents());
+        /// <summary>
+        /// Activate the microphone and send data for NLU processing immediately without waiting for sound/speech from the user to begin.  Includes optional additional request parameters like dynamic entities and maximum results.
+        /// </summary>
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        public VoiceServiceRequest ActivateImmediately(VoiceServiceRequestEvents requestEvents) => ActivateImmediately(new WitRequestOptions(), requestEvents);
+        /// <summary>
+        /// Activate the microphone and send data for NLU processing immediately without waiting for sound/speech from the user to begin.  Includes optional additional request parameters like dynamic entities and maximum results.
+        /// </summary>
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        /// <param name="requestEvents">Events specific to the request's lifecycle</param>
+        public abstract VoiceServiceRequest ActivateImmediately(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents);
 
         /// <summary>
         /// Stop listening and submit any remaining buffered microphone data for processing.
@@ -139,13 +162,9 @@ namespace Meta.WitAi.Dictation
 
         new TelemetryEvents TelemetryEvents { get; set; }
 
-        void Activate();
+        VoiceServiceRequest Activate(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents);
 
-        void Activate(WitRequestOptions requestOptions);
-
-        void ActivateImmediately();
-
-        void ActivateImmediately(WitRequestOptions requestOptions);
+        VoiceServiceRequest ActivateImmediately(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents);
 
         void Deactivate();
 

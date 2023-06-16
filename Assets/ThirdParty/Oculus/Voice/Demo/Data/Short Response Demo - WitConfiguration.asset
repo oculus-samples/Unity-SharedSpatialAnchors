@@ -12,36 +12,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5a46bda3295124c99b0e6537ac7252, type: 3}
   m_Name: Short Response Demo - WitConfiguration
   m_EditorClassIdentifier: 
-  _clientAccessToken: 
+  _clientAccessToken: JYSZFUVTNXFZ4N3LAHJMDS6JOET2IBVP
   _appInfo:
-    name: shapes_short_demo
-    id: 1727234757643392
+    name: voicesdk_samples_shapes
+    id: 04b6d9fc-60b7-4d9e-8473-9290b9d1243f
     lang: en
     isPrivate: 0
-    createdAt: 2022-06-29T07:04:13-0700
+    createdAt: 2023-04-04T10:35:19-0700
     trainingStatus: 1
-    lastTrainDuration: 69
-    lastTrainedAt: 2023-01-17T14:11:45-0800
-    nextTrainAt: 2023-01-17T14:10:36-0800
+    lastTrainDuration: 36
+    lastTrainedAt: 2023-04-04T10:36:17-0700
+    nextTrainAt: 2023-04-04T10:35:41-0700
     intents:
-    - id: 408187434584809
-      name: color_set
+    - id: 196347333139222
+      name: change_color
       entities:
       - name: color:color
-        id: 3025574414362129
-    - id: 558260792572836
-      name: shape_select
-      entities:
+        id: 629054192387147
       - name: shape:shape
-        id: 712301993185969
+        id: 239839848416213
     entities:
     - name: color
-      id: 3153129054936907
+      id: 183423817885903
       lookups:
+      - free-text
       - keywords
       roles:
       - name: color
-        id: 3025574414362129
+        id: 629054192387147
       keywords:
       - keyword: black
         synonyms:
@@ -52,29 +50,34 @@ MonoBehaviour:
       - keyword: brown
         synonyms:
         - brown
-      - keyword: cyan
+      - keyword: gold
         synonyms:
-        - cyan
-        - cyanne
-        - saya
-        - zianne
-        - zion
+        - gold
       - keyword: green
         synonyms:
         - green
       - keyword: magenta
         synonyms:
         - magenta
-        - pink
+      - keyword: maroon
+        synonyms:
+        - maroon
+        - red
       - keyword: orange
         synonyms:
         - orange
+      - keyword: pink
+        synonyms:
+        - pink
       - keyword: purple
         synonyms:
         - purple
       - keyword: red
         synonyms:
         - red
+      - keyword: violet
+        synonyms:
+        - violet
       - keyword: white
         synonyms:
         - white
@@ -82,42 +85,27 @@ MonoBehaviour:
         synonyms:
         - yellow
     - name: shape
-      id: 712343623174186
+      id: 2277400329106527
       lookups:
       - keywords
       roles:
       - name: shape
-        id: 712301993185969
+        id: 239839848416213
       keywords:
-      - keyword: Ball
-        synonyms:
-        - ball
       - keyword: capsule
         synonyms:
         - capsule
-        - pill
-      - keyword: circle
-        synonyms:
-        - circle
       - keyword: cube
         synonyms:
-        - block
-        - box
-        - coope
-        - coupe
         - cube
         - square
       - keyword: cylinder
         synonyms:
-        - can
         - cylinder
-        - pipe
+        - tube
       - keyword: sphere
         synonyms:
         - ball
-        - circle
-        - fear
-        - spear
         - sphere
     traits: []
     voices:
@@ -161,16 +149,21 @@ MonoBehaviour:
       - formal
       - fast
       - projected
+    composer:
+      canvases: []
   _configurationId: 4e21a24e472ab684e84db753427d5687
   timeoutMS: 10000
   endpointConfiguration:
-    uriScheme: 
-    authority: 
-    port: 0
-    witApiVersion: 
-    speech: 
-    message: 
-    dictation: 
+    _uriScheme: 
+    _authority: 
+    _port: 0
+    _witApiVersion: 
+    _message: 
+    _speech: 
+    _dictation: 
+    _synthesize: 
+    _event: 
+    _converse: 
   isDemoOnly: 1
   useConduit: 1
   _manifestLocalPath: ConduitManifest-b2c7fa42-6877-466b-855f-1d9096a38363.json

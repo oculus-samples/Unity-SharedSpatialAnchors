@@ -172,6 +172,36 @@ namespace Meta.WitAi.Lib
                 UpdateClientToken(configuration, appInfo, warnings, onUpdateComplete);
             });
         }
+        private static void UpdateExportInfo(IWitRequestConfiguration configuration,
+            WitAppInfo appInfo, StringBuilder warnings,
+            Action<WitAppInfo, string> onUpdateComplete)
+        {
+            GetRequest(configuration).RequestAppExportInfo(appInfo.id, (exportInfo, error) =>
+            {
+                if (!String.IsNullOrEmpty(error))
+                {
+                    warnings.AppendLine($"Could not determine export URI for {appInfo.id}.");
+                    UpdateComplete(configuration, appInfo, warnings, onUpdateComplete);
+                    return;
+                }
+                GetRequest(configuration).RequestAppExportZip(exportInfo.uri, (exportZip, downloadError) =>
+                {
+                    // Failed to update client token
+                    if (!string.IsNullOrEmpty(downloadError))
+                    {
+                        warnings.AppendLine($"App export download failed ({downloadError})");
+                    }
+                    // Got download
+                    else
+                    {
+                        var ep = new ExportParser(exportZip);
+                        appInfo.composer = ep.ImportComposerInfo(); //TODO: split out to composer-only lib.
+                    }
+                    // Complete
+                    UpdateComplete(configuration, appInfo, warnings, onUpdateComplete);
+                });
+            });
+        }
 
         // Update client token
         private static void UpdateClientToken(IWitRequestConfiguration configuration,
@@ -390,8 +420,8 @@ namespace Meta.WitAi.Lib
                         appInfo.voices = voiceList.ToArray();
                     }
 
-                    // Complete
-                    UpdateComplete(configuration, appInfo, warnings, onUpdateComplete);
+                    UpdateExportInfo(configuration, appInfo, warnings, onUpdateComplete);
+
                 });
         }
 

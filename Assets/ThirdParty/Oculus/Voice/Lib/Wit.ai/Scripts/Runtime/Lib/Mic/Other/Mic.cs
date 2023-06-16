@@ -326,18 +326,7 @@ namespace Meta.WitAi.Lib
             }
             if (AudioClip != null)
             {
-                #if UNITY_EDITOR
-                if (!Application.isPlaying)
-                {
-                    // Editor only
-                    DestroyImmediate(AudioClip);
-                }
-                else
-                #endif
-                {
-                    // Safe destroy
-                    Destroy(AudioClip);
-                }
+                AudioClip.DestroySafely();
                 AudioClip = null;
             }
         }
@@ -460,7 +449,7 @@ namespace Meta.WitAi.Lib
 #if UNITY_WEBGL && !UNITY_EDITOR
             return false;
 #else
-            return Microphone.IsRecording(device);
+            return !string.IsNullOrEmpty(device) && Microphone.IsRecording(device);
 #endif
         }
 

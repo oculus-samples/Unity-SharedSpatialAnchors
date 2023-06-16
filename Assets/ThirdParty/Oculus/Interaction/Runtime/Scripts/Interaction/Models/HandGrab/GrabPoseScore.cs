@@ -84,6 +84,12 @@ namespace Oculus.Interaction.Grab
             _rotationWeight = rotationWeight;
         }
 
+        public bool IsValid()
+        {
+            return _translationScore != float.PositiveInfinity
+                && _rotationScore != float.PositiveInfinity;
+        }
+
         private float Score(float maxDistance)
         {
             return Mathf.Lerp(_translationScore, _rotationScore * maxDistance, _rotationWeight);

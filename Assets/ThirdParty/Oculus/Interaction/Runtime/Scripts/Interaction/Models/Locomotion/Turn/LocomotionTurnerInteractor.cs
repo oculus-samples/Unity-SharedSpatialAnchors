@@ -170,7 +170,7 @@ namespace Oculus.Interaction.Locomotion
         private void DragMidPoint(Pose worldMidPoint)
         {
             Vector3 midPointPos = worldMidPoint.position;
-            float distance = Mathf.Abs(_axisValue) - _dragThresold;
+            float distance = Mathf.Abs(_axisValue) - _dragThresold * this.transform.lossyScale.x;
             if (distance <= 0)
             {
                 return;
@@ -206,9 +206,8 @@ namespace Oculus.Interaction.Locomotion
         /// <returns>A value between -1 and 1</returns>
         public float Value()
         {
-            return Mathf.Clamp(_axisValue / _dragThresold, -1f, 1f);
+            return Mathf.Clamp(_axisValue / (_dragThresold * this.transform.lossyScale.x), -1f, 1f);
         }
-
 
         protected override LocomotionTurnerInteractable ComputeCandidate()
         {

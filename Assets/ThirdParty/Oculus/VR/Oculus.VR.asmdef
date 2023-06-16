@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "Unity.RenderPipelines.Universal.Runtime",
-        "Unity.XR.OpenXR"
+        "Unity.XR.OpenXR",
+        "Unity.XR.OpenXR.Editor"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -52,6 +53,16 @@
             "name": "com.unity.xr.oculus",
             "expression": "3.2.6",
             "define": "OCULUS_XR_ETFR_DELAYED_PERMISSION_REQUEST"
+        },
+        {
+            "name": "com.unity.xr.oculus",
+            "expression": "3.3.0",
+            "define": "OCULUS_XR_DYNAMIC_DEPTH_RESOLVE"
+        },
+        {
+            "name": "com.unity.xr.openxr",
+            "expression": "1.5.3",
+            "define": "UNITY_OPENXR_1_5_3"
         }
     ],
     "noEngineReferences": false

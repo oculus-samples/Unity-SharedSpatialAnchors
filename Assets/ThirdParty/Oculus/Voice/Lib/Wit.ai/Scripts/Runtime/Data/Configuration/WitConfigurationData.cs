@@ -7,48 +7,9 @@
  */
 
 using System;
-using Meta.WitAi.Data.Configuration;
-using Meta.WitAi.Json;
-using UnityEngine;
 
-namespace Meta.WitAi.Configuration
+namespace Oculus.Interaction.Deprecated
 {
-    [Serializable]
-    public abstract class WitConfigurationData
-    {
-        [SerializeField] public WitConfiguration witConfiguration;
-
-        #if UNITY_EDITOR
-        public void UpdateData(Action onUpdateComplete = null)
-        {
-            if (!witConfiguration)
-            {
-                onUpdateComplete?.Invoke();
-                return;
-            }
-
-            var request = OnCreateRequest();
-            request.onResponse += (r) => OnUpdateData(r, onUpdateComplete);
-            request.Request();
-        }
-
-        protected abstract WitRequest OnCreateRequest();
-
-        private void OnUpdateData(WitRequest request, Action onUpdateComplete)
-        {
-            if (request.StatusCode == 200)
-            {
-                UpdateData(request.ResponseData);
-            }
-            else
-            {
-                VLog.E(request.StatusDescription);
-            }
-
-            onUpdateComplete?.Invoke();
-        }
-
-        public abstract void UpdateData(WitResponseNode data);
-        #endif
-    }
+    [Obsolete("Abstract class no longer used")]
+    public abstract class WitConfigurationData { }
 }

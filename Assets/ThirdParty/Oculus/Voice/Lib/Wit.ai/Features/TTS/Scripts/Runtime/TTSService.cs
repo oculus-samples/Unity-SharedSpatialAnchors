@@ -404,7 +404,7 @@ namespace Meta.WitAi.TTS
             }
 
             // Add on ready delegate
-            clipData.onPlaybackReady += (error) => onStreamReady(clipData, error);
+            clipData.onPlaybackReady += (error) => onStreamReady?.Invoke(clipData, error);
 
             // Wait a moment and load
             CoroutineUtility.StartCoroutine(CallAfterAMoment(() =>
@@ -611,11 +611,10 @@ namespace Meta.WitAi.TTS
             }
 
             // Copy array
-            TTSClipData[] copy = new TTSClipData[clips.Length];
-            clips.CopyTo(copy, 0);
+            HashSet<TTSClipData> remaining = new HashSet<TTSClipData>(clips);
 
             // Unload all clips
-            foreach (var clip in copy)
+            foreach (var clip in remaining)
             {
                 Unload(clip);
             }
@@ -770,7 +769,7 @@ namespace Meta.WitAi.TTS
                 }
 
                 // Add download completion callback
-                clipData.onDownloadComplete += (error) => onDownloadComplete(clipData, downloadPath, error);
+                clipData.onDownloadComplete += (error) => onDownloadComplete?.Invoke(clipData, downloadPath, error);
 
                 // Download to cache
                 WebHandler.RequestDownloadFromWeb(clipData, downloadPath);

@@ -26,11 +26,15 @@ namespace Meta.WitAi
         public const string ENDPOINT_TTS_VOICES = "voices";
 
         // Add endpoints
+        public const string ENDPOINT_IMPORT = "import";
         public const string ENDPOINT_ADD_INTENT = "intents";
         public const string ENDPOINT_ADD_ENTITY = "entities";
         public const string ENDPOINT_ADD_ENTITY_KEYWORD = "keywords";
         public const string ENDPOINT_ADD_ENTITY_KEYWORD_SYNONYMS = "synonyms";
         public const string ENDPOINT_ADD_TRAIT = "traits";
         public const string ENDPOINT_ADD_TRAIT_VALUE = "values";
+
+        // Export endpoints
+        public const string ENDPOINT_EXPORT = "export";
     }
 }

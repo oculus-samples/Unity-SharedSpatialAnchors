@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -55,26 +54,31 @@ public class OVRFace : MonoBehaviour
 
     [SerializeField]
     [Tooltip("A multiplier to the weights read from the OVRFaceExpressions to exaggerate facial expressions")]
-    protected internal float _blendShapeStrengthMultiplier = 1.0f;
+    protected internal float _blendShapeStrengthMultiplier = 100.0f;
 
     private SkinnedMeshRenderer _skinnedMeshRenderer;
+    protected SkinnedMeshRenderer SkinnedMesh => _skinnedMeshRenderer;
 
-    /// <summary>
-    /// Start this instance.
-    /// Will validate that all properties are set correctly
-    /// </summary>
+    protected virtual void Awake()
+    {
+        if (_faceExpressions == null)
+        {
+            _faceExpressions = SearchFaceExpressions();
+            Debug.Log($"Found OVRFaceExpression reference in {_faceExpressions.name} due to unassigned field.");
+        }
+    }
+
+    internal OVRFaceExpressions SearchFaceExpressions() => gameObject.GetComponentInParent<OVRFaceExpressions>();
+
     protected virtual void Start()
     {
-        Assert.IsNotNull(_faceExpressions);
+        Assert.IsNotNull(_faceExpressions, "OVRFace requires OVRFaceExpressions to function.");
+
         _skinnedMeshRenderer = GetComponent<SkinnedMeshRenderer>();
         Assert.IsNotNull(_skinnedMeshRenderer);
         Assert.IsNotNull(_skinnedMeshRenderer.sharedMesh);
     }
 
-    /// <summary>
-    /// Update this instance.
-    /// Will update the blend shape weights on the SkinnedMeshRenderer
-    /// </summary>
     protected virtual void Update()
     {
         if (!_faceExpressions.FaceTrackingEnabled || !_faceExpressions.enabled)
@@ -82,19 +86,22 @@ public class OVRFace : MonoBehaviour
             return;
         }
 
-        if ( _faceExpressions.ValidExpressions)
+        if (_faceExpressions.ValidExpressions)
         {
             int numBlendshapes = _skinnedMeshRenderer.sharedMesh.blendShapeCount;
 
             for (int blendShapeIndex = 0; blendShapeIndex < numBlendshapes; ++blendShapeIndex)
             {
                 OVRFaceExpressions.FaceExpression blendShapeToFaceExpression = GetFaceExpression(blendShapeIndex);
-                if (blendShapeToFaceExpression >= OVRFaceExpressions.FaceExpression.Max || blendShapeToFaceExpression < 0)
+                if (blendShapeToFaceExpression >= OVRFaceExpressions.FaceExpression.Max ||
+                    blendShapeToFaceExpression < 0)
                 {
                     continue;
                 }
+
                 float currentWeight = _faceExpressions[blendShapeToFaceExpression];
-                _skinnedMeshRenderer.SetBlendShapeWeight(blendShapeIndex, currentWeight * _blendShapeStrengthMultiplier);
+                _skinnedMeshRenderer.SetBlendShapeWeight(blendShapeIndex,
+                    currentWeight * _blendShapeStrengthMultiplier);
             }
         }
     }
@@ -107,5 +114,6 @@ public class OVRFace : MonoBehaviour
     /// </remarks>
     /// <param name="blendShapeIndex">The index of the blend shape, will be in-between 0 and the number of blend shapes on the shared mesh.</param>
     /// <returns>Returns the <see cref="OVRFaceExpressions.FaceExpression"/> to drive the bland shape identified by <paramref name="blendShapeIndex"/>.</returns>
-    protected virtual OVRFaceExpressions.FaceExpression GetFaceExpression(int blendShapeIndex) => OVRFaceExpressions.FaceExpression.Max;
+    internal protected virtual OVRFaceExpressions.FaceExpression GetFaceExpression(int blendShapeIndex) =>
+        OVRFaceExpressions.FaceExpression.Invalid;
 }

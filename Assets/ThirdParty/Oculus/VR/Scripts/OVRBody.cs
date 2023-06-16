@@ -42,9 +42,12 @@ public class OVRBody : MonoBehaviour,
 
     private bool _hasData;
 
-    private const OVRPermissionsRequester.Permission BodyTrackingPermission = OVRPermissionsRequester.Permission.BodyTracking;
+    private const OVRPermissionsRequester.Permission BodyTrackingPermission =
+        OVRPermissionsRequester.Permission.BodyTracking;
+
     private Action<string> _onPermissionGranted;
     private static int _trackingInstanceCount;
+
 
     /// <summary>
     /// The raw <see cref="BodyState"/> data used to populate the <see cref="OVRSkeleton"/>.
@@ -62,11 +65,13 @@ public class OVRBody : MonoBehaviour,
         _dataChangedSinceLastQuery = false;
         _hasData = false;
 
+
         if (!StartBodyTracking())
         {
             enabled = false;
             return;
         }
+
 
         if (OVRPlugin.nativeXrApi == OVRPlugin.XrApi.OpenXR)
         {
@@ -178,12 +183,12 @@ public class OVRBody : MonoBehaviour,
 
     OVRSkeletonRenderer.SkeletonRendererData
         OVRSkeletonRenderer.IOVRSkeletonRendererDataProvider.GetSkeletonRendererData() => _hasData
-    ? new OVRSkeletonRenderer.SkeletonRendererData
-    {
-        RootScale = 1.0f,
-        IsDataValid = true,
-        IsDataHighConfidence = true,
-        ShouldUseSystemGestureMaterial = false,
-    }
-    : default;
+        ? new OVRSkeletonRenderer.SkeletonRendererData
+        {
+            RootScale = 1.0f,
+            IsDataValid = true,
+            IsDataHighConfidence = true,
+            ShouldUseSystemGestureMaterial = false,
+        }
+        : default;
 }

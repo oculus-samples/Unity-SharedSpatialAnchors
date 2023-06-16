@@ -6,11 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+using System.IO;
 using Meta.WitAi.Configuration;
 using Meta.WitAi.Data.Configuration;
+using Meta.WitAi.Dictation.Events;
 using Meta.WitAi.Events;
 using Meta.WitAi.Interfaces;
-using Meta.WitAi.Json;
+using Meta.WitAi.Requests;
 using UnityEngine;
 
 namespace Meta.WitAi.Dictation
@@ -45,59 +47,59 @@ namespace Meta.WitAi.Dictation
         protected override bool ShouldSendMicData => witRuntimeConfiguration.sendAudioToWit ||
                                                      null == TranscriptionProvider;
 
-        private readonly VoiceEvents voiceEvents = new VoiceEvents();
 
         /// <summary>
         /// Events specific to wit voice activation.
         /// </summary>
-        public VoiceEvents VoiceEvents => voiceEvents;
+        public VoiceEvents VoiceEvents => _voiceEvents;
+        private readonly VoiceEvents _voiceEvents = new VoiceEvents();
+
+        public override DictationEvents DictationEvents
+        {
+            get => dictationEvents;
+            set
+            {
+                DictationEvents oldEvents = dictationEvents;
+                dictationEvents = value;
+                if (gameObject.activeSelf)
+                {
+                    VoiceEvents.RemoveListener(oldEvents);
+                    VoiceEvents.AddListener(dictationEvents);
+                }
+            }
+        }
 
         #endregion
 
         #region IWitRequestProvider
         public WitRequest CreateWitRequest(WitConfiguration config, WitRequestOptions requestOptions,
+            VoiceServiceRequestEvents requestEvents,
             IDynamicEntitiesProvider[] additionalEntityProviders = null)
         {
-            return config.CreateDictationRequest(requestOptions);
+            return config.CreateDictationRequest(requestOptions, requestEvents);
         }
 
         #endregion
 
         #region Voice Service Methods
-
-
         /// <summary>
         /// Activates and waits for the user to exceed the min wake threshold before data is sent to the server.
         /// </summary>
-        public override void Activate()
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        /// <param name="requestEvents">Events specific to the request's lifecycle</param>
+        public override VoiceServiceRequest Activate(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents)
         {
-            witService.Activate();
-        }
-
-        /// <summary>
-        /// Activates and waits for the user to exceed the min wake threshold before data is sent to the server.
-        /// </summary>
-        /// <param name="options"></param>
-        public override void Activate(WitRequestOptions options)
-        {
-            witService.Activate(options);
+            return witService.Activate(requestOptions, requestEvents);
         }
 
         /// <summary>
         /// Activates immediately and starts sending data to the server. This will not wait for min wake threshold
         /// </summary>
-        public override void ActivateImmediately()
+        /// <param name="requestOptions">Additional options such as custom request id</param>
+        /// <param name="requestEvents">Events specific to the request's lifecycle</param>
+        public override VoiceServiceRequest ActivateImmediately(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents)
         {
-            witService.ActivateImmediately();
-        }
-
-        /// <summary>
-        /// Activates immediately and starts sending data to the server. This will not wait for min wake threshold
-        /// </summary>
-        /// <param name="options"></param>
-        public override void ActivateImmediately(WitRequestOptions options)
-        {
-            witService.ActivateImmediately(options);
+            return witService.ActivateImmediately(requestOptions, requestEvents);
         }
 
         /// <summary>
@@ -131,81 +133,21 @@ namespace Meta.WitAi.Dictation
         protected override void OnEnable()
         {
             base.OnEnable();
-            VoiceEvents.OnFullTranscription.AddListener(OnFullTranscription);
-            VoiceEvents.OnPartialTranscription.AddListener(OnPartialTranscription);
-            VoiceEvents.OnStartListening.AddListener(OnStartedListening);
-            VoiceEvents.OnStoppedListening.AddListener(OnStoppedListening);
-            VoiceEvents.OnMicLevelChanged.AddListener(OnMicLevelChanged);
-            VoiceEvents.OnError.AddListener(OnError);
-            VoiceEvents.OnResponse.AddListener(OnResponse);
-            VoiceEvents.OnRequestCompleted.AddListener(OnCompleted);
-            VoiceEvents.OnAborting.AddListener(OnAborting);
-            VoiceEvents.OnAborted.AddListener(OnAborted);
+            VoiceEvents.AddListener(DictationEvents);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
-            VoiceEvents.OnFullTranscription.RemoveListener(OnFullTranscription);
-            VoiceEvents.OnPartialTranscription.RemoveListener(OnPartialTranscription);
-            VoiceEvents.OnStartListening.RemoveListener(OnStartedListening);
-            VoiceEvents.OnStoppedListening.RemoveListener(OnStoppedListening);
-            VoiceEvents.OnMicLevelChanged.RemoveListener(OnMicLevelChanged);
-            VoiceEvents.OnError.RemoveListener(OnError);
-            VoiceEvents.OnResponse.RemoveListener(OnResponse);
-            VoiceEvents.OnRequestCompleted.RemoveListener(OnCompleted);
-            VoiceEvents.OnAborting.RemoveListener(OnAborting);
-            VoiceEvents.OnAborted.RemoveListener(OnAborted);
+            VoiceEvents.RemoveListener(DictationEvents);
         }
 
-        private void OnCompleted()
+        public void TranscribeFile(string fileName)
         {
-            DictationEvents.OnRequestCompleted?.Invoke();
-        }
-
-        private void OnAborted()
-        {
-            DictationEvents.OnAborted?.Invoke();
-        }
-
-        private void OnAborting()
-        {
-            DictationEvents.OnAborting?.Invoke();
-        }
-
-        private void OnFullTranscription(string transcription)
-        {
-            DictationEvents.OnFullTranscription?.Invoke(transcription);
-        }
-
-        private void OnPartialTranscription(string transcription)
-        {
-            DictationEvents.OnPartialTranscription?.Invoke(transcription);
-        }
-
-        private void OnStartedListening()
-        {
-            DictationEvents.onStart?.Invoke();
-        }
-
-        private void OnStoppedListening()
-        {
-            DictationEvents.onStopped?.Invoke();
-        }
-
-        private void OnMicLevelChanged(float level)
-        {
-            DictationEvents.onMicAudioLevel?.Invoke(level);
-        }
-
-        private void OnError(string error, string message)
-        {
-            DictationEvents.onError?.Invoke(error, message);
-        }
-
-        private void OnResponse(WitResponseNode response)
-        {
-            DictationEvents.onResponse?.Invoke(response);
+            var request = CreateWitRequest(witRuntimeConfiguration.witConfiguration, new WitRequestOptions(), new VoiceServiceRequestEvents());
+            var data = File.ReadAllBytes(fileName);
+            request.postData = data;
+            witService.ExecuteRequest(request);
         }
     }
 }

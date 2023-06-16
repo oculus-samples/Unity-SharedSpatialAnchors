@@ -148,6 +148,22 @@ namespace Meta.WitAi
                 GUILayout.EndHorizontal();
             }
         }
+        // Layout header button
+        public static void LayoutHeaderText(string text, string headerURL, string docsUrl)
+        {
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(text, EditorStyles.boldLabel, GUILayout.ExpandWidth(true)) && !string.IsNullOrEmpty(headerURL))
+            {
+                Application.OpenURL(headerURL);
+            }
+            GUILayout.FlexibleSpace();
+            if (!string.IsNullOrEmpty(docsUrl) && LayoutIconButton(WitStyles.HelpIcon))
+            {
+                Application.OpenURL(docsUrl);
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+        }
         #endregion
 
         #region FOLDOUT

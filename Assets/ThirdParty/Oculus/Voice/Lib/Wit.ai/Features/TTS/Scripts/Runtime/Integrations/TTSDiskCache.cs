@@ -13,9 +13,7 @@ using UnityEngine;
 using Meta.WitAi.TTS.Data;
 using Meta.WitAi.TTS.Events;
 using Meta.WitAi.TTS.Interfaces;
-using Meta.WitAi.TTS.Utilities;
 using Meta.WitAi.Utilities;
-using Meta.WitAi;
 using Meta.WitAi.Requests;
 
 namespace Meta.WitAi.TTS.Integrations
@@ -47,6 +45,17 @@ namespace Meta.WitAi.TTS.Integrations
 
         // All currently performing stream requests
         private Dictionary<string, VRequest> _streamRequests = new Dictionary<string, VRequest>();
+
+        // Cancel all requests
+        protected virtual void OnDestroy()
+        {
+            Dictionary<string, VRequest> requests = _streamRequests;
+            _streamRequests.Clear();
+            foreach (var request in requests.Values)
+            {
+                request.Cancel();
+            }
+        }
 
         /// <summary>
         /// Builds full cache path
@@ -160,7 +169,7 @@ namespace Meta.WitAi.TTS.Integrations
                 clipData.clip = clip;
                 // Call on complete
                 OnStreamComplete(clipData, error);
-            }, clipData.audioType, false, 0f, 0f, (progress) => clipData.loadProgress = progress);
+            }, clipData.audioType, clipData.diskCacheSettings.StreamFromDisk, 0.01f, clipData.diskCacheSettings.StreamBufferLength, (progress) => clipData.loadProgress = progress);
             if (canPerform)
             {
                 _streamRequests[clipData.clipID] = request;

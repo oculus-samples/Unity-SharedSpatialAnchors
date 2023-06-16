@@ -128,11 +128,10 @@ namespace Meta.WitAi.Windows
         public abstract void DeactivateAndAbortRequest();
 
         // Event Callback Registration
-        public abstract WitRequestCreatedEvent OnRequestCreated { get; }
-        public abstract WitErrorEvent OnError { get; }
-        public abstract WitResponseEvent OnResponse { get; }
-        public abstract WitTranscriptionEvent OnFullTranscription { get; }
+        public abstract VoiceServiceRequestEvent OnSend { get; }
         public abstract WitTranscriptionEvent OnPartialTranscription { get; }
+        public abstract WitTranscriptionEvent OnFullTranscription { get; }
         public abstract UnityEvent OnStoppedListening { get; }
+        public abstract VoiceServiceRequestEvent OnComplete { get; }
     }
 }

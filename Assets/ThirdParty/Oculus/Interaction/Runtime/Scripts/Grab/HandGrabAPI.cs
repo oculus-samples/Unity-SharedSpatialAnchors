@@ -315,6 +315,7 @@ namespace Oculus.Interaction.GrabAPI
         {
             float requiredMin = 1.0f;
             float optionalMax = 0f;
+            bool anyRequired = false;
             bool usesOptionals = fingers.SelectsWithOptionals;
             for (int i = 0; i < Constants.NUM_FINGERS; i++)
             {
@@ -335,11 +336,37 @@ namespace Oculus.Interaction.GrabAPI
                 }
                 else if (fingers[finger] == FingerRequirement.Required)
                 {
+                    anyRequired = true;
                     requiredMin = Mathf.Min(requiredMin, fingerAPI.GetFingerGrabScore(finger));
                 }
             }
 
-            return usesOptionals ? optionalMax : requiredMin;
+            return usesOptionals ? optionalMax : anyRequired ? requiredMin : 0f;
+        }
+
+        public void SetPinchGrabParam(PinchGrabParam paramId, float paramVal)
+        {
+            FingerPinchGrabAPI pinchGrab = _fingerPinchGrabAPI as FingerPinchGrabAPI;
+            if (pinchGrab != null)
+            {
+                pinchGrab.SetPinchGrabParam(paramId, paramVal);
+            }
+        }
+
+        public float GetPinchGrabParam(PinchGrabParam paramId)
+        {
+            FingerPinchGrabAPI pinchGrab = _fingerPinchGrabAPI as FingerPinchGrabAPI;
+            if (pinchGrab != null)
+            {
+                return pinchGrab.GetPinchGrabParam(paramId);
+            }
+
+            return 0;
+        }
+
+        public bool GetFingerIsGrabbing(HandFinger finger)
+        {
+            return _fingerPinchGrabAPI.GetFingerIsGrabbing(finger);
         }
 
         #region Inject

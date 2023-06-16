@@ -38,7 +38,7 @@ namespace Oculus.Interaction.Input
     public abstract class DataSource<TData> : MonoBehaviour, IDataSource<TData>
         where TData : class, ICopyFrom<TData>, new()
     {
-        public bool Started { get; private set; }
+        public bool Started => _started;
         protected bool _started = false;
         private bool _requiresUpdate = true;
 
@@ -82,7 +82,6 @@ namespace Oculus.Interaction.Input
                 UpdateAfter = _updateAfter as IDataSource;
                 this.AssertField(UpdateAfter, nameof(UpdateAfter));
             }
-            Started = true;
             this.EndStart(ref _started);
         }
 
@@ -90,7 +89,7 @@ namespace Oculus.Interaction.Input
         {
             if (_started)
             {
-                if (Started && UpdateModeAfterPrevious && UpdateAfter != null)
+                if (UpdateModeAfterPrevious && UpdateAfter != null)
                 {
                     UpdateAfter.InputDataAvailable += MarkInputDataRequiresUpdate;
                 }

@@ -24,6 +24,7 @@ using Meta.WitAi.Dictation;
 using Meta.WitAi.Dictation.Events;
 using Meta.WitAi.Events;
 using Meta.WitAi.Interfaces;
+using Meta.WitAi.Requests;
 using Meta.WitAi.Utilities;
 using Oculus.Voice.Core.Bindings.Android;
 using Oculus.Voice.Dictation.Configuration;
@@ -81,24 +82,21 @@ namespace Oculus.Voice.Dictation.Bindings.Android
             _dictationRuntimeConfiguration = configuration;
         }
 
-        public void Activate()
+        private void Activate()
         {
             service.StartDictation(new DictationConfigurationBinding(_dictationRuntimeConfiguration));
         }
 
-        public void Activate(WitRequestOptions requestOptions)
+        public VoiceServiceRequest Activate(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents)
         {
             Activate();
+            return null;
         }
 
-        public void ActivateImmediately()
+        public VoiceServiceRequest ActivateImmediately(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents)
         {
             Activate();
-        }
-
-        public void ActivateImmediately(WitRequestOptions requestOptions)
-        {
-            Activate();
+            return null;
         }
 
         public void Deactivate()

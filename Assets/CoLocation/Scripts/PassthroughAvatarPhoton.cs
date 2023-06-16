@@ -72,7 +72,7 @@ public class PassthroughAvatarPhoton : MonoBehaviour, IPunObservable
             left.position = (Vector3)stream.ReceiveNext();
             left.eulerAngles = (Vector3)stream.ReceiveNext();
             right.position = (Vector3)stream.ReceiveNext();
-            right.eulerAngles = (Vector3)stream.ReceiveNext();
+            right.eulerAngles = (Vector3)stream.ReceiveNext();  
             passthrough.location = (string)stream.ReceiveNext();
         }
     }
@@ -80,6 +80,7 @@ public class PassthroughAvatarPhoton : MonoBehaviour, IPunObservable
     private void OnDisable()
     {
         CoLocatedPassthroughManager.Instance.RemoveCoLocalUser(head);
-        Destroy(body.gameObject);
+        if(body != null)
+            Destroy(body.gameObject);
     }
 }

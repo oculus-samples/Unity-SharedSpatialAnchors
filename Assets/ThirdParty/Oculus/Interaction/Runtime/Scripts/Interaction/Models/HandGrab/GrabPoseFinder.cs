@@ -49,20 +49,23 @@ namespace Oculus.Interaction.HandGrab
         private Transform _relativeTo;
         private InterpolationCache _interpolationCache = new InterpolationCache();
 
+        public bool UsesHandPose
+        {
+            get
+            {
+                return _handGrabPoses.Count > 0 && _handGrabPoses[0].HandPose != null;
+            }
+        }
+
         public GrabPoseFinder(List<HandGrabPose> handGrabPoses, Transform relativeTo)
         {
             _handGrabPoses = handGrabPoses;
             _relativeTo = relativeTo;
         }
 
-        public bool UsesHandPose()
-        {
-            return _handGrabPoses.Count > 0 && _handGrabPoses[0].HandPose != null;
-        }
-
         public bool SupportsHandedness(Handedness handedness)
         {
-            if (!UsesHandPose())
+            if (!UsesHandPose)
             {
                 return true;
             }
@@ -119,11 +122,32 @@ namespace Oculus.Interaction.HandGrab
                 return false;
             }
 
-            bool underFound = under.CalculateBestPose(userPose, handedness,
-                scoringModifier, _relativeTo, ref _interpolationCache.underResult);
+            bool underFound;
+            bool overFound;
 
-            bool overFound = over.CalculateBestPose(userPose, handedness,
-                scoringModifier, _relativeTo, ref _interpolationCache.overResult);
+            if (t < 0)
+            {
+                underFound = under.CalculateBestPose(userPose, handedness,
+                    scoringModifier, _relativeTo, ref _interpolationCache.underResult);
+                Pose adjustedPose = _relativeTo.GlobalPose(_interpolationCache.underResult.RelativePose);
+                overFound = over.CalculateBestPose(adjustedPose, handedness,
+                    PoseMeasureParameters.DEFAULT, _relativeTo, ref _interpolationCache.overResult);
+            }
+            else if (t > 1)
+            {
+                overFound = over.CalculateBestPose(userPose, handedness,
+                    scoringModifier, _relativeTo, ref _interpolationCache.overResult);
+                Pose adjustedPose = _relativeTo.GlobalPose(_interpolationCache.overResult.RelativePose);
+                underFound = under.CalculateBestPose(adjustedPose, handedness,
+                    PoseMeasureParameters.DEFAULT, _relativeTo, ref _interpolationCache.underResult);
+            }
+            else
+            {
+                underFound = under.CalculateBestPose(userPose, handedness,
+                    scoringModifier, _relativeTo, ref _interpolationCache.underResult);
+                overFound = over.CalculateBestPose(userPose, handedness,
+                    scoringModifier, _relativeTo, ref _interpolationCache.overResult);
+            }
 
             if (_interpolationCache.underResult.HasHandPose
                 && _interpolationCache.overResult.HasHandPose)

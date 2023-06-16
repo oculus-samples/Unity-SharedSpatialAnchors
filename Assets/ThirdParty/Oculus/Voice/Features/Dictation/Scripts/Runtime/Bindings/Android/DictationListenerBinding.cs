@@ -41,7 +41,7 @@ namespace Oculus.Voice.Dictation.Bindings.Android
 
         public void onStart(string sessionId)
         {
-            DictationEvents.onStart?.Invoke();
+            DictationEvents.OnStartListening?.Invoke();
             DictationSession session = new PlatformDictationSession()
             {
                 dictationService = _dictationService,
@@ -51,27 +51,27 @@ namespace Oculus.Voice.Dictation.Bindings.Android
 
         public void onMicAudioLevel(string sessionId, int micLevel)
         {
-            DictationEvents.onMicAudioLevel?.Invoke(micLevel / 100.0f);
+            DictationEvents.OnMicAudioLevelChanged?.Invoke(micLevel / 100.0f);
         }
 
         public void onPartialTranscription(string sessionId, string transcription)
         {
-            DictationEvents.onPartialTranscription?.Invoke(transcription);
+            DictationEvents.OnPartialTranscription?.Invoke(transcription);
         }
 
         public void onFinalTranscription(string sessionId, string transcription)
         {
-            DictationEvents.onFullTranscription?.Invoke(transcription);
+            DictationEvents.OnFullTranscription?.Invoke(transcription);
         }
 
         public void onError(string sessionId, string errorType, string errorMessage)
         {
-            DictationEvents.onError?.Invoke(errorType, errorMessage);
+            DictationEvents.OnError?.Invoke(errorType, errorMessage);
         }
 
         public void onStopped(string sessionId)
         {
-            DictationEvents.onStopped?.Invoke();
+            DictationEvents.OnStoppedListening?.Invoke();
             DictationSession session = new PlatformDictationSession()
             {
                 dictationService = _dictationService,

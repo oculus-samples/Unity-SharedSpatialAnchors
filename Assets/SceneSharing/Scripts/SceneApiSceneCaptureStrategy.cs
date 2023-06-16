@@ -32,7 +32,7 @@ namespace Common
     {
         private static readonly Dictionary<string, ObstacleType> _obstacleTypeMap = new Dictionary<string, ObstacleType>()
         {
-            {"DESK", ObstacleType.Desk}, {"COUCH", ObstacleType.Couch}, {"DOOR_FRAME", ObstacleType.Door}, {"WINDOW_FRAME", ObstacleType.Window}
+            {"DESK", ObstacleType.Desk}, {"COUCH", ObstacleType.Couch}, {"DOOR_FRAME", ObstacleType.Door}, {"WINDOW_FRAME", ObstacleType.Window}, {"TABLE", ObstacleType.Table}, {"STORAGE", ObstacleType.Storage}, {"OTHER", ObstacleType.Other}
         };
 
         private ulong _roomLayoutQuery = ulong.MinValue;
@@ -183,7 +183,6 @@ namespace Common
                 foreach (var uuid in entityUuids)
                 {
                     Debug.Log($"SpatialEntityGetContainer: UUID [{uuid.ToString()}]");
-                    // TODO check if uuid is valid? (i.e. non-zero)
                     idsToQuery.Add(uuid);
                 }
             }
@@ -291,7 +290,7 @@ namespace Common
 
                 Add3DEntityToRoom(boundsf, worldPose, labels);
             }
-            if (bounded2dEnabled)
+            else if (bounded2dEnabled)
             {
                 var success = OVRPlugin.GetSpaceBoundingBox2D(space, out var rectf);
                 Debug.Log($"GetSpaceBoundingBox2D success [{success}]");
@@ -299,11 +298,11 @@ namespace Common
 
                 Add2DEntityToRoom(rectf, worldPose, labels);
             }
-            //else
-            //{
-            //    Debug.LogWarning($"{MethodBase.GetCurrentMethod().Name} entity has no bounding box - space: [{space}]");
-            //    return;
-            //}
+            else
+            {
+                Debug.LogWarning($"{MethodBase.GetCurrentMethod().Name} entity has no bounding box - space: [{space}]");
+                return;
+            }
         }
 
         private void Add2DEntityToRoom(OVRPlugin.Rectf rectf, OVRPose worldPose, string labels)
@@ -374,17 +373,11 @@ namespace Common
 
         private static Obstacle CreateObstacle(OVRPose worldPose, OVRPlugin.Rectf rectf, string labels, ObstacleType obstacleType)
         {
-            var position = worldPose.position;
-            position.y /= 2.0f;
-
-            if (obstacleType == ObstacleType.Window || obstacleType == ObstacleType.Door)
-                position.y -= rectf.Size.h;
-
             var size = new Vector3(rectf.Size.w, rectf.Size.h, worldPose.position.y);
 
             var obstacle = new Obstacle
             {
-                position = position,
+                position = worldPose.position,
                 rotation = worldPose.orientation,
                 type = obstacleType,
                 boundingBox = new Bounds(Vector3.zero, size)
@@ -396,19 +389,11 @@ namespace Common
 
         private static Obstacle CreateObstacle(OVRPose worldPose, OVRPlugin.Boundsf boundsf, string labels, ObstacleType obstacleType)
         {
-            var position = worldPose.position;
-            position.y /= 2.0f;
-
             var size = new Vector3(boundsf.Size.w, boundsf.Size.h, boundsf.Size.d);
-
-            //if (obstacleType == ObstacleType.Misc)
-            //    position.y -= size.z;
-            //else if (obstacleType == ObstacleType.Shelf)
-            //    position.y -= size.z * 2;
 
             var obstacle = new Obstacle
             {
-                position = position,
+                position = worldPose.position,
                 rotation = worldPose.orientation,
                 type = obstacleType,
                 boundingBox = new Bounds(Vector3.zero, size)

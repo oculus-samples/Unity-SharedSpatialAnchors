@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 
+
 using System;
 using Oculus.VR.Editor;
 using UnityEngine;
@@ -34,7 +35,7 @@ public class OVRProjectConfigEditor : Editor
         DrawProjectConfigInspector(projectConfig);
     }
 
-        public static void DrawTargetDeviceInspector(OVRProjectConfig projectConfig)
+    public static void DrawTargetDeviceInspector(OVRProjectConfig projectConfig)
     {
         // Target Devices
         EditorGUILayout.LabelField("Target Devices", EditorStyles.boldLabel);
@@ -58,7 +59,8 @@ public class OVRProjectConfigEditor : Editor
         {
             bool hasModified = false;
 
-            foreach (OVRProjectConfig.DeviceType deviceType in System.Enum.GetValues(typeof(OVRProjectConfig.DeviceType)))
+            foreach (OVRProjectConfig.DeviceType deviceType in System.Enum.GetValues(
+                         typeof(OVRProjectConfig.DeviceType)))
             {
                 bool oldSupportsDevice = projectConfig.targetDeviceTypes.Contains(deviceType);
                 bool newSupportsDevice = oldSupportsDevice;
@@ -67,7 +69,8 @@ public class OVRProjectConfigEditor : Editor
                     continue;
                 }
 
-                OVREditorUtil.SetupBoolField(projectConfig, ObjectNames.NicifyVariableName(deviceType.ToString()), ref newSupportsDevice, ref hasModified);
+                OVREditorUtil.SetupBoolField(projectConfig, ObjectNames.NicifyVariableName(deviceType.ToString()),
+                    ref newSupportsDevice, ref hasModified);
 
                 if (newSupportsDevice && !oldSupportsDevice)
                 {
@@ -93,6 +96,7 @@ public class OVRProjectConfigEditor : Editor
         Security,
         Experimental,
     }
+
     static eProjectConfigTab selectedTab = 0;
     static string[] projectConfigTabStrs = null;
 
@@ -103,7 +107,9 @@ public class OVRProjectConfigEditor : Editor
 
         if (EditorUserBuildSettings.activeBuildTarget != UnityEditor.BuildTarget.Android)
         {
-            EditorGUILayout.LabelField($"Your current platform is \"{EditorUserBuildSettings.activeBuildTarget}\". These settings only apply if your active platform is \"Android\".", EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(
+                $"Your current platform is \"{EditorUserBuildSettings.activeBuildTarget}\". These settings only apply if your active platform is \"Android\".",
+                EditorStyles.wordWrappedMiniLabel);
         }
 
         if (projectConfigTabStrs == null)
@@ -113,7 +119,8 @@ public class OVRProjectConfigEditor : Editor
                 projectConfigTabStrs[i] = ObjectNames.NicifyVariableName(projectConfigTabStrs[i]);
         }
 
-        selectedTab = (eProjectConfigTab)GUILayout.SelectionGrid((int)selectedTab, projectConfigTabStrs, 3, GUI.skin.button);
+        selectedTab =
+            (eProjectConfigTab)GUILayout.SelectionGrid((int)selectedTab, projectConfigTabStrs, 3, GUI.skin.button);
         EditorGUILayout.Space(5);
         bool hasModified = false;
 
@@ -125,17 +132,22 @@ public class OVRProjectConfigEditor : Editor
                 using (new EditorGUI.DisabledScope(true))
                 {
                     EditorGUILayout.Toggle(new GUIContent("Focus Aware (Required)",
-                        "If checked, the new overlay will be displayed when the user presses the home button. The game will not be paused, but will now receive InputFocusLost and InputFocusAcquired events."), true);
+                            "If checked, the new overlay will be displayed when the user presses the home button. The game will not be paused, but will now receive InputFocusLost and InputFocusAcquired events."),
+                        true);
                 }
 
                 // Hand Tracking Support
-                OVREditorUtil.SetupEnumField(projectConfig, "Hand Tracking Support", ref projectConfig.handTrackingSupport, ref hasModified);
+                OVREditorUtil.SetupEnumField(projectConfig, "Hand Tracking Support",
+                    ref projectConfig.handTrackingSupport, ref hasModified);
 
                 OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Hand Tracking Frequency",
                         "Note that a higher tracking frequency will reserve some performance headroom from the application's budget."),
-                    ref projectConfig.handTrackingFrequency, ref hasModified, "https://developer.oculus.com/documentation/unity/unity-handtracking/#enable-hand-tracking");
+                    ref projectConfig.handTrackingFrequency, ref hasModified,
+                    "https://developer.oculus.com/documentation/unity/unity-handtracking/#enable-hand-tracking");
 
-                OVREditorUtil.SetupEnumField(projectConfig, "Hand Tracking Version", ref projectConfig.handTrackingVersion, ref hasModified);
+                OVREditorUtil.SetupEnumField(projectConfig, "Hand Tracking Version",
+                    ref projectConfig.handTrackingVersion, ref hasModified);
+
 
                 // Enable Render Model Support
                 bool renderModelSupportAvailable = OVRPluginInfo.IsOVRPluginOpenXRActivated();
@@ -144,13 +156,25 @@ public class OVRProjectConfigEditor : Editor
                 {
                     projectConfig.renderModelSupport = OVRProjectConfig.RenderModelSupport.Disabled;
                 }
+
                 OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Render Model Support",
                         "If enabled, the application will be able to load render models from the runtime."),
                     ref projectConfig.renderModelSupport, ref hasModified);
                 if (hasModified && projectConfig.renderModelSupport == OVRProjectConfig.RenderModelSupport.Disabled)
                 {
-                    projectConfig.trackedKeyboardSupport = OVRProjectConfig.TrackedKeyboardSupport.None;
+                    if (projectConfig.trackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None)
+                    {
+                        Debug.LogWarning("Tracked Keyboard support disabled. Requires Render Model Support");
+                        projectConfig.trackedKeyboardSupport = OVRProjectConfig.TrackedKeyboardSupport.None;
+                    }
+
+                    if (projectConfig.virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None)
+                    {
+                        Debug.LogWarning("Virtual Keyboard support disabled. Requires Render Model Support");
+                        projectConfig.virtualKeyboardSupport = OVRProjectConfig.FeatureSupport.None;
+                    }
                 }
+
                 EditorGUI.EndDisabledGroup();
 
                 // System Keyboard Support
@@ -165,22 +189,36 @@ public class OVRProjectConfigEditor : Editor
                 {
                     projectConfig.trackedKeyboardSupport = OVRProjectConfig.TrackedKeyboardSupport.None;
                 }
+
                 OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Tracked Keyboard Support",
                         "Show user's physical keyboard in correct position in VR."),
                     ref projectConfig.trackedKeyboardSupport, ref hasModified);
 
-                // Anchor Support
-                using (new EditorGUI.DisabledScope(projectConfig.sharedAnchorSupport !=
-                                                   OVRProjectConfig.FeatureSupport.None))
+                // Virtual Keyboard Support
+                bool virtualKeyboardSupportAvailable = OVRPluginInfo.IsOVRPluginOpenXRActivated();
+                EditorGUI.BeginDisabledGroup(!virtualKeyboardSupportAvailable);
+                if (!virtualKeyboardSupportAvailable)
                 {
-                    var tooltip = projectConfig.sharedAnchorSupport != OVRProjectConfig.FeatureSupport.None
-                        ? "Anchor Support is required for Shared Spatial Anchor Support."
-                        : "";
-                    OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Anchor Support", tooltip), ref projectConfig.anchorSupport, ref hasModified);
+                    projectConfig.virtualKeyboardSupport = OVRProjectConfig.FeatureSupport.None;
+                }
+
+                OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Virtual Keyboard Support",
+                        "Provides a consistent typing experience across Meta Quest VR applications."),
+                    ref projectConfig.virtualKeyboardSupport, ref hasModified);
+
+                // Anchor Support - linked to Shared Spatial Anchors and Scene
+                var anchorSupportRequired = projectConfig.sharedAnchorSupport != OVRProjectConfig.FeatureSupport.None;
+                var anchorSupportTooltip = "Anchor Support is required for Shared Spatial Anchor Support.";
+                using (new EditorGUI.DisabledScope(anchorSupportRequired))
+                {
+                    var tooltip = anchorSupportRequired ? anchorSupportTooltip : "";
+                    OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Anchor Support", tooltip),
+                        ref projectConfig.anchorSupport, ref hasModified);
                 }
 
                 OVREditorUtil.SetupEnumField(projectConfig,
-                    new GUIContent("Shared Spatial Anchor Support", "Enables support for sharing spatial anchors with other users. This requires Anchor Support to be enabled."),
+                    new GUIContent("Shared Spatial Anchor Support",
+                        "Enables support for sharing spatial anchors with other users. This requires Anchor Support to be enabled."),
                     ref projectConfig.sharedAnchorSupport, ref hasModified);
 
                 if (projectConfig.sharedAnchorSupport != OVRProjectConfig.FeatureSupport.None &&
@@ -191,31 +229,52 @@ public class OVRProjectConfigEditor : Editor
                 }
 
 
+
                 // Body Tracking Support
-                OVREditorUtil.SetupEnumField(projectConfig, "Body Tracking Support", ref projectConfig.bodyTrackingSupport, ref hasModified);
+                OVREditorUtil.SetupEnumField(projectConfig, "Body Tracking Support",
+                    ref projectConfig.bodyTrackingSupport, ref hasModified);
 
                 // Face Tracking Support
-                OVREditorUtil.SetupEnumField(projectConfig, "Face Tracking Support", ref projectConfig.faceTrackingSupport, ref hasModified);
+                OVREditorUtil.SetupEnumField(projectConfig, "Face Tracking Support",
+                    ref projectConfig.faceTrackingSupport, ref hasModified);
 
                 // Eye Tracking Support
-                OVREditorUtil.SetupEnumField(projectConfig, "Eye Tracking Support", ref projectConfig.eyeTrackingSupport, ref hasModified);
+                OVREditorUtil.SetupEnumField(projectConfig, "Eye Tracking Support",
+                    ref projectConfig.eyeTrackingSupport, ref hasModified);
 
                 if (hasModified && projectConfig.trackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None)
                 {
                     projectConfig.renderModelSupport = OVRProjectConfig.RenderModelSupport.Enabled;
                 }
+
+                if (hasModified && projectConfig.virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None)
+                {
+                    projectConfig.renderModelSupport = OVRProjectConfig.RenderModelSupport.Enabled;
+                }
+
                 if (!OVRPluginInfo.IsOVRPluginOpenXRActivated())
                 {
                     EditorGUILayout.HelpBox(
                         "The OpenXR backend must be enabled in the Oculus menu to use the Render Model and Tracked Keyboard features.",
                         MessageType.Info);
                 }
-                if (projectConfig.trackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None && projectConfig.renderModelSupport == OVRProjectConfig.RenderModelSupport.Disabled)
+
+                if (projectConfig.trackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None &&
+                    projectConfig.renderModelSupport == OVRProjectConfig.RenderModelSupport.Disabled)
                 {
                     EditorGUILayout.HelpBox(
                         "Render model support is required to load keyboard models from the runtime.",
                         MessageType.Error);
                 }
+
+                if (projectConfig.virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None &&
+                    projectConfig.renderModelSupport == OVRProjectConfig.RenderModelSupport.Disabled)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Render model support is required to load virtual keyboard models from the runtime.",
+                        MessageType.Error);
+                }
+
                 EditorGUI.EndDisabledGroup();
 
                 // System Splash Screen
@@ -231,7 +290,7 @@ public class OVRProjectConfigEditor : Editor
 
                 // Passthrough support
                 OVREditorUtil.SetupEnumField(projectConfig, new GUIContent("Passthrough Support",
-                    "Allows the application to use passthrough functionality. This option must be enabled at build time, otherwise initializing passthrough and creating passthrough layers in application scenes will fail."),
+                        "Allows the application to use passthrough functionality. This option must be enabled at build time, otherwise initializing passthrough and creating passthrough layers in application scenes will fail."),
                     ref projectConfig._insightPassthroughSupport, ref hasModified);
 
                 break;
@@ -247,13 +306,16 @@ public class OVRProjectConfigEditor : Editor
 
             case eProjectConfigTab.Security:
 
-                OVREditorUtil.SetupBoolField(projectConfig, "Disable Backups", ref projectConfig.disableBackups, ref hasModified,
+                OVREditorUtil.SetupBoolField(projectConfig, "Disable Backups", ref projectConfig.disableBackups,
+                    ref hasModified,
                     "https://developer.android.com/guide/topics/data/autobackup#EnablingAutoBackup");
-                OVREditorUtil.SetupBoolField(projectConfig, "Enable NSC Configuration", ref projectConfig.enableNSCConfig, ref hasModified,
+                OVREditorUtil.SetupBoolField(projectConfig, "Enable NSC Configuration",
+                    ref projectConfig.enableNSCConfig, ref hasModified,
                     "https://developer.android.com/training/articles/security-config");
                 EditorGUI.BeginDisabledGroup(!projectConfig.enableNSCConfig);
                 ++EditorGUI.indentLevel;
-                OVREditorUtil.SetupInputField(projectConfig, "Custom Security XML Path", ref projectConfig.securityXmlPath, ref hasModified);
+                OVREditorUtil.SetupInputField(projectConfig, "Custom Security XML Path",
+                    ref projectConfig.securityXmlPath, ref hasModified);
                 --EditorGUI.indentLevel;
                 EditorGUI.EndDisabledGroup();
 
@@ -265,8 +327,6 @@ public class OVRProjectConfigEditor : Editor
                 OVREditorUtil.SetupBoolField(projectConfig, new GUIContent("Experimental Features Enabled",
                         "If checked, this application can use experimental features. Note that such features are for developer use only. This option must be disabled when submitting to the Oculus Store."),
                     ref projectConfig.experimentalFeaturesEnabled, ref hasModified);
-
-                OVREditorUtil.SetupEnumField(projectConfig, "Virtual Keyboard Support", ref projectConfig.virtualKeyboardSupport, ref hasModified);
 
                 break;
         }

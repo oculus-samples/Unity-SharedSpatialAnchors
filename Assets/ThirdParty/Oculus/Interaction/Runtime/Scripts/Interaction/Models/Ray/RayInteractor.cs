@@ -71,6 +71,7 @@ namespace Oculus.Interaction
         {
             base.Awake();
             Selector = _selector as ISelector;
+            _nativeId = 0x52617949746f7220;
         }
 
         protected override void Start()
@@ -116,7 +117,7 @@ namespace Oculus.Interaction
                 {
                     bool equal = Mathf.Abs(hit.Distance - closestDist) < _equalDistanceThreshold;
                     if ((!equal && hit.Distance < closestDist) ||
-                        (equal && interactable.TiebreakerScore > closestInteractable.TiebreakerScore))
+                        (equal && ComputeCandidateTiebreaker(interactable, closestInteractable) > 0))
                     {
                         closestDist = hit.Distance;
                         closestInteractable = interactable;
@@ -132,6 +133,17 @@ namespace Oculus.Interaction
             _rayCandidateProperties = new RayCandidateProperties(closestInteractable, candidatePosition);
 
             return closestInteractable;
+        }
+
+        protected override int ComputeCandidateTiebreaker(RayInteractable a, RayInteractable b)
+        {
+            int result = base.ComputeCandidateTiebreaker(a, b);
+            if (result != 0)
+            {
+                return result;
+            }
+
+            return a.TiebreakerScore.CompareTo(b.TiebreakerScore);
         }
 
         protected override void InteractableSelected(RayInteractable interactable)

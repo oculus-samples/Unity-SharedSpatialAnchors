@@ -88,7 +88,9 @@ namespace Oculus.Voice.Bindings.Android
 
         public void onRequestCreated()
         {
+            #pragma warning disable CS0618
             VoiceEvents.OnRequestCreated?.Invoke(null);
+            VoiceEvents.OnSend?.Invoke(null);
         }
 
         public void onStartListening()

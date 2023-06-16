@@ -21,7 +21,9 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Oculus.Interaction;
 using System.Collections.Generic;
+using Photon.Pun;
 
 /// <summary>
 /// Main manager for sample interaction
@@ -60,6 +62,8 @@ public class SampleController : MonoBehaviour
 
     private List<SharedAnchor> sharedanchorList = new List<SharedAnchor>();
 
+    private RayInteractor _rayInteractor;
+
     private void Awake()
     {
         if (Instance == null)
@@ -78,11 +82,13 @@ public class SampleController : MonoBehaviour
         placementPreview.transform.localRotation = Quaternion.identity;
         placementPreview.transform.localScale = Vector3.one;
         placementPreview.SetActive(false);
+        _rayInteractor = FindObjectOfType<RayInteractor>();
     }
 
     private void Update()
     {
-        var shouldPlaceNewAnchor = _isPlacementMode && OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger);
+        var rayInteractorHoveringUI = _rayInteractor == null || (_rayInteractor != null && _rayInteractor.Candidate == null);
+        var shouldPlaceNewAnchor = _isPlacementMode && OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger) && rayInteractorHoveringUI;
 
         if (shouldPlaceNewAnchor)
         {
@@ -109,7 +115,7 @@ public class SampleController : MonoBehaviour
 
         colocationAnchor = Instantiate(anchorPrefab, placementRoot.position, placementRoot.rotation).GetComponent<SharedAnchor>();
 
-        if(automaticCoLocation)
+        if (automaticCoLocation)
             StartCoroutine(WaitingForAnchorLocalization());
     }
 
@@ -125,7 +131,7 @@ public class SampleController : MonoBehaviour
         colocationAnchor.OnAlignButtonPressed();
     }
 
-    public void Log(string message)
+    public void Log(string message, bool error = false)
     {
         // In VR Logging
 
@@ -135,9 +141,17 @@ public class SampleController : MonoBehaviour
         // Console logging (goes to logcat on device)
 
         const string anchorTag = "SpatialAnchorsUnity: ";
-        Debug.Log(anchorTag + message);
+        if (error)
+            Debug.LogError(anchorTag + message);
+        else
+            Debug.Log(anchorTag + message);
 
         pageText.text = SampleController.Instance.logText.pageToDisplay + "/" + logText.textInfo.pageCount;
+    }
+
+    public void LogError(string message)
+    {
+        Log(message, true);
     }
 
     public void AddSharedAnchorToLocalPlayer(SharedAnchor anchor)

@@ -18,6 +18,9 @@ public class AudioClipAudioSource : MonoBehaviour, IAudioInputSource
 {
     [SerializeField] private AudioSource _audioSource;
     [SerializeField] private List<AudioClip> _audioClips;
+    [Tooltip("If true, the associated clips will be played again from the beginning with multiple requests after the clip queue has been exhausted.")]
+    [SerializeField] private bool _loopRequests;
+
     private bool _isRecording;
 
     private Queue<int> _audioQueue = new Queue<int>();
@@ -74,6 +77,10 @@ public class AudioClipAudioSource : MonoBehaviour, IAudioInputSource
             return;
         }
         _isRecording = true;
+        if (clipIndex >= _audioClips.Count && _loopRequests)
+        {
+            clipIndex = 0;
+        }
         if (clipIndex < _audioClips.Count)
         {
             activeClip = clipData[clipIndex];
@@ -111,7 +118,7 @@ public class AudioClipAudioSource : MonoBehaviour, IAudioInputSource
             OnSampleReady?.Invoke(data.Length, data, max);
             yield return null;
         }
-        _isRecording = false;
+        StopRecording();
         clipIndex++;
     }
 

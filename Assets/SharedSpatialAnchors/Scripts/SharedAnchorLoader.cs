@@ -57,6 +57,16 @@ public class SharedAnchorLoader : MonoBehaviour
         {
             Destroy(this);
         }
+
+        string anchorIds = PlayerPrefs.GetString("local_anchors");
+        if (anchorIds != "")
+        {
+            string[] anchorIdList = anchorIds.Split('|');
+            foreach(string anchorIDString in anchorIdList)
+            {
+                _locallySavedAnchorUuids.Add(anchorIDString);
+            }
+        }
     }
 
     private System.Collections.IEnumerator WaitingForAnchorLocalization()
@@ -111,7 +121,7 @@ public class SharedAnchorLoader : MonoBehaviour
     {
         // Loads the last used shared anchor form local device.
         string uuid = PlayerPrefs.GetString("cached_anchor_uuid");
-        if (uuid == null)
+        if (uuid == null || uuid == "")
         {
             SampleController.Instance.Log("LoadLastUsedCachedAnchor: no cached anchor found");
             return;
@@ -191,7 +201,7 @@ public class SharedAnchorLoader : MonoBehaviour
 
         if (unboundAnchors == null)
         {
-            Debug.LogError($"{nameof(OnLoadUnboundAnchorComplete)}: Failed to query anchors - {nameof(OVRSpatialAnchor.LoadUnboundAnchors)} returned null.");
+            SampleController.Instance.Log($"{nameof(OnLoadUnboundAnchorComplete)}: Failed to query anchors - {nameof(OVRSpatialAnchor.LoadUnboundAnchors)} returned null.");
             return;
         }
 
@@ -204,23 +214,23 @@ public class SharedAnchorLoader : MonoBehaviour
 
         foreach (var unboundAnchor in unboundAnchors)
         {
-            colocationAnchor = InstantiateUnboundAnchor();
+            OVRSpatialAnchor anchorToBind = InstantiateUnboundAnchor();
 
-            if (colocationAnchor != null)
+            if (anchorToBind != null)
             {
                 try
                 {
                     SampleController.Instance.Log("Binding Anchor...");
-                    unboundAnchor.BindTo(colocationAnchor.GetComponent<OVRSpatialAnchor>());
+                    unboundAnchor.BindTo(anchorToBind);
                 }
                 catch
                 {
                     SampleController.Instance.Log($"UnboundAnchor.BindTo has failed");
-                    GameObject.Destroy(colocationAnchor);
+                    GameObject.Destroy(anchorToBind.gameObject);
                     throw;
                 }
 
-                while (colocationAnchor.GetComponent<OVRSpatialAnchor>().PendingCreation)
+                while (anchorToBind.PendingCreation)
                 {
                     yield return new WaitForEndOfFrame();
                     SampleController.Instance.Log("Waiting on pending anchor creation...");
@@ -229,20 +239,20 @@ public class SharedAnchorLoader : MonoBehaviour
                 SampleController.Instance.Log($"Anchor created and bound to cloud anchor {unboundAnchor.Uuid}");
                 _loadedAnchorUuids.Add(unboundAnchor.Uuid);
 
-                if (SampleController.Instance.automaticCoLocation && colocationAnchor)
+                if (SampleController.Instance.automaticCoLocation && anchorToBind)
                 {
+                    colocationAnchor = anchorToBind.GetComponent<SharedAnchor>();
                     StartCoroutine(WaitingForAnchorLocalization());
                 }
             }
             else
             {
-                SampleController.Instance.Log($"OVRSpatialAnchor is null");
-                Debug.LogError("OVRSpatialAnchor is null");
+                SampleController.Instance.LogError($"{nameof(BindAnchorsCoroutine)}: {nameof(anchorToBind)} is null");
             }
         }
     }
 
-    private SharedAnchor InstantiateUnboundAnchor()
+    private OVRSpatialAnchor InstantiateUnboundAnchor()
     {
         var spatialAnchor = Instantiate(SampleController.Instance.anchorPrefab);
 
@@ -279,7 +289,7 @@ public class SharedAnchorLoader : MonoBehaviour
                 cachedAnchor.IsAnchorShared = true;
             }
         }
-        return sharedAnchor;
+        return spatialAnchor;
     }
 
     public void AddLocallySavedAnchor(OVRSpatialAnchor anchor)

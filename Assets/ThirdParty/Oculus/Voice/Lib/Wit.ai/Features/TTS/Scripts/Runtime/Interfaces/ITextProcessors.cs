@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+using System.Collections.Generic;
 using Meta.WitAi.TTS.Utilities;
 
 namespace Meta.WitAi.TTS.Interfaces
@@ -17,19 +18,17 @@ namespace Meta.WitAi.TTS.Interfaces
         /// Called before prefix/postfix modifications are applied to the input string
         /// </summary>
         /// <param name="speaker">The speaker that will be used to speak the resulting text</param>
-        /// <param name="text">The current text that will be used for speech</param>
-        /// <returns>If false is returned, the calling speak operation will be cancelled</returns>
-        bool OnPreprocessTTS(TTSSpeaker speaker, ref string text);
+        /// <param name="phrases">The current phrase list that will be used for speech.  Can be added to or removed as needed.</param>
+        void OnPreprocessTTS(TTSSpeaker speaker, List<string> phrases);
     }
-    
+
     public interface ISpeakerTextPostprocessor
     {
         /// <summary>
         /// Called after prefix/postfix modifications are applied to the input string
         /// </summary>
-        /// <param name="speaker"></param>
-        /// <param name="text"></param>
-        /// <returns>If false is returned, the calling speak operation will be cancelled</returns>
-        bool OnPostprocessTTS(TTSSpeaker speaker, ref string text);
+        /// <param name="speaker">The speaker that will be used to speak the resulting text</param>
+        /// <param name="phrases">The current phrase list that will be used for speech.  Can be added to or removed as needed.</param>
+        void OnPostprocessTTS(TTSSpeaker speaker, List<string> phrases);
     }
 }

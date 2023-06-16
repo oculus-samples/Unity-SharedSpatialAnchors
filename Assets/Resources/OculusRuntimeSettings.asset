@@ -13,3 +13,5 @@ MonoBehaviour:
   m_Name: OculusRuntimeSettings
   m_EditorClassIdentifier: 
   colorSpace: 7
+  hasSetTelemetryEnabled: 1
+  telemetryEnabled: 1

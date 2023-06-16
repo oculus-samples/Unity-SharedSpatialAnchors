@@ -118,6 +118,7 @@ namespace Oculus.Interaction.Surfaces
         {
             return BackingSurface.Raycast(ray, out hit, maxDistance) &&
                    ClipBounds(InfiniteBounds, out Bounds clipBounds) &&
+                   clipBounds.size != Vector3.zero &&
                    clipBounds.Contains(Transform.InverseTransformPoint(hit.Point));
         }
 

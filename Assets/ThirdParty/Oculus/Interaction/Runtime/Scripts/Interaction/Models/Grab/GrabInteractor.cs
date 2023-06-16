@@ -58,6 +58,7 @@ namespace Oculus.Interaction
             base.Awake();
             Selector = _selector as ISelector;
             VelocityCalculator = _velocityCalculator as IVelocityCalculator;
+            _nativeId = 0x4772616249746f72;
         }
 
         protected override void Start()

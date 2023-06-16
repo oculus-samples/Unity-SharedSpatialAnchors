@@ -20,16 +20,17 @@
 
 using System;
 using System.Globalization;
+using Meta.Voice;
 using Meta.WitAi;
 using Meta.WitAi.Configuration;
 using Meta.WitAi.Data;
 using Meta.WitAi.Data.Configuration;
 using Meta.WitAi.Interfaces;
 using Meta.WitAi.Json;
+using Meta.WitAi.Requests;
 using Oculus.Voice.Bindings.Android;
 using Oculus.Voice.Core.Bindings.Android.PlatformLogger;
 using Oculus.Voice.Core.Bindings.Interfaces;
-using Oculus.Voice.Core.Utilities;
 using Oculus.Voice.Interfaces;
 using Oculus.VoiceSDK.Utilities;
 using UnityEngine;
@@ -59,7 +60,7 @@ namespace Oculus.Voice
         private IVoiceSDKLogger voiceSDKLoggerImpl;
 #if UNITY_ANDROID && !UNITY_EDITOR
         // This version is auto-updated for a release build
-        private readonly string PACKAGE_VERSION = "51.0.0.154.269";
+        private readonly string PACKAGE_VERSION = "54.0.0.135.284";
 #endif
 
         private bool Initialized => null != voiceServiceImpl;
@@ -67,13 +68,18 @@ namespace Oculus.Voice
         public event Action OnInitialized;
 
         #region Voice Service Properties
-        public override bool Active => null != voiceServiceImpl && voiceServiceImpl.Active;
-        public override bool IsRequestActive => null != voiceServiceImpl && voiceServiceImpl.IsRequestActive;
+        public override bool Active => base.Active || (null != voiceServiceImpl && voiceServiceImpl.Active);
+        public override bool IsRequestActive => base.IsRequestActive || (null != voiceServiceImpl && voiceServiceImpl.IsRequestActive);
         public override ITranscriptionProvider TranscriptionProvider
         {
-            get => voiceServiceImpl.TranscriptionProvider;
-            set => voiceServiceImpl.TranscriptionProvider = value;
-
+            get => voiceServiceImpl?.TranscriptionProvider;
+            set
+            {
+                if (voiceServiceImpl != null)
+                {
+                    voiceServiceImpl.TranscriptionProvider = value;
+                }
+            }
         }
         public override bool MicActive => null != voiceServiceImpl && voiceServiceImpl.MicActive;
         protected override bool ShouldSendMicData => witRuntimeConfiguration.sendAudioToWit ||
@@ -106,60 +112,59 @@ namespace Oculus.Voice
             }
         }
 
-        #region Voice Service Methods
-
-        public override void Activate(string text, WitRequestOptions options)
+        #region Voice Service Text Methods
+        public override bool CanSend()
         {
-            if (IsNetworkPresent())
+            return base.CanSend() && voiceServiceImpl.CanSend();
+        }
+
+        public override VoiceServiceRequest Activate(string text, WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents)
+        {
+            if (CanSend())
             {
-                voiceSDKLoggerImpl.LogInteractionStart(options.RequestId, "message");
+                voiceSDKLoggerImpl.LogInteractionStart(requestOptions.RequestId, "message");
                 LogRequestConfig();
-                voiceServiceImpl.Activate(text, options);
+                return voiceServiceImpl.Activate(text, requestOptions, requestEvents);
             }
+            return null;
         }
+        #endregion
 
-        public override void Activate(WitRequestOptions options)
+        #region Voice Service Audio Methods
+        public override bool CanActivateAudio()
         {
-            if (IsMicPresent() && IsNetworkPresent())
-            {
-                voiceSDKLoggerImpl.LogInteractionStart(options.RequestId, "speech");
-                LogRequestConfig();
-                voiceServiceImpl.Activate(options);
-            }
+            return base.CanActivateAudio() && voiceServiceImpl.CanActivateAudio();
         }
 
-        public override void ActivateImmediately(WitRequestOptions options)
-        {
-            if (IsMicPresent() && IsNetworkPresent())
-            {
-                voiceSDKLoggerImpl.LogInteractionStart(options.RequestId, "speech");
-                voiceServiceImpl.ActivateImmediately(options);
-            }
-        }
-
-        private bool IsMicPresent()
+        protected override string GetActivateAudioError()
         {
             if (!HasPlatformIntegrations && !AudioBuffer.Instance.IsInputAvailable)
             {
-                VoiceEvents.OnError?.Invoke("No Microphone present",
-                    "No Microphone(s)/recording devices found.  You will be unable to capture audio on this device.");
-
-                return false;
+                return "No Microphone(s)/recording devices found.  You will be unable to capture audio on this device.";
             }
-
-            return true;
+            return string.Empty;
         }
 
-        private bool IsNetworkPresent()
+        public override VoiceServiceRequest Activate(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents)
         {
-            if (Application.internetReachability == NetworkReachability.NotReachable)
+            if (CanActivateAudio() && CanSend())
             {
-                VoiceEvents.OnError?.Invoke("Network unreachable", "Unable to reach the internet.  Check your connection.");
-
-                return false;
+                voiceSDKLoggerImpl.LogInteractionStart(requestOptions.RequestId, "speech");
+                LogRequestConfig();
+                return voiceServiceImpl.Activate(requestOptions, requestEvents);
             }
+            return null;
+        }
 
-            return true;
+        public override VoiceServiceRequest ActivateImmediately(WitRequestOptions requestOptions, VoiceServiceRequestEvents requestEvents)
+        {
+            if (CanActivateAudio() && CanSend())
+            {
+                voiceSDKLoggerImpl.LogInteractionStart(requestOptions.RequestId, "speech");
+                LogRequestConfig();
+                return voiceServiceImpl.ActivateImmediately(requestOptions, requestEvents);
+            }
+            return null;
         }
 
         public override void Deactivate()
@@ -177,18 +182,29 @@ namespace Oculus.Voice
         private void InitVoiceSDK()
         {
             // Clean up if we're switching to native C# wit impl
-            if (!UsePlatformIntegrations && voiceServiceImpl is VoiceSDKImpl)
+            if (!UsePlatformIntegrations)
             {
-                ((VoiceSDKImpl) voiceServiceImpl).Disconnect();
+                if (voiceServiceImpl is VoiceSDKImpl)
+                {
+                    ((VoiceSDKImpl) voiceServiceImpl).Disconnect();
+                }
+
+                if (voiceSDKLoggerImpl is VoiceSDKPlatformLoggerImpl)
+                {
+                    try
+                    {
+                        ((VoiceSDKPlatformLoggerImpl)voiceSDKLoggerImpl).Disconnect();
+                    }
+                    catch (Exception e)
+                    {
+                        VLog.E($"Disconnection error: {e.Message}");
+                    }
+                }
             }
 #if UNITY_ANDROID && !UNITY_EDITOR
-            // Do not re-init logging if we've already initialized logger
-            if (voiceSDKLoggerImpl == null)
-            {
-                var loggerImpl = new VoiceSDKPlatformLoggerImpl();
-                loggerImpl.Connect(PACKAGE_VERSION);
-                voiceSDKLoggerImpl = loggerImpl;
-            }
+            var loggerImpl = new VoiceSDKPlatformLoggerImpl();
+            loggerImpl.Connect(PACKAGE_VERSION);
+            voiceSDKLoggerImpl = loggerImpl;
 
             if (UsePlatformIntegrations)
             {
@@ -268,18 +284,17 @@ namespace Oculus.Voice
 
             // Logging
             VoiceEvents.OnResponse?.AddListener(OnWitResponseListener);
-            VoiceEvents.OnAborted?.AddListener(OnAborted);
-            VoiceEvents.OnError?.AddListener(OnError);
             VoiceEvents.OnStartListening?.AddListener(OnStartedListening);
             VoiceEvents.OnMinimumWakeThresholdHit?.AddListener(OnMinimumWakeThresholdHit);
             VoiceEvents.OnStoppedListening?.AddListener(OnStoppedListening);
             VoiceEvents.OnMicDataSent?.AddListener(OnMicDataSent);
-            VoiceEvents.OnRequestCreated?.AddListener(OnWitRequestCreated);
-            VoiceEvents.onPartialTranscription?.AddListener(OnPartialTranscription);
-            VoiceEvents.onFullTranscription?.AddListener(OnFullTranscription);
+            VoiceEvents.OnSend?.AddListener(OnSend);
+            VoiceEvents.OnPartialTranscription?.AddListener(OnPartialTranscription);
+            VoiceEvents.OnFullTranscription?.AddListener(OnFullTranscription);
             VoiceEvents.OnStoppedListeningDueToTimeout?.AddListener(OnStoppedListeningDueToTimeout);
             VoiceEvents.OnStoppedListeningDueToInactivity?.AddListener(OnStoppedListeningDueToInactivity);
             VoiceEvents.OnStoppedListeningDueToDeactivation?.AddListener(OnStoppedListeningDueToDeactivation);
+            VoiceEvents.OnComplete?.AddListener(OnRequestComplete);
             TelemetryEvents.OnAudioTrackerFinished?.AddListener(OnAudioDurationTrackerFinished);
         }
 
@@ -298,21 +313,21 @@ namespace Oculus.Voice
             }
             #endif
             voiceServiceImpl = null;
+            voiceSDKLoggerImpl = null;
 
             // Logging
             VoiceEvents.OnResponse?.RemoveListener(OnWitResponseListener);
-            VoiceEvents.OnAborted?.RemoveListener(OnAborted);
-            VoiceEvents.OnError?.RemoveListener(OnError);
             VoiceEvents.OnStartListening?.RemoveListener(OnStartedListening);
             VoiceEvents.OnMinimumWakeThresholdHit?.RemoveListener(OnMinimumWakeThresholdHit);
             VoiceEvents.OnStoppedListening?.RemoveListener(OnStoppedListening);
             VoiceEvents.OnMicDataSent?.RemoveListener(OnMicDataSent);
-            VoiceEvents.OnRequestCreated?.RemoveListener(OnWitRequestCreated);
-            VoiceEvents.onPartialTranscription?.RemoveListener(OnPartialTranscription);
-            VoiceEvents.onFullTranscription?.RemoveListener(OnFullTranscription);
+            VoiceEvents.OnSend?.RemoveListener(OnSend);
+            VoiceEvents.OnPartialTranscription?.RemoveListener(OnPartialTranscription);
+            VoiceEvents.OnFullTranscription?.RemoveListener(OnFullTranscription);
             VoiceEvents.OnStoppedListeningDueToTimeout?.RemoveListener(OnStoppedListeningDueToTimeout);
             VoiceEvents.OnStoppedListeningDueToInactivity?.RemoveListener(OnStoppedListeningDueToInactivity);
             VoiceEvents.OnStoppedListeningDueToDeactivation?.RemoveListener(OnStoppedListeningDueToDeactivation);
+            VoiceEvents.OnComplete?.RemoveListener(OnRequestComplete);
             TelemetryEvents.OnAudioTrackerFinished?.RemoveListener(OnAudioDurationTrackerFinished);
         }
 
@@ -338,18 +353,6 @@ namespace Oculus.Voice
                 string speechLength = witResponseNode["speech"]["tokens"][speechTokensLength - 1]?["end"]?.Value;
                 voiceSDKLoggerImpl.LogAnnotation("audioLength", speechLength);
             }
-
-            voiceSDKLoggerImpl.LogInteractionEndSuccess();
-        }
-
-        void OnAborted()
-        {
-            voiceSDKLoggerImpl.LogInteractionEndFailure("aborted");
-        }
-
-        void OnError(string errorType, string errorMessage)
-        {
-            voiceSDKLoggerImpl.LogInteractionEndFailure($"{errorType}:{errorMessage}");
         }
 
         void OnStartedListening()
@@ -387,7 +390,7 @@ namespace Oculus.Voice
             voiceSDKLoggerImpl.LogInteractionPoint("micDataSent");
         }
 
-        void OnWitRequestCreated(WitRequest request)
+        void OnSend(VoiceServiceRequest request)
         {
             voiceSDKLoggerImpl.LogInteractionPoint("witRequestCreated");
             if (request != null)
@@ -410,6 +413,25 @@ namespace Oculus.Voice
         void OnFullTranscription(string text)
         {
             voiceSDKLoggerImpl.LogInteractionPoint("fullTranscriptionTime");
+        }
+
+        void OnRequestComplete(VoiceServiceRequest request)
+        {
+            if (request.State == VoiceRequestState.Failed)
+            {
+                VLog.E($"Request Failed\nError: {request.Results.Message}");
+                voiceSDKLoggerImpl.LogInteractionEndFailure(request.Results.Message);
+            }
+            else if (request.State == VoiceRequestState.Canceled)
+            {
+                VLog.W($"Request Canceled\nMessage: {request.Results.Message}");
+                voiceSDKLoggerImpl.LogInteractionEndFailure("aborted");
+            }
+            else
+            {
+                VLog.D($"Request Success");
+                voiceSDKLoggerImpl.LogInteractionEndSuccess();
+            }
         }
 
         void LogRequestConfig()

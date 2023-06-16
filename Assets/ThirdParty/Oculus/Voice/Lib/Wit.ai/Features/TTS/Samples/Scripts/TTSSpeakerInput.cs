@@ -53,9 +53,14 @@ namespace Meta.WitAi.TTS.Samples
         // Format text with current datetime
         private string FormatText(string text)
         {
-            DateTime now = DateTime.Now;
-            string dateString = $"{now.ToLongDateString()} at {now.ToShortTimeString()}";
-            return text.Replace(_dateId, dateString);
+            string result = text;
+            if (result.Contains(_dateId))
+            {
+                DateTime now = DateTime.Now;
+                string dateString = $"{now.ToLongDateString()} at {now.ToShortTimeString()}";
+                result = text.Replace(_dateId, dateString);
+            }
+            return result;
         }
         // Remove delegates
         private void OnDisable()

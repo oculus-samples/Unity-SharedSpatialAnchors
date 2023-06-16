@@ -105,6 +105,16 @@ namespace Oculus.Interaction
             _emitOnFirstUpdate = emitOnFirstUpdate;
         }
 
+        public void InjectOptionalWhenActivated(UnityEvent whenActivated)
+        {
+            _whenActivated = whenActivated;
+        }
+
+        public void InjectOptionalWhenDeactivated(UnityEvent whenDeactivated)
+        {
+            _whenDeactivated = whenDeactivated;
+        }
+
         #endregion
     }
 }

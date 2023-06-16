@@ -35,7 +35,7 @@ using UnityEngine.Assertions;
 /// See <see cref="OVRCustomFaceEditor"/> for more information.
 /// </remarks>
 [RequireComponent(typeof(SkinnedMeshRenderer))]
-public sealed class OVRCustomFace : OVRFace
+public class OVRCustomFace : OVRFace
 {
     public OVRFaceExpressions.FaceExpression[] Mappings
     {
@@ -44,11 +44,18 @@ public sealed class OVRCustomFace : OVRFace
     }
 
     [SerializeField]
-    [Tooltip("The mapping between Face Expressions to the blendshapes available on the shared mesh of the skinned mesh renderer")]
+    [Tooltip("The mapping between Face Expressions to the blendshapes available " +
+             "on the shared mesh of the skinned mesh renderer")]
     internal OVRFaceExpressions.FaceExpression[] _mappings;
 
     [SerializeField, HideInInspector]
     internal RetargetingType retargetingType;
+
+    [SerializeField]
+    [Tooltip("Allow duplicates when mapping blendshapes to Face Expressions")]
+    internal bool _allowDuplicateMapping = true;
+
+    protected bool AllowDuplicateMapping => _allowDuplicateMapping;
 
     /// <inheritdoc/>
     protected override void Start()
@@ -57,18 +64,33 @@ public sealed class OVRCustomFace : OVRFace
 
         Assert.IsNotNull(_mappings);
         Assert.AreEqual(_mappings.Length, GetComponent<SkinnedMeshRenderer>().sharedMesh.blendShapeCount,
-	        "Mapping out of sync with shared mesh.");
+            "Mapping out of sync with shared mesh.");
     }
 
     /// <inheritdoc/>
-    protected override OVRFaceExpressions.FaceExpression GetFaceExpression(int blendShapeIndex)
+    internal protected override OVRFaceExpressions.FaceExpression GetFaceExpression(int blendShapeIndex)
     {
         Assert.IsTrue(blendShapeIndex < _mappings.Length && blendShapeIndex >= 0);
         return _mappings[blendShapeIndex];
     }
 
-	public enum RetargetingType
-	{
-		OculusFace,
-	}
+    /// <summary>
+    /// Allows the user to define their own blend shape name and face expression pair mappings.
+    /// By default it will just return the Oculus version.
+    /// </summary>
+    /// <returns>Two arrays, each relating a blend shape name with a face expression pair.</returns>
+    internal protected virtual (string[], OVRFaceExpressions.FaceExpression[])
+        GetCustomBlendShapeNameAndExpressionPairs()
+    {
+        string[] oculusBlendShapeNames = Enum.GetNames(typeof(OVRFaceExpressions.FaceExpression));
+        OVRFaceExpressions.FaceExpression[] oculusFaceExpressions =
+            (OVRFaceExpressions.FaceExpression[])Enum.GetValues(typeof(OVRFaceExpressions.FaceExpression));
+        return (oculusBlendShapeNames, oculusFaceExpressions);
+    }
+
+    public enum RetargetingType
+    {
+        OculusFace,
+        Custom,
+    }
 }

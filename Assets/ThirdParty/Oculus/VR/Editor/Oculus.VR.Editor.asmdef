@@ -74,6 +74,11 @@
             "name": "com.unity.xr.oculus",
             "expression": "3.2.1-pre",
             "define": "OCULUS_XR_EYE_TRACKED_FOVEATED_RENDERING"
+        },
+        {
+            "name": "com.unity.xr.oculus",
+            "expression": "4.0.0",
+            "define": "OCULUS_XR_PLUGIN_QUEST_ONE_REMOVED"
         }
     ],
     "noEngineReferences": false

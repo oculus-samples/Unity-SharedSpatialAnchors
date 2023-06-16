@@ -72,11 +72,13 @@ namespace Oculus.Interaction
             Vector3 center = _handGrabApi.GetPinchCenter();
             if (_collider != null)
             {
-                transform.position = _collider.ClosestPoint(center);
+                center = _collider.ClosestPoint(center);
             }
-            else
+
+            transform.position = center;
+            if (Hand.GetRootPose(out Pose pose))
             {
-                transform.position = center;
+                transform.rotation = pose.rotation;
             }
         }
 

@@ -67,24 +67,9 @@ namespace Meta.WitAi.Windows
             _service.DeactivateAndAbortRequest();
         }
 
-        public override WitRequestCreatedEvent OnRequestCreated
+        public override VoiceServiceRequestEvent OnSend
         {
-            get => _service.VoiceEvents.OnRequestCreated;
-        }
-
-        public override WitErrorEvent OnError
-        {
-            get => _service.VoiceEvents.OnError;
-        }
-
-        public override WitResponseEvent OnResponse
-        {
-            get => _service.VoiceEvents.OnResponse;
-        }
-
-        public override WitTranscriptionEvent OnFullTranscription
-        {
-            get => _service.VoiceEvents.onFullTranscription;
+            get => _service.VoiceEvents.OnSend;
         }
 
         public override WitTranscriptionEvent OnPartialTranscription
@@ -92,9 +77,19 @@ namespace Meta.WitAi.Windows
             get => _service.VoiceEvents.OnPartialTranscription;
         }
 
+        public override WitTranscriptionEvent OnFullTranscription
+        {
+            get => _service.VoiceEvents.OnFullTranscription;
+        }
+
         public override UnityEvent OnStoppedListening
         {
             get => _service.VoiceEvents.OnStoppedListening;
+        }
+
+        public override VoiceServiceRequestEvent OnComplete
+        {
+            get => _service.VoiceEvents.OnComplete;
         }
 
         public static WitUnderstandingViewerServiceAPI CreateApiWrapper(MonoBehaviour service)

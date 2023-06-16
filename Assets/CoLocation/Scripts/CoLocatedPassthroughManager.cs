@@ -81,9 +81,12 @@ public class CoLocatedPassthroughManager : MonoBehaviour
 
     public void RemoveCoLocalUser(Transform head)
     {
+        if (head == null)
+            return;
+
         for (int i = 0; i < localPassthroughCutouts.Count; i++)
         {
-            if (localPassthroughCutouts[i].CheckHead(head))
+            if (localPassthroughCutouts[i] != null && localPassthroughCutouts[i].CheckHead(head))
             {
                 Destroy(localPassthroughCutouts[i].gameObject);
                 localPassthroughCutouts.Remove(localPassthroughCutouts[i]);

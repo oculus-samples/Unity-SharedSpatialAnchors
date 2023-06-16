@@ -110,7 +110,16 @@ namespace Oculus.Interaction
 
         private void LockWrist()
         {
+            bool wasTouching = _isTouching;
+
             _isTouching = true;
+
+            if (!wasTouching && _isTouching)
+            {
+                // Activate native component
+                int result = NativeMethods.isdk_NativeComponent_Activate(0x506f6b654c696d74);
+                this.AssertIsTrue(result == NativeMethods.IsdkSuccess, "Unable to Activate native poke limit!");
+            }
         }
 
         private void UnlockWrist()

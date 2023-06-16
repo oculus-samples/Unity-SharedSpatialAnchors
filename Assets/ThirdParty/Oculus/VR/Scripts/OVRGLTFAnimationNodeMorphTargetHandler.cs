@@ -32,6 +32,7 @@ public class OVRGLTFAnimationNodeMorphTargetHandler
     {
         this.MeshData = meshData;
     }
+
     public void Update()
     {
         if (!modified)
@@ -96,6 +97,7 @@ public class OVRGLTFAnimationNodeMorphTargetHandler
             MeshData.mesh.vertices = meshDataBase.vertices;
             MeshData.mesh.RecalculateBounds();
         }
+
         if (meshDataBase.texcoords != null)
         {
             MeshData.mesh.uv = meshDataBase.texcoords;

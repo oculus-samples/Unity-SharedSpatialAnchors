@@ -91,9 +91,9 @@ public readonly struct OVRSpace : IEquatable<OVRSpace>
 
     public override int GetHashCode() => Handle.GetHashCode();
 
-    public static bool operator== (OVRSpace lhs, OVRSpace rhs) => lhs.Handle == rhs.Handle;
+    public static bool operator ==(OVRSpace lhs, OVRSpace rhs) => lhs.Handle == rhs.Handle;
 
-    public static bool operator!= (OVRSpace lhs, OVRSpace rhs) => lhs.Handle != rhs.Handle;
+    public static bool operator !=(OVRSpace lhs, OVRSpace rhs) => lhs.Handle != rhs.Handle;
 
     public static implicit operator OVRSpace(ulong handle) => new OVRSpace(handle);
 
@@ -109,7 +109,8 @@ public static partial class OVRExtensions
             case OVRSpace.StorageLocation.Local: return OVRPlugin.SpaceStorageLocation.Local;
             case OVRSpace.StorageLocation.Cloud: return OVRPlugin.SpaceStorageLocation.Cloud;
             default:
-                throw new NotSupportedException($"{storageLocation} is not a supported {nameof(OVRPlugin.SpaceStorageLocation)}");
+                throw new NotSupportedException(
+                    $"{storageLocation} is not a supported {nameof(OVRPlugin.SpaceStorageLocation)}");
         }
     }
 }

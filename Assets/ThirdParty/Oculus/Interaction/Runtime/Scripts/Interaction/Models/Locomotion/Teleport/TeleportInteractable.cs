@@ -106,11 +106,11 @@ namespace Oculus.Interaction.Locomotion
 
         [SerializeField, Optional, ConditionalHide("_allowTeleport", true)]
         [Tooltip("An override for the Interactor EqualDistanceThreshold used when comparing the interactable against other interactables that does not allow teleport.")]
-        private int _equalDistanceToBlockerOverride;
+        private float _equalDistanceToBlockerOverride;
         /// <summary>
         /// An override for the Interactor EqualDistanceThreshold used when comparing the interactable against other interactables that does not allow teleport.
         /// </summary>
-        public int EqualDistanceToBlockerOverride
+        public float EqualDistanceToBlockerOverride
         {
             get
             {
@@ -187,8 +187,6 @@ namespace Oculus.Interaction.Locomotion
             }
         }
 
-        protected bool _started;
-
         protected override void Awake()
         {
             base.Awake();
@@ -203,7 +201,6 @@ namespace Oculus.Interaction.Locomotion
             this.AssertField(Surface, nameof(Surface));
             this.EndStart(ref _started);
         }
-
 
         public bool IsInRange(Pose origin, float maxSqrDistance)
         {

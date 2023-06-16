@@ -35,8 +35,6 @@ namespace Oculus.Interaction
 
         public event Action<PointerEvent> WhenPointerEventRaised = delegate { };
 
-        protected bool _started = false;
-
         public void PublishPointerEvent(PointerEvent evt)
         {
             WhenPointerEventRaised(evt);

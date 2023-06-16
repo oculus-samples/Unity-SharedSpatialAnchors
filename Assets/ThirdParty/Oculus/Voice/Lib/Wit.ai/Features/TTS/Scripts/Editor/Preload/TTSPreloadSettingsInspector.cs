@@ -108,6 +108,15 @@ namespace Meta.WitAi.TTS.Editor
                     RefreshData();
                 }
             }
+            GUILayout.Space(ACTION_BTN_INDENT);
+            if (WitEditorUI.LayoutTextButton("Import AutoLoader Data"))
+            {
+                EditorUtility.ClearProgressBar();
+                if (TTSPreloadUtility.ImportPhrases(Settings))
+                {
+                    RefreshData();
+                }
+            }
             // Clear disk cache
             GUI.enabled = TtsService != null;
             EditorGUILayout.Space();

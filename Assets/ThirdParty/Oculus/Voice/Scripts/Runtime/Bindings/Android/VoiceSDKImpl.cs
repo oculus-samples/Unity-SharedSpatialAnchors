@@ -23,12 +23,14 @@ using Meta.WitAi;
 using Meta.WitAi.Configuration;
 using Meta.WitAi.Events;
 using Meta.WitAi.Interfaces;
+using Meta.WitAi.Requests;
 using Oculus.Voice.Core.Bindings.Android;
 using Oculus.Voice.Interfaces;
 using Debug = UnityEngine.Debug;
 
 namespace Oculus.Voice.Bindings.Android
 {
+    // TODO: Fix VoiceSDKImpl to work with IVoiceRequest
     public class VoiceSDKImpl : BaseAndroidConnectionImpl<VoiceSDKBinding>,
         IPlatformVoiceService, IVCBindingEvents
     {
@@ -57,6 +59,15 @@ namespace Oculus.Voice.Bindings.Android
         private VoiceSDKListenerBinding eventBinding;
 
         public ITranscriptionProvider TranscriptionProvider { get; set; }
+        public bool CanActivateAudio()
+        {
+            return true;
+        }
+
+        public bool CanSend()
+        {
+            return true;
+        }
 
         public override void Connect(string version)
         {
@@ -83,28 +94,32 @@ namespace Oculus.Voice.Bindings.Android
             _isActive = false;
         }
 
-        public void Activate(string text, WitRequestOptions requestOptions)
+        public VoiceServiceRequest Activate(string text, WitRequestOptions requestOptions,
+            VoiceServiceRequestEvents requestEvents)
         {
             eventBinding.VoiceEvents.OnRequestOptionSetup?.Invoke(requestOptions);
             service.Activate(text, requestOptions);
+            return null;
         }
 
-        public void Activate(WitRequestOptions requestOptions)
+        public VoiceServiceRequest Activate(WitRequestOptions requestOptions,
+            VoiceServiceRequestEvents requestEvents)
         {
-            if (_isActive) return;
-
+            if (_isActive) return null;
             _isActive = true;
             eventBinding.VoiceEvents.OnRequestOptionSetup?.Invoke(requestOptions);
             service.Activate(requestOptions);
+            return null;
         }
 
-        public void ActivateImmediately(WitRequestOptions requestOptions)
+        public VoiceServiceRequest ActivateImmediately(WitRequestOptions requestOptions,
+            VoiceServiceRequestEvents requestEvents)
         {
-            if (_isActive) return;
-
+            if (_isActive) return null;
             _isActive = true;
             eventBinding.VoiceEvents.OnRequestOptionSetup?.Invoke(requestOptions);
             service.ActivateImmediately(requestOptions);
+            return null;
         }
 
         public void Deactivate()
@@ -117,6 +132,11 @@ namespace Oculus.Voice.Bindings.Android
         {
             _isActive = false;
             service.Deactivate();
+        }
+
+        public void DeactivateAndAbortRequest(VoiceServiceRequest request)
+        {
+
         }
 
         public void OnServiceNotAvailable(string error, string message)

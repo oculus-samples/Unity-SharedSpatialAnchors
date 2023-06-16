@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 using System.Collections;
 using UnityEngine;
 
@@ -43,6 +42,7 @@ public class OVRSceneModelLoader : MonoBehaviour
         // Bind the events associated with LoadSceneModel()
         SceneManager.SceneModelLoadedSuccessfully += OnSceneModelLoadedSuccessfully;
         SceneManager.NoSceneModelToLoad += OnNoSceneModelToLoad;
+        SceneManager.NewSceneModelAvailable += OnNewSceneModelAvailable;
 
         // Bind the events associated with RequestSceneCapture()
         SceneManager.SceneCaptureReturnedWithoutError += OnSceneCaptureReturnedWithoutError;
@@ -57,7 +57,7 @@ public class OVRSceneModelLoader : MonoBehaviour
         {
             OVRSceneManager.Development.LogWarning(nameof(OVRSceneModelLoader),
                 $"{nameof(OVRSceneManager.LoadSceneModel)} failed. Will try again next frame.");
-          yield return null;
+            yield return null;
         } while (!SceneManager.LoadSceneModel());
     }
 
@@ -119,15 +119,24 @@ public class OVRSceneModelLoader : MonoBehaviour
     }
 
     /// <summary>
+    /// Invoked when the scene model has changed.
+    /// </summary>
+    protected virtual void OnNewSceneModelAvailable()
+    {
+        // New scene model detected, reloading the scene.
+        SceneManager.Verbose?.Log(nameof(OVRSceneModelLoader),
+            $"{nameof(OnNewSceneModelAvailable)}() calling {nameof(OVRSceneManager)}.{nameof(OVRSceneManager.LoadSceneModel)}()");
+        SceneManager.LoadSceneModel();
+    }
+
+    /// <summary>
     /// Invoked when the scene capture succeeds without error. The default behavior loads the scene model using
     /// <see cref="OVRSceneManager.LoadSceneModel"/>.
     /// </summary>
     protected virtual void OnSceneCaptureReturnedWithoutError()
     {
-        // The capture flow successfully returned, we can now load the scene model
-        SceneManager.Verbose?.Log(nameof(OVRSceneModelLoader),
-            $"{nameof(OnSceneCaptureReturnedWithoutError)}() calling {nameof(OVRSceneManager)}.{nameof(OVRSceneManager.LoadSceneModel)}()");
-        SceneManager.LoadSceneModel();
+        // The Room Setup successfully returned, we can now load the scene model
+        SceneManager.Verbose?.Log(nameof(OVRSceneModelLoader), $"Room setup returned without errors.");
     }
 
     /// <summary>
@@ -135,10 +144,9 @@ public class OVRSceneModelLoader : MonoBehaviour
     /// </summary>
     protected virtual void OnUnexpectedErrorWithSceneCapture()
     {
-        // An unexpected error was returned when invoking the capture flow. This prevents the user
+        // An unexpected error was returned when invoking the Room Setup. This prevents the user
         // from capturing their room.
         SceneManager.Verbose?.LogError(nameof(OVRSceneModelLoader),
-            "Requesting the capture flow failed. The Scene Model cannot be loaded.");
+            "Requesting the Room Setup failed. The Scene Model cannot be loaded.");
     }
 }
-

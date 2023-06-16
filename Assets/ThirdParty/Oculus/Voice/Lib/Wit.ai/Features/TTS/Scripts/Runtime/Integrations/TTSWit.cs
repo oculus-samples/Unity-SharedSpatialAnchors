@@ -37,10 +37,8 @@ namespace Meta.WitAi.TTS.Integrations
         public string style = DEFAULT_STYLE;
         [Range(50, 200)]
         public int speed = 100;
-        [Range(25, 400)]
+        [Range(25, 200)]
         public int pitch = 100;
-        [Range(1, 100)]
-        public int gain = 50;
     }
     [Serializable]
     public struct TTSWitRequestSettings
@@ -52,6 +50,8 @@ namespace Meta.WitAi.TTS.Integrations
         public float audioStreamReadyDuration;
         [Tooltip("Total samples to be used to generate clip. A new clip will be generated every time this chunk size is surpassed.")]
         public float audioStreamChunkLength;
+        [Tooltip("Amount of placeholder stream clips to be generated on service generation.")]
+        public int audioStreamPreloadCount;
     }
 
     public class TTSWit : TTSService, ITTSVoiceProvider, ITTSWebHandler, IWitConfigurationProvider
@@ -96,6 +96,12 @@ namespace Meta.WitAi.TTS.Integrations
         {
             return WitTTSVRequest.GetAudioType(RequestSettings.audioType);
         }
+        // Preload stream cache
+        protected override void Awake()
+        {
+            base.Awake();
+            PreloadStreamCache();
+        }
         // Add delegates
         protected override void OnEnable()
         {
@@ -110,6 +116,13 @@ namespace Meta.WitAi.TTS.Integrations
             AudioStreamHandler.OnClipUpdated -= OnStreamClipUpdated;
             AudioStreamHandler.OnStreamComplete -= OnStreamClipComplete;
         }
+        // Destroy stream cache
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            UnloadStreamCache();
+        }
+
         // Clip stream updated
         private void OnStreamClipUpdated(AudioClip oldClip, AudioClip newClip)
         {
@@ -145,6 +158,42 @@ namespace Meta.WitAi.TTS.Integrations
         }
         #endregion
 
+        #region AudioStream Cache
+        // Simple check for cache
+        private bool _wasCached = false;
+        // Preload the stream cache
+        private void PreloadStreamCache()
+        {
+            // Ignore
+            if (!RequestSettings.audioStream || RequestSettings.audioStreamPreloadCount <= 0 || _wasCached)
+            {
+                return;
+            }
+
+            // Total samples to preload
+            int totalSamples = Mathf.CeilToInt(RequestSettings.audioStreamChunkLength *
+                                               WitConstants.ENDPOINT_TTS_CHANNELS *
+                                               WitConstants.ENDPOINT_TTS_SAMPLE_RATE);
+
+            // Preload specified amount of clips
+            _wasCached = true;
+            AudioStreamHandler.PreloadCachedClips(RequestSettings.audioStreamPreloadCount, totalSamples, WitConstants.ENDPOINT_TTS_CHANNELS, WitConstants.ENDPOINT_TTS_SAMPLE_RATE);
+        }
+        // Preload the stream cache
+        private void UnloadStreamCache()
+        {
+            // Ignore if was not cached
+            if (!_wasCached)
+            {
+                return;
+            }
+
+            // Destroy all cached clips
+            AudioStreamHandler.DestroyCachedClips();
+            _wasCached = false;
+        }
+        #endregion AudioStream Cache
+
         #region ITTSWebHandler Streams
         // Request settings
         [Header("Web Request Settings")]
@@ -154,7 +203,8 @@ namespace Meta.WitAi.TTS.Integrations
             audioType = TTSWitAudioType.PCM,
             audioStream = true,
             audioStreamReadyDuration = 0.1f, // .1 seconds received before starting playback
-            audioStreamChunkLength = 5f // 5 seconds per clip generation
+            audioStreamChunkLength = 5f, // 5 seconds per clip generation
+            audioStreamPreloadCount = 3 // 3 clips preloaded to be streamed at once
         };
 
         // Use settings web stream events

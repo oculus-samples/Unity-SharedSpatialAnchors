@@ -38,11 +38,9 @@ public class OVRProgressIndicator : MonoBehaviour
     }
 
 
-
     // Update is called once per frame
     void Update()
     {
-        progressImage.sharedMaterial.SetFloat("_AlphaCutoff", 1-currentProgress);
-
+        progressImage.sharedMaterial.SetFloat("_AlphaCutoff", 1 - currentProgress);
     }
 }

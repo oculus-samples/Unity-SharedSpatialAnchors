@@ -26,14 +26,14 @@ using Common;
 public class WorldGenerationController : MonoBehaviour
 {
     [SerializeField]
-    GameObject          wallPrefab;
+    GameObject wallPrefab;
 
     [SerializeField]
-    GameObject          obstaclePrefab;
+    GameObject obstaclePrefab;
 
-    List<GameObject>    sceneObjects = new List<GameObject>();
+    List<GameObject> sceneObjects = new List<GameObject>();
 
-    bool                sceneAlignmentApplied = false;
+    bool sceneAlignmentApplied = false;
 
     public void GenerateWorld(Scene scene)
     {
@@ -46,7 +46,7 @@ public class WorldGenerationController : MonoBehaviour
             Destroy(obj);
         sceneObjects.Clear();
 
-        GameObject newFloor = GameObject.Instantiate(wallPrefab,scene.floor.position,scene.floor.rotation);
+        GameObject newFloor = GameObject.Instantiate(wallPrefab, scene.floor.position, scene.floor.rotation);
         newFloor.transform.localScale = new Vector3(scene.floor.rect.width, scene.floor.rect.height, 0.07f);
         newFloor.transform.rotation = scene.floor.rotation * Quaternion.Euler(180, 0, 0);
         newFloor.SetActive(sceneAlignmentApplied);
@@ -60,7 +60,7 @@ public class WorldGenerationController : MonoBehaviour
 
         foreach (var wall in scene.walls)
         {
-            GameObject newWall = GameObject.Instantiate(wallPrefab,wall.position,wall.rotation);
+            GameObject newWall = GameObject.Instantiate(wallPrefab, wall.position, wall.rotation);
             newWall.transform.localScale = new Vector3(wall.rect.width, wall.rect.height, 0.07f);
             newWall.transform.rotation = wall.rotation * Quaternion.Euler(0, 180, 0);
             newWall.SetActive(sceneAlignmentApplied);
@@ -103,7 +103,8 @@ public class WorldGenerationController : MonoBehaviour
         }
 
         Vector3 objPos = obstacle.position;
-        objPos.y += obstacleScale.y;
+        if (obstacle.type != ObstacleType.Window && obstacle.type != ObstacleType.Door)
+            objPos.y -= (obstacleScale.y / 2.0f);
 
         GameObject obstacleGameObject = Object.Instantiate(obstaclePrefab, objPos, obstacleRotation);
         obstacleGameObject.transform.localScale = obstacleScale;
@@ -112,7 +113,7 @@ public class WorldGenerationController : MonoBehaviour
 
     public void ShowSceneObjects()
     {
-        foreach(GameObject sceneObj in sceneObjects)
+        foreach (GameObject sceneObj in sceneObjects)
         {
             sceneObj.SetActive(true);
         }
@@ -131,35 +132,14 @@ public class WorldGenerationController : MonoBehaviour
 
             Color edgeColor = Color.white;
             edgeColor.a = Mathf.Clamp01(timer / 3.0f); // fade from transparent
-            //_passthroughLayer.edgeColor = edgeColor;
 
             float normTime = Mathf.Clamp01(timer / lerpTime);
-            //_fadeSphere.sharedMaterial.SetColor("_Color", Color.Lerp(Color.black, Color.clear, normTime));
 
-            //VirtualRoom.Instance.SetEdgeEffectIntensity(normTime);
             foreach (GameObject sceneObj in sceneObjects)
             {
                 sceneObj.GetComponentInChildren<MeshRenderer>().material.SetFloat("_EffectIntensity", 1.0f);
                 sceneObj.GetComponentInChildren<MeshRenderer>().material.SetFloat("_EdgeTimeline", normTime);
             }
-            /*
-            // once lerpTime is over, fade in normal passthrough
-            if (timer >= lerpTime)
-            {
-                PassthroughStylist.PassthroughStyle normalPassthrough = new PassthroughStylist.PassthroughStyle(
-                    new Color(0, 0, 0, 0),
-                    1.0f,
-                    0.0f,
-                    0.0f,
-                    0.0f,
-                    false,
-                    Color.white,
-                    Color.black,
-                    Color.white);
-                _passthroughStylist.ShowStylizedPassthrough(normalPassthrough, 5.0f);
-                _fadeSphere.gameObject.SetActive(false);
-            }
-            */
             yield return null;
         }
     }

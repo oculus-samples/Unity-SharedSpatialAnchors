@@ -20,7 +20,6 @@
 
 using Oculus.Interaction.Input;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace Oculus.Interaction.HandGrab
 {
@@ -122,7 +121,7 @@ namespace Oculus.Interaction.HandGrab
 
             if (wristConstraint > 0f)
             {
-                Pose wristPose = GetWristPose(grabTarget.WorldGrabPose, grabSource.WristToGrabPoseOffset);
+                Pose wristPose = grabSource.GetVisualWristPose();
                 _syntheticHand.LockWristPose(wristPose, wristConstraint,
                     SyntheticHand.WristLockMode.Full, true);
                 _isWristFree = false;
@@ -155,14 +154,6 @@ namespace Oculus.Interaction.HandGrab
                 }
                 _syntheticHand.SetFingerFreedom((HandFinger)fingerIndex, fingerFreedom);
             }
-        }
-
-        private Pose GetWristPose(Pose gripPoint, Pose offset)
-        {
-            Pose wristOffset = offset;
-            wristOffset.Invert();
-            gripPoint.Premultiply(wristOffset);
-            return gripPoint;
         }
 
         private bool FreeFingers()

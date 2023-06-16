@@ -52,7 +52,7 @@ namespace Meta.Conduit
         /// </summary>
         public List<ManifestAction> Actions { get; set; } = new List<ManifestAction>();
 
-        
+
         /// <summary>
         /// List of error handlers (methods).
         /// </summary>
@@ -73,7 +73,7 @@ namespace Meta.Conduit
         public Dictionary<string, Type> CustomEntityTypes { get; } = new Dictionary<string, Type>();
 
         /// <summary>
-        /// A list of registered callbacks 
+        /// A list of registered callbacks
         /// </summary>
         [JsonIgnore]
         public static List<string> WitResponseMatcherIntents = new List<string>();
@@ -139,9 +139,7 @@ namespace Meta.Conduit
             return Tuple.Create( targetMethod, targetType);
         }
 
-        /// <summary>
-        /// Processes all actions in the manifest and associate them with the methods they should invoke.
-        /// </summary>
+
         private bool ResolveAllActions()
         {
             var resolvedAll = true;
@@ -204,7 +202,7 @@ namespace Meta.Conduit
             {
                 return true;
             }
-            
+
             var resolvedAll = true;
             foreach (var action in this.ErrorHandlers)
             {
@@ -218,25 +216,26 @@ namespace Meta.Conduit
                     continue;
                 }
 
-                var attributes = targetMethod.GetCustomAttributes(typeof(OnConduitFailedParameterResolutionAttribute), false);
+                var attributes = targetMethod.GetCustomAttributes(typeof(HandleEntityResolutionFailureAttribute), false);
                 if (attributes.Length == 0)
                 {
                     VLog.E($"{targetMethod} - Did not have expected Conduit attribute");
                     resolvedAll = false;
                     continue;
                 }
-                var actionAttribute = attributes.First() as OnConduitFailedParameterResolutionAttribute;
+                var actionAttribute = attributes.First() as HandleEntityResolutionFailureAttribute;
                 if (actionAttribute == null)
                 {
                     VLog.E("Found null attribute when one was expected");
                     continue;
                 }
-                
+
                 var invocationContext = new InvocationContext()
                 {
                     Type = targetType,
                     MethodInfo = targetMethod,
-                    CustomAttributeType = typeof(OnConduitFailedParameterResolutionAttribute)
+                    CustomAttributeType = typeof(HandleEntityResolutionFailureAttribute)
+                    
                 };
 
                 if (!_methodLookup.ContainsKey(action.Name))
@@ -257,7 +256,7 @@ namespace Meta.Conduit
 
             return resolvedAll;
         }
-        
+
         /// <summary>
         /// Processes all actions in the manifest and associate them with the methods they should invoke.
         /// </summary>
@@ -269,7 +268,7 @@ namespace Meta.Conduit
         private MethodInfo GetBestMethodMatch(Type targetType, string method, Type[] parameterTypes)
         {
             var exactMatch = targetType.GetMethod(method,
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, null, CallingConventions.Any,
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic, null, CallingConventions.Any,
                 parameterTypes, null);
 
             return exactMatch;
@@ -292,7 +291,7 @@ namespace Meta.Conduit
         /// <returns>The invocationContext.</returns>
         public List<InvocationContext> GetInvocationContexts(string actionId)
         {
-            return _methodLookup.ContainsKey(actionId) ? _methodLookup[actionId] : new List<InvocationContext>();
+            return _methodLookup.ContainsKey(actionId) ? _methodLookup[actionId] : null;
         }
 
         public override string ToString()
@@ -302,12 +301,12 @@ namespace Meta.Conduit
 
         public List<InvocationContext> GetErrorHandlerContexts()
         {
-            List<InvocationContext> contexts = new List<InvocationContext>(); 
+            List<InvocationContext> contexts = new List<InvocationContext>();
             foreach (var methodLookupValue in _methodLookup.Values)
             {
                 foreach (var invocationContext in methodLookupValue)
                 {
-                    if (invocationContext.CustomAttributeType == typeof(OnConduitFailedParameterResolutionAttribute))
+                    if (invocationContext.CustomAttributeType == typeof(HandleEntityResolutionFailureAttribute))
                     {
                         contexts.Add(invocationContext);
                     }

@@ -69,7 +69,7 @@ namespace Oculus.Interaction.Grab.GrabSurfaces
         private Transform _relativeTo;
 
         private Pose RelativePose => PoseUtils.DeltaScaled(_relativeTo, this.transform);
-
+        private const float Epsilon = 0.000001f;
         /// <summary>
         /// The reference pose of the surface. It defines the radius of the cylinder
         /// as the point from the relative transform to the reference pose to ensure
@@ -147,7 +147,7 @@ namespace Oculus.Interaction.Grab.GrabSurfaces
             get
             {
                 Vector3 dir = (_data.endPoint - _data.startPoint);
-                if (dir.sqrMagnitude == 0f)
+                if (dir.sqrMagnitude <= Epsilon)
                 {
                     return Vector3.up;
                 }

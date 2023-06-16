@@ -42,6 +42,15 @@ namespace Meta.WitAi.Windows
         }
 
         // Opens Setup Window
+        public static void OpenGettingStarted(Action<WitConfiguration> onSetupComplete)
+        {
+            // Get wizard (Title is overwritten)
+            WitWelcomeWizard wizard = (WitWelcomeWizard)ScriptableWizard.DisplayWizard(WitTexts.Texts.SetupTitleLabel, SetupWindowType, WitTexts.Texts.SetupSubmitButtonLabel);
+            // Set success callback
+            wizard.successAction = onSetupComplete;
+        }
+
+        // Opens Setup Window
         public static void OpenSetupWindow(Action<WitConfiguration> onSetupComplete)
         {
             // Get wizard (Title is overwritten)

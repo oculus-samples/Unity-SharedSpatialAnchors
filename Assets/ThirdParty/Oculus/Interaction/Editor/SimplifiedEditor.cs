@@ -1,5 +1,5 @@
 /*
- * Copyright(c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * Licensed under the Oculus SDK License Agreement (the "License");

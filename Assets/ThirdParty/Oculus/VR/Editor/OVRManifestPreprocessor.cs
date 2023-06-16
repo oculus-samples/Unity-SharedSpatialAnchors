@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -28,12 +29,16 @@ public class OVRManifestPreprocessor
 {
     private static readonly string ManifestFileName = "AndroidManifest.xml";
     private static readonly string ManifestFolderName = "Plugins/Android";
+
     private static readonly string ManifestFolderPathAbsolute =
         Path.Combine(Application.dataPath, ManifestFolderName);
+
     private static readonly string BuildManifestFolderPathRelative =
         Path.Combine("Assets", ManifestFolderName);
+
     private static readonly string BuildManifestFilePathAbsolute =
         Path.Combine(ManifestFolderPathAbsolute, ManifestFileName);
+
     private static readonly string BuildManifestFilePathRelative =
         Path.Combine(BuildManifestFolderPathRelative, ManifestFileName);
 
@@ -55,7 +60,9 @@ public class OVRManifestPreprocessor
 
         if (DoesAndroidManifestExist())
         {
-            if (!EditorUtility.DisplayDialog("AndroidManifest.xml Already Exists!", "Would you like to replace the existing manifest with a new one? All modifications will be lost.", "Replace", "Cancel"))
+            if (!EditorUtility.DisplayDialog("AndroidManifest.xml Already Exists!",
+                    "Would you like to replace the existing manifest with a new one? All modifications will be lost.",
+                    "Replace", "Cancel"))
             {
                 return;
             }
@@ -81,11 +88,13 @@ public class OVRManifestPreprocessor
     {
         if (!DoesAndroidManifestExist())
         {
-            Debug.LogError("Unable to update manifest because it does not exist! Run \"Create store-compatible AndroidManifest.xml\" first");
+            Debug.LogError(
+                "Unable to update manifest because it does not exist! Run \"Create store-compatible AndroidManifest.xml\" first");
             return;
         }
 
-        if (!EditorUtility.DisplayDialog("Update AndroidManifest.xml", "This will overwrite all Oculus specific AndroidManifest Settings. Continue?", "Overwrite", "Cancel"))
+        if (!EditorUtility.DisplayDialog("Update AndroidManifest.xml",
+                "This will overwrite all Oculus specific AndroidManifest Settings. Continue?", "Overwrite", "Cancel"))
         {
             return;
         }
@@ -102,7 +111,8 @@ public class OVRManifestPreprocessor
         AssetDatabase.Refresh();
     }
 
-    private static void AddOrRemoveTag(XmlDocument doc, string @namespace, string path, string elementName, string name, bool required, bool modifyIfFound, params string[] attrs) // name, value pairs
+    private static void AddOrRemoveTag(XmlDocument doc, string @namespace, string path, string elementName, string name,
+        bool required, bool modifyIfFound, params string[] attrs) // name, value pairs
     {
         var nodes = doc.SelectNodes(path + "/" + elementName);
         XmlElement element = null;
@@ -149,7 +159,8 @@ public class OVRManifestPreprocessor
         }
     }
 
-    public static void PatchAndroidManifest(string sourceFile, string destinationFile = null, bool skipExistingAttributes = true, bool enableSecurity = false)
+    public static void PatchAndroidManifest(string sourceFile, string destinationFile = null,
+        bool skipExistingAttributes = true, bool enableSecurity = false)
     {
         if (destinationFile == null)
         {
@@ -186,7 +197,7 @@ public class OVRManifestPreprocessor
             // The following manifest entries are all handled through Oculus XR SDK Plugin
 #if !PRIORITIZE_OCULUS_XR_SETTINGS
             ApplyOculusXRManifestTags(doc, androidNamespaceURI, modifyIfFound);
-            ApplyTargetDevicesManifestTags(doc, androidNamespaceURI, true/*modifyIfFound*/);
+            ApplyTargetDevicesManifestTags(doc, androidNamespaceURI, true /*modifyIfFound*/);
 #endif
 
             doc.Save(destinationFile);
@@ -197,7 +208,8 @@ public class OVRManifestPreprocessor
         }
     }
 
-    private static void ApplyRequiredManfiestTags(XmlDocument doc, string androidNamespaceURI, bool modifyIfFound, bool enableSecurity)
+    private static void ApplyRequiredManfiestTags(XmlDocument doc, string androidNamespaceURI, bool modifyIfFound,
+        bool enableSecurity)
     {
         OVRProjectConfig projectConfig = OVRProjectConfig.GetProjectConfig();
 
@@ -248,11 +260,18 @@ public class OVRManifestPreprocessor
         // OVRProjectConfig.HandTrackingSupport.ControllersOnly => manifest entry not present
         // OVRProjectConfig.HandTrackingSupport.ControllersAndHands => manifest entry present and required=false
         // OVRProjectConfig.HandTrackingSupport.HandsOnly => manifest entry present and required=true
-        OVRProjectConfig.HandTrackingSupport targetHandTrackingSupport = OVRProjectConfig.GetProjectConfig().handTrackingSupport;
-        OVRProjectConfig.HandTrackingVersion targetHandTrackingVersion = OVRProjectConfig.GetProjectConfig().handTrackingVersion;
-        bool handTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetHandTrackingSupport != OVRProjectConfig.HandTrackingSupport.ControllersOnly);
-        bool handTrackingVersionEntryNeeded = handTrackingEntryNeeded && (targetHandTrackingVersion != OVRProjectConfig.HandTrackingVersion.Default);
-        string handTrackingVersionValue = (targetHandTrackingVersion == OVRProjectConfig.HandTrackingVersion.V2) ? "V2.0" : "V1.0";
+        OVRProjectConfig.HandTrackingSupport targetHandTrackingSupport =
+            OVRProjectConfig.GetProjectConfig().handTrackingSupport;
+        OVRProjectConfig.HandTrackingVersion targetHandTrackingVersion =
+            OVRProjectConfig.GetProjectConfig().handTrackingVersion;
+        bool handTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                       (targetHandTrackingSupport !=
+                                        OVRProjectConfig.HandTrackingSupport.ControllersOnly);
+        bool handTrackingVersionEntryNeeded = handTrackingEntryNeeded &&
+                                              (targetHandTrackingVersion !=
+                                               OVRProjectConfig.HandTrackingVersion.Default);
+        string handTrackingVersionValue =
+            (targetHandTrackingVersion == OVRProjectConfig.HandTrackingVersion.V2) ? "V2.0" : "V1.0";
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -261,7 +280,8 @@ public class OVRManifestPreprocessor
             "oculus.software.handtracking",
             handTrackingEntryNeeded,
             modifyIfFound,
-            "required", (targetHandTrackingSupport == OVRProjectConfig.HandTrackingSupport.HandsOnly) ? "true" : "false");
+            "required",
+            (targetHandTrackingSupport == OVRProjectConfig.HandTrackingSupport.HandsOnly) ? "true" : "false");
         AddOrRemoveTag(doc,
             androidNamespaceURI,
             "/manifest",
@@ -269,6 +289,7 @@ public class OVRManifestPreprocessor
             "com.oculus.permission.HAND_TRACKING",
             handTrackingEntryNeeded,
             modifyIfFound);
+
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -313,7 +334,8 @@ public class OVRManifestPreprocessor
         //============================================================================
         // Anchor
         OVRProjectConfig.AnchorSupport targetAnchorSupport = OVRProjectConfig.GetProjectConfig().anchorSupport;
-        bool anchorEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetAnchorSupport == OVRProjectConfig.AnchorSupport.Enabled);
+        bool anchorEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                 (targetAnchorSupport == OVRProjectConfig.AnchorSupport.Enabled);
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -324,7 +346,8 @@ public class OVRManifestPreprocessor
             modifyIfFound);
 
         var targetSharedAnchorSupport = OVRProjectConfig.GetProjectConfig().sharedAnchorSupport;
-        bool sharedAnchorEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && targetSharedAnchorSupport != OVRProjectConfig.FeatureSupport.None;
+        bool sharedAnchorEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                       targetSharedAnchorSupport != OVRProjectConfig.FeatureSupport.None;
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -373,7 +396,8 @@ public class OVRManifestPreprocessor
         //============================================================================
         // Render Model
         OVRProjectConfig.RenderModelSupport renderModelSupport = OVRProjectConfig.GetProjectConfig().renderModelSupport;
-        bool renderModelEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (renderModelSupport == OVRProjectConfig.RenderModelSupport.Enabled);
+        bool renderModelEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                      (renderModelSupport == OVRProjectConfig.RenderModelSupport.Enabled);
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -397,8 +421,11 @@ public class OVRManifestPreprocessor
         // OVRProjectConfig.TrackedKeyboardSupport.None => manifest entry not present
         // OVRProjectConfig.TrackedKeyboardSupport.Supported => manifest entry present and required=false
         // OVRProjectConfig.TrackedKeyboardSupport.Required => manifest entry present and required=true
-        OVRProjectConfig.TrackedKeyboardSupport targetTrackedKeyboardSupport = OVRProjectConfig.GetProjectConfig().trackedKeyboardSupport;
-        bool trackedKeyboardEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetTrackedKeyboardSupport != OVRProjectConfig.TrackedKeyboardSupport.None);
+        OVRProjectConfig.TrackedKeyboardSupport targetTrackedKeyboardSupport =
+            OVRProjectConfig.GetProjectConfig().trackedKeyboardSupport;
+        bool trackedKeyboardEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                          (targetTrackedKeyboardSupport !=
+                                           OVRProjectConfig.TrackedKeyboardSupport.None);
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -407,7 +434,8 @@ public class OVRManifestPreprocessor
             "oculus.software.trackedkeyboard",
             trackedKeyboardEntryNeeded,
             modifyIfFound,
-            "required", (targetTrackedKeyboardSupport == OVRProjectConfig.TrackedKeyboardSupport.Required) ? "true" : "false");
+            "required",
+            (targetTrackedKeyboardSupport == OVRProjectConfig.TrackedKeyboardSupport.Required) ? "true" : "false");
         AddOrRemoveTag(doc,
             androidNamespaceURI,
             "/manifest",
@@ -420,7 +448,8 @@ public class OVRManifestPreprocessor
         // Body Tracking
         // If Quest is the target device, add the bodytracking manifest tags if needed
         var targetBodyTrackingSupport = OVRProjectConfig.GetProjectConfig().bodyTrackingSupport;
-        bool bodyTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetBodyTrackingSupport != OVRProjectConfig.FeatureSupport.None);
+        bool bodyTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                       (targetBodyTrackingSupport != OVRProjectConfig.FeatureSupport.None);
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -428,7 +457,9 @@ public class OVRManifestPreprocessor
             "uses-feature",
             "com.oculus.software.body_tracking",
             bodyTrackingEntryNeeded,
-            (targetBodyTrackingSupport == OVRProjectConfig.FeatureSupport.Required) ? true : modifyIfFound, // If Required, we should override the current entry
+            (targetBodyTrackingSupport == OVRProjectConfig.FeatureSupport.Required)
+                ? true
+                : modifyIfFound, // If Required, we should override the current entry
             "required", (targetBodyTrackingSupport == OVRProjectConfig.FeatureSupport.Required) ? "true" : "false");
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -441,7 +472,8 @@ public class OVRManifestPreprocessor
         //============================================================================
         // Face Tracking
         var targetFaceTrackingSupport = OVRProjectConfig.GetProjectConfig().faceTrackingSupport;
-        bool faceTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetFaceTrackingSupport != OVRProjectConfig.FeatureSupport.None);
+        bool faceTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                       (targetFaceTrackingSupport != OVRProjectConfig.FeatureSupport.None);
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -449,7 +481,9 @@ public class OVRManifestPreprocessor
             "uses-feature",
             "oculus.software.face_tracking",
             faceTrackingEntryNeeded,
-            (targetFaceTrackingSupport == OVRProjectConfig.FeatureSupport.Required) ? true : modifyIfFound, // If Required, we should override the current entry
+            (targetFaceTrackingSupport == OVRProjectConfig.FeatureSupport.Required)
+                ? true
+                : modifyIfFound, // If Required, we should override the current entry
             "required", (targetFaceTrackingSupport == OVRProjectConfig.FeatureSupport.Required) ? "true" : "false");
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -462,7 +496,8 @@ public class OVRManifestPreprocessor
         //============================================================================
         // Eye Tracking
         var targetEyeTrackingSupport = OVRProjectConfig.GetProjectConfig().eyeTrackingSupport;
-        bool eyeTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (targetEyeTrackingSupport != OVRProjectConfig.FeatureSupport.None);
+        bool eyeTrackingEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                      (targetEyeTrackingSupport != OVRProjectConfig.FeatureSupport.None);
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -470,7 +505,9 @@ public class OVRManifestPreprocessor
             "uses-feature",
             "oculus.software.eye_tracking",
             eyeTrackingEntryNeeded,
-            (targetEyeTrackingSupport == OVRProjectConfig.FeatureSupport.Required) ? true : modifyIfFound, // If Required, we should override the current entry
+            (targetEyeTrackingSupport == OVRProjectConfig.FeatureSupport.Required)
+                ? true
+                : modifyIfFound, // If Required, we should override the current entry
             "required", (targetEyeTrackingSupport == OVRProjectConfig.FeatureSupport.Required) ? "true" : "false");
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -483,7 +520,8 @@ public class OVRManifestPreprocessor
         //============================================================================
         // Virtual Keyboard
         var virtualKeyboardSupport = OVRProjectConfig.GetProjectConfig().virtualKeyboardSupport;
-        bool virtualKeyboardEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily && (virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None);
+        bool virtualKeyboardEntryNeeded = OVRDeviceSelector.isTargetDeviceQuestFamily &&
+                                          (virtualKeyboardSupport != OVRProjectConfig.FeatureSupport.None);
 
         AddOrRemoveTag(doc,
             androidNamespaceURI,
@@ -491,8 +529,11 @@ public class OVRManifestPreprocessor
             "uses-feature",
             "com.oculus.feature.VIRTUAL_KEYBOARD",
             virtualKeyboardEntryNeeded,
-            (virtualKeyboardSupport == OVRProjectConfig.FeatureSupport.Required) ? true : modifyIfFound, // If Required, we should override the current entry
+            (virtualKeyboardSupport == OVRProjectConfig.FeatureSupport.Required)
+                ? true
+                : modifyIfFound, // If Required, we should override the current entry
             "required", (virtualKeyboardSupport == OVRProjectConfig.FeatureSupport.Required) ? "true" : "false");
+
     }
 
 
@@ -531,6 +572,7 @@ public class OVRManifestPreprocessor
                 else
                     targetDeviceValue += "|quest";
             }
+
             if (OVRDeviceSelector.isTargetDeviceQuest2)
             {
                 if (string.IsNullOrEmpty(targetDeviceValue))
@@ -538,6 +580,7 @@ public class OVRManifestPreprocessor
                 else
                     targetDeviceValue += "|quest2";
             }
+
             if (OVRDeviceSelector.isTargetDeviceQuestPro)
             {
                 if (string.IsNullOrEmpty(targetDeviceValue))
@@ -549,6 +592,7 @@ public class OVRManifestPreprocessor
             {
                 Debug.LogError("Empty target devices");
             }
+
             AddOrRemoveTag(doc,
                 androidNamespaceURI,
                 "/manifest/application",

@@ -25,6 +25,15 @@ namespace Meta.WitAi.Windows
         private static string[] _logLevelNames;
         private static LogType[] _logLevels = new LogType[] { LogType.Log, LogType.Warning, LogType.Error };
 
+        public virtual bool ShowWitConfiguration => true;
+        public virtual bool ShowGeneralSettings => true;
+
+        public static bool ShowTooltips
+        {
+            get => EditorPrefs.GetBool("VSDK::Settings::Tooltips", true);
+            set => EditorPrefs.SetBool("VSDK::Settings::Tooltips", value);
+        }
+
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -55,6 +64,12 @@ namespace Meta.WitAi.Windows
 
         protected override void LayoutContent()
         {
+            if (ShowGeneralSettings) DrawGeneralSettings();
+            if (ShowWitConfiguration) DrawWitConfigurations();
+        }
+
+        private void DrawGeneralSettings()
+        {
             // VLog level
             bool updated = false;
             RefreshLogLevel();
@@ -65,9 +80,16 @@ namespace Meta.WitAi.Windows
                 SetLogLevel(logLevel);
             }
 
+            var showTooltips = ShowTooltips;
+            WitEditorUI.LayoutToggle(new GUIContent(WitTexts.Texts.ShowTooltipsLabel), ref showTooltips, ref updated);
+            if (updated) ShowTooltips = showTooltips;
+        }
+        
+        private void DrawWitConfigurations()
+        {
             // Server access token
             GUILayout.BeginHorizontal();
-            updated = false;
+            bool updated = false;
             WitEditorUI.LayoutPasswordField(WitTexts.SettingsServerTokenContent, ref serverToken, ref updated);
             if (updated)
             {
@@ -98,6 +120,7 @@ namespace Meta.WitAi.Windows
                 witInspector.OnInspectorGUI();
             }
         }
+
         // Apply server token
         private void RelinkServerToken(bool closeIfInvalid)
         {
