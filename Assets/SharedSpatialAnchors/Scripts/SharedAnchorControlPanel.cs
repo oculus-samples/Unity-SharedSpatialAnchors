@@ -62,6 +62,11 @@ public class SharedAnchorControlPanel : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI statusText;
 
+    public TextMeshProUGUI StatusText
+    {
+        get { return statusText; }
+    }
+
     [SerializeField]
     private TextMeshProUGUI renderStyleText;
 
@@ -97,11 +102,6 @@ public class SharedAnchorControlPanel : MonoBehaviour
         ToggleRoomButtons(false);
     }
 
-    private void Update()
-    {
-        statusText.text = "Status: " + PhotonPun.PhotonNetwork.NetworkClientState;
-    }
-
     public void OnCreateModeButtonPressed()
     {
         SampleController.Instance.Log("OnCreateModeButtonPressed");
@@ -120,10 +120,8 @@ public class SharedAnchorControlPanel : MonoBehaviour
         }
     }
 
-    public void OnLoadAnchorsButtonPressed()
+    public void OnLoadLocalAnchorsButtonPressed()
     {
-        SampleController.Instance.Log("OnLoadAnchorsButtonPressed");
-
         if (SampleController.Instance.cachedAnchorSample)
         {
             SharedAnchorLoader.Instance.LoadLastUsedCachedAnchor();
@@ -132,6 +130,11 @@ public class SharedAnchorControlPanel : MonoBehaviour
         {
             SharedAnchorLoader.Instance.LoadLocalAnchors();
         }
+    }
+
+    public void OnLoadSharedAnchorsButtonPressed()
+    {
+        SharedAnchorLoader.Instance.LoadSharedAnchors();
     }
 
     public void OnSpawnCubeButtonPressed()
@@ -149,7 +152,8 @@ public class SharedAnchorControlPanel : MonoBehaviour
         }
 
         SampleController.Instance.logText.pageToDisplay++;
-        pageText.text = SampleController.Instance.logText.pageToDisplay + "/" + SampleController.Instance.logText.textInfo.pageCount;
+        if(pageText)
+            pageText.text = SampleController.Instance.logText.pageToDisplay + "/" + SampleController.Instance.logText.textInfo.pageCount;
     }
 
     public void LogPrev()
@@ -160,7 +164,8 @@ public class SharedAnchorControlPanel : MonoBehaviour
         }
 
         SampleController.Instance.logText.pageToDisplay--;
-        pageText.text = SampleController.Instance.logText.pageToDisplay + "/" + SampleController.Instance.logText.textInfo.pageCount;
+        if(pageText)
+            pageText.text = SampleController.Instance.logText.pageToDisplay + "/" + SampleController.Instance.logText.textInfo.pageCount;
     }
 
     private void SpawnCube()

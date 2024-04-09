@@ -54,6 +54,15 @@ public class SharedAnchor : MonoBehaviour
 
     private OVRSpatialAnchor _spatialAnchor;
 
+    #if OVR_INTERNAL_CODE
+    private LocalGroupController localGroupControllerRef;
+    #endif
+
+    public const string SHARE_POINT_CLOUD_DATA_ERROR = "Share Point Cloud Data is disabled on your device. Settings -> Privacy & Safety -> Device Permissions";
+    public const string SHARE_POINT_CLOUD_DATA_INFO_URL = "https://www.meta.com/help/quest/articles/in-vr-experiences/oculus-features/point-cloud/";
+    private const uint MAX_ANCHOR_SAVE_ATTEMPTS = 3;
+    private uint numAnchorSaveAttempts = 0;
+
     public bool IsSavedLocally
     {
         set
@@ -110,49 +119,56 @@ public class SharedAnchor : MonoBehaviour
 
         if (SampleController.Instance.automaticCoLocation)
             transform.Find("Canvas").gameObject.SetActive(false);
+
+#if OVR_INTERNAL_CODE
+        if (SampleController.Instance.localGroupSample)
+            localGroupControllerRef = FindObjectOfType<LocalGroupController>();
+#endif
     }
 
     public void OnSaveLocalButtonPressed()
     {
-        SampleController.Instance.Log("OnSaveLocalButtonPressed: saving anchor");
-
         if (_spatialAnchor == null)
         {
             return;
         }
 
-        _spatialAnchor.Save((_, isSuccessful) =>
+        _spatialAnchor.SaveAsync().ContinueWith((isSuccessful) =>
         {
             if (isSuccessful)
             {
-                IsSavedLocally = true;
+                SampleController.Instance.Log($"Successfully Saved Spatial Anchor");
 
-                SampleController.Instance.GetComponent<SharedAnchorLoader>().AddLocallySavedAnchor(_spatialAnchor);
+                IsSavedLocally = true;
+                SharedAnchorLoader.Instance?.AddLocallySavedAnchor(_spatialAnchor);
+            }
+            else
+            {
+                SampleController.Instance.LogError($"Failed to save spatial anchor to local storage");
             }
         });
     }
 
     public void OnHideButtonPressed()
     {
-        SampleController.Instance.Log("OnHideButtonPressed: hiding anchor");
-
+        SampleController.Instance.Log($"{nameof(OnHideButtonPressed)}: Hiding Spatial Anchor");
         Destroy(gameObject);
     }
 
     public void OnEraseButtonPressed()
     {
-        SampleController.Instance.Log("OnEraseButtonPressed: erasing anchor");
-
         if (_spatialAnchor == null)
         {
             return;
         }
 
-        _spatialAnchor.Erase((_, isSuccessful) =>
+        _spatialAnchor.EraseAsync().ContinueWith((isSuccessful) =>
         {
+            SampleController.Instance.Log($"Successfully Erased Spatial Anchor : {isSuccessful}");
+
             if (isSuccessful)
             {
-                SampleController.Instance.GetComponent<SharedAnchorLoader>().RemoveLocallySavedAnchor(_spatialAnchor);
+                SharedAnchorLoader.Instance?.RemoveLocallySavedAnchor(_spatialAnchor);
                 Destroy(gameObject);
             }
         });
@@ -185,40 +201,77 @@ public class SharedAnchor : MonoBehaviour
     {
         SampleController.Instance.Log(nameof(OnShareButtonPressed));
 
-        if (!IsReadyToShare())
+#if OVR_INTERNAL_CODE
+        if (SampleController.Instance.localGroupSample)
         {
-            return;
-        }
+            IsSelectedForShare = true;
 
-        IsSelectedForShare = true;
-        SaveToCloudThenShare();
+            if (localGroupControllerRef.peerNetworkingEnabled)
+            {
+                SampleController.Instance.Log("Sharing anchor over p2p Local Group");
+                localGroupControllerRef.GetComponent<LocalGroupController>().ShareAnchorsWithLocalGroup(new List<OVRSpatialAnchor> { GetComponent<OVRSpatialAnchor>() });
+            }
+            else
+            {
+                SampleController.Instance.Log("Sharing anchor over cloud Local Group");
+                numAnchorSaveAttempts = 0;
+                SaveToCloudThenShare();
+            }
+        }
+        else
+#endif
+        {
+            if (!IsReadyToShare())
+            {
+                return;
+            }
+
+            IsSelectedForShare = true;
+            numAnchorSaveAttempts = 0;
+            SaveToCloudThenShare();
+        }
     }
 
     private void SaveToCloudThenShare()
     {
         OVRSpatialAnchor.SaveOptions saveOptions;
         saveOptions.Storage = OVRSpace.StorageLocation.Cloud;
-        _spatialAnchor.Save(saveOptions, (spatialAnchor, isSuccessful) =>
+        _spatialAnchor.SaveAsync(saveOptions).ContinueWith((isSuccessful) =>
         {
             if (isSuccessful)
             {
                 SampleController.Instance.Log("Successfully saved anchor(s) to the cloud");
 
-                var userIds = PhotonAnchorManager.GetUserList().Select(userId => userId.ToString()).ToArray();
-                ICollection<OVRSpaceUser> spaceUserList = new List<OVRSpaceUser>();
-                foreach (string strUsername in userIds)
+#if OVR_INTERNAL_CODE
+                if (SampleController.Instance.localGroupSample && localGroupControllerRef)
                 {
-                    spaceUserList.Add(new OVRSpaceUser(ulong.Parse(strUsername)));
+                    localGroupControllerRef.GetComponent<LocalGroupController>().ShareAnchorsWithLocalGroup(new List<OVRSpatialAnchor> { GetComponent<OVRSpatialAnchor>() });
                 }
+                else
+#endif
+                {
+                    var userIds = PhotonAnchorManager.GetUserList().Select(userId => userId.ToString()).ToArray();
+                    ICollection<OVRSpaceUser> spaceUserList = new List<OVRSpaceUser>();
+                    foreach (string strUsername in userIds)
+                    {
+                        SampleController.Instance.Log($"Sharing Anchor with {strUsername}");
+                        spaceUserList.Add(new OVRSpaceUser(ulong.Parse(strUsername)));
+                    }
 
-                OVRSpatialAnchor.Share(new List<OVRSpatialAnchor> { spatialAnchor }, spaceUserList, OnShareComplete);
+                    _spatialAnchor.ShareAsync(spaceUserList).ContinueWith(OnShareComplete);
+                }
 
                 SampleController.Instance.AddSharedAnchorToLocalPlayer(this);
             }
             else
             {
-                SampleController.Instance.Log("Saving anchor(s) failed. Retrying...");
-                SaveToCloudThenShare();
+                SampleController.Instance.Log($"Saving Spatial Anchor Failed");
+                numAnchorSaveAttempts++;
+                if (numAnchorSaveAttempts < MAX_ANCHOR_SAVE_ATTEMPTS)
+                {
+                    SampleController.Instance.Log("Retrying anchor save to cloud...");
+                    SaveToCloudThenShare();
+                }
             }
         });
     }
@@ -241,34 +294,28 @@ public class SharedAnchor : MonoBehaviour
         {
             spaceUserList.Add(new OVRSpaceUser(ulong.Parse(strUsername)));
         }
-        OVRSpatialAnchor.Share(new List<OVRSpatialAnchor> { _spatialAnchor }, spaceUserList, OnShareComplete);
+        _spatialAnchor.ShareAsync(spaceUserList).ContinueWith(OnShareComplete);
     }
 
-    private static void OnShareComplete(ICollection<OVRSpatialAnchor> spatialAnchors, OVRSpatialAnchor.OperationResult result)
+    private void OnShareComplete(OVRSpatialAnchor.OperationResult result)
     {
         SampleController.Instance.Log(nameof(OnShareComplete) + " Result: " + result);
 
         if (result != OVRSpatialAnchor.OperationResult.Success)
         {
-            foreach (var spatialAnchor in spatialAnchors)
+            shareIcon.color = Color.red;
+
+            if (result == OVRSpatialAnchor.OperationResult.Failure_SpaceCloudStorageDisabled)
             {
-                spatialAnchor.GetComponent<SharedAnchor>().shareIcon.color = Color.red;
+                SampleController.Instance.Log(SHARE_POINT_CLOUD_DATA_ERROR);
+                Application.OpenURL(SHARE_POINT_CLOUD_DATA_INFO_URL);
             }
+
             return;
         }
 
-        var uuids = new Guid[spatialAnchors.Count];
-        var uuidIndex = 0;
-
-        foreach (var spatialAnchor in spatialAnchors)
-        {
-            SampleController.Instance.Log("OnShareComplete: space: " + spatialAnchor.Space.Handle + ", uuid: " + spatialAnchor.Uuid);
-
-            uuids[uuidIndex] = spatialAnchor.Uuid;
-            ++uuidIndex;
-        }
-
-        PhotonAnchorManager.Instance.PublishAnchorUuids(uuids, (uint)uuids.Length, true);
+        SampleController.Instance.Log($"{nameof(OnShareComplete)} - UUID: {_spatialAnchor.Uuid}");
+        PhotonAnchorManager.Instance.PublishAnchorUuids(new Guid[] { _spatialAnchor.Uuid }, 1, true);
     }
 
     public void OnAlignButtonPressed()

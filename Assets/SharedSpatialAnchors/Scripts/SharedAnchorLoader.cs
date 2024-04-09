@@ -18,15 +18,12 @@
 * limitations under the License.
 */
 
-using Photon.Realtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.UIElements;
 using static OVRSpatialAnchor;
 
 public class SharedAnchorLoader : MonoBehaviour
@@ -45,7 +42,13 @@ public class SharedAnchorLoader : MonoBehaviour
     private readonly HashSet<Guid> _anchorsToRetryLoading = new HashSet<Guid>();
     private readonly HashSet<Guid> _loadedAnchorUuids = new HashSet<Guid>();
     private List<string> _locallySavedAnchorUuids = new List<string>();
+    private List<string> _recievedSharedAnchorUuids = new List<string>();
     SharedAnchor colocationAnchor = null;
+
+
+    private const int MAX_ANCHOR_LOAD_RETRY = 3;
+    private int loadUnboundAnchorCount = 0;
+    private Guid[] anchorsLoading;
 
     private void Awake()
     {
@@ -65,6 +68,16 @@ public class SharedAnchorLoader : MonoBehaviour
             foreach(string anchorIDString in anchorIdList)
             {
                 _locallySavedAnchorUuids.Add(anchorIDString);
+            }
+        }
+
+        anchorIds = PlayerPrefs.GetString("shared_anchors");
+        if (anchorIds != "")
+        {
+            string[] anchorIdList = anchorIds.Split('|');
+            foreach (string anchorIDString in anchorIdList)
+            {
+                _recievedSharedAnchorUuids.Add(anchorIDString);
             }
         }
     }
@@ -117,17 +130,37 @@ public class SharedAnchorLoader : MonoBehaviour
         }
     }
 
+    public void LoadSharedAnchors()
+    {
+        string anchorIds = PlayerPrefs.GetString("shared_anchors");
+        if (anchorIds != "")
+        {
+            string[] anchorIdList = anchorIds.Split('|');
+            Guid[] guids = new Guid[anchorIdList.Length];
+            for (int i = 0; i < anchorIdList.Length; i++)
+            {
+                guids[i] = Guid.Parse(anchorIdList[i]);
+                SampleController.Instance.Log($"{nameof(LoadSharedAnchors)} : UUID {guids[i]}");
+            }
+            RetrieveAnchorsFromCloud(guids, AnchorQueryMode.CLOUD);
+        }
+        else
+        {
+            SampleController.Instance.Log($"{nameof(LoadSharedAnchors)}: there are no shared anchors saved");
+        }
+    }
+
     public void LoadLastUsedCachedAnchor()
     {
         // Loads the last used shared anchor form local device.
         string uuid = PlayerPrefs.GetString("cached_anchor_uuid");
-        if (uuid == null || uuid == "")
+        if (uuid.Length == 0)
         {
-            SampleController.Instance.Log("LoadLastUsedCachedAnchor: no cached anchor found");
+            SampleController.Instance.Log($"{nameof(LoadLastUsedCachedAnchor)}: no cached anchor found");
             return;
         }
 
-        SampleController.Instance.Log("LoadLastUsedCachedAnchor: uuid: " + uuid);
+        SampleController.Instance.Log($"{nameof(LoadLastUsedCachedAnchor)} uuid: {uuid}");
 
         HashSet<Guid> uuids = new HashSet<Guid>();
         uuids.Add(new Guid(uuid));
@@ -138,21 +171,23 @@ public class SharedAnchorLoader : MonoBehaviour
     public void LoadAnchorsFromRemote(HashSet<Guid> uuids)
     {
         // Load anchors received from remote participant
-        SampleController.Instance.Log("LoadAnchorsFromRemote: uuids count: " + uuids.Count);
+        SampleController.Instance.Log($"{nameof(LoadAnchorsFromRemote)} uuids count: {uuids.Count}");
 
         // Filter out uuids that are already localized
         uuids.ExceptWith(_loadedAnchorUuids);
 
         if (uuids.Count == 0)
         {
-            SampleController.Instance.Log("LoadAnchorsFromRemote: no new anchors to load, return");
+            SampleController.Instance.Log($"{nameof(LoadAnchorsFromRemote)}: no new anchors to load");
             return;
         }
 
         foreach (Guid uuid in uuids)
         {
-            SampleController.Instance.Log("LoadAnchorsFromRemote: uuid: " + uuid);
+            SampleController.Instance.Log($"{nameof(LoadAnchorsFromRemote)} uuid: {uuid}");
         }
+
+        loadUnboundAnchorCount = 0;
 
         if (SampleController.Instance.cachedAnchorSample)
         {
@@ -173,45 +208,51 @@ public class SharedAnchorLoader : MonoBehaviour
         Assert.IsTrue(anchorIds.Length <= OVRPlugin.SpaceFilterInfoIdsMaxSize, "SpaceFilterInfoIdsMaxSize exceeded.");
         SampleController.Instance.Log($"{nameof(RetrieveAnchorsFromLocal)}: {anchorIds.Length} anchors to load");
 
-        OVRSpatialAnchor.LoadUnboundAnchors(new OVRSpatialAnchor.LoadOptions()
+        OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
         {
             StorageLocation = OVRSpace.StorageLocation.Local,
             Timeout = 0,
             Uuids = anchorIds
-        }, OnLoadUnboundAnchorComplete);
+        }).ContinueWith(OnLoadUnboundAnchorsComplete);
     }
 
     private void RetrieveAnchorsFromCloud(Guid[] anchorIds, AnchorQueryMode newQueryMode)
     {
         queryMode = newQueryMode;
         Assert.IsTrue(anchorIds.Length <= OVRPlugin.SpaceFilterInfoIdsMaxSize, "SpaceFilterInfoIdsMaxSize exceeded.");
-        SampleController.Instance.Log(nameof(RetrieveAnchorsFromCloud));
+        SampleController.Instance.Log($"Calling {nameof(LoadUnboundAnchors)} on {anchorIds.Length} anchors");
 
-        OVRSpatialAnchor.LoadUnboundAnchors(new OVRSpatialAnchor.LoadOptions()
+        OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
         {
             StorageLocation = OVRSpace.StorageLocation.Cloud,
             Timeout = 0,
             Uuids = anchorIds
-        }, OnLoadUnboundAnchorComplete);
+        }).ContinueWith(OnLoadUnboundAnchorsComplete);
+        loadUnboundAnchorCount++;
+        anchorsLoading = anchorIds;
     }
 
-    private void OnLoadUnboundAnchorComplete(UnboundAnchor[] unboundAnchors)
+    private void OnLoadUnboundAnchorsComplete(UnboundAnchor[] unboundAnchors)
     {
-        SampleController.Instance.Log(nameof(OnLoadUnboundAnchorComplete));
-
         if (unboundAnchors == null)
         {
-            SampleController.Instance.Log($"{nameof(OnLoadUnboundAnchorComplete)}: Failed to query anchors - {nameof(OVRSpatialAnchor.LoadUnboundAnchors)} returned null.");
+            SampleController.Instance.LogError($"{nameof(OnLoadUnboundAnchorsComplete)}: Failed to query anchors - {nameof(OVRSpatialAnchor.LoadUnboundAnchors)} returned null.");
+
+            if(loadUnboundAnchorCount < MAX_ANCHOR_LOAD_RETRY)
+            {
+                RetrieveAnchorsFromCloud(anchorsLoading, queryMode);
+            }
+
             return;
         }
+
+        SampleController.Instance.Log($"{nameof(OnLoadUnboundAnchorsComplete)}: {unboundAnchors.Length} anchors found");
 
         StartCoroutine(BindAnchorsCoroutine(unboundAnchors));
     }
 
     private IEnumerator BindAnchorsCoroutine(UnboundAnchor[] unboundAnchors)
     {
-        SampleController.Instance.Log(nameof(BindAnchorsCoroutine));
-
         foreach (var unboundAnchor in unboundAnchors)
         {
             OVRSpatialAnchor anchorToBind = InstantiateUnboundAnchor();
@@ -236,8 +277,11 @@ public class SharedAnchorLoader : MonoBehaviour
                     SampleController.Instance.Log("Waiting on pending anchor creation...");
                 }
 
-                SampleController.Instance.Log($"Anchor created and bound to cloud anchor {unboundAnchor.Uuid}");
-                _loadedAnchorUuids.Add(unboundAnchor.Uuid);
+                SampleController.Instance.Log($"Anchor created and bound to cloud anchor {anchorToBind.Uuid}");
+
+                _loadedAnchorUuids.Add(anchorToBind.Uuid);
+                if (queryMode == AnchorQueryMode.CLOUD)
+                    RecievedSharedAnchored(anchorToBind);
 
                 if (SampleController.Instance.automaticCoLocation && anchorToBind)
                 {
@@ -261,6 +305,10 @@ public class SharedAnchorLoader : MonoBehaviour
         {
             //Disable the share icon since this anchor has been shared with me
             sharedAnchor.DisableShareIcon();
+        }
+        else if (sharedAnchor != null && queryMode == AnchorQueryMode.LOCAL)
+        {
+            sharedAnchor.IsSavedLocally = true;
         }
 
         var cachedAnchor = spatialAnchor.GetComponent<CachedSharedAnchor>();
@@ -302,5 +350,14 @@ public class SharedAnchorLoader : MonoBehaviour
     {
         _locallySavedAnchorUuids.Remove(anchor.Uuid.ToString());
         PlayerPrefs.SetString("local_anchors", string.Join("|", _locallySavedAnchorUuids));
+    }
+
+    public void RecievedSharedAnchored(OVRSpatialAnchor anchor)
+    {
+        if (!_recievedSharedAnchorUuids.Contains(anchor.Uuid.ToString()))
+        {
+            _recievedSharedAnchorUuids.Add(anchor.Uuid.ToString());
+            PlayerPrefs.SetString("shared_anchors", string.Join("|", _recievedSharedAnchorUuids));
+        }
     }
 }

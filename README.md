@@ -1,12 +1,18 @@
-![Group 1](https://user-images.githubusercontent.com/78103154/165530747-ab6ee610-c0a6-4f43-bed4-57db257984d9.png)
+![Sample Banner](./Media/colocated-block-toss.gif 'Unity SSA Sample')
 
 # Unity-SharedSpatialAnchors
 
-Unity-SharedSpatialAnchors was built to demonstrate how to use the Shared Spatial Anchors API, available in the Oculus Integration SDK for the Unity game engine. The sample app showcases the creation, saving, loading, and sharing of Spatial Anchors.
+Unity-SharedSpatialAnchors was built to demonstrate how to use the Shared Spatial Anchors API, available in the Meta XR Core SDK for the Unity game engine.
 
-For anchor sharing, this app uses Photon Unity Networking to share player data, and also allow users to interact with networked objects in a co-located space.
+The sample app showcases:
+- Spatial Anchor Creation, Saving, Loading, and Sharing
+- Scene Sharing
+- Automatic Colocation
+- Passthrough Avatars
 
-This codebase is available both as a reference and as a template for game that utilizes shared spatial anchors. Unity-SharedSpatialAnchors is under the license found [here](LICENSE) unless otherwise specified.
+This app uses Photon Unity Networking to share anchor data and support interaction with networked objects in a colocated space.
+
+This codebase is available both as a reference and as a template for a project that utilizes shared spatial anchors. Unity-SharedSpatialAnchors is under the license found [here](LICENSE) unless otherwise specified.
 
 ## SETUP
 You must follow these instructions first: https://developer.oculus.com/documentation/unity/unity-ssa-sf/

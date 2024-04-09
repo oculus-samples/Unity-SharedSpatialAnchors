@@ -79,7 +79,8 @@ public class CachedSharedAnchor : MonoBehaviour
             ShareAnchor();
         }
 
-        if (IsAutoAlign) {
+        if (IsAutoAlign)
+        {
             AlignToAnchor();
         }
     }
@@ -93,7 +94,7 @@ public class CachedSharedAnchor : MonoBehaviour
             return;
         }
 
-        _spatialAnchor.Save((_, isSuccessful) =>
+        _spatialAnchor.SaveAsync().ContinueWith((isSuccessful) =>
         {
             if (isSuccessful)
             {
@@ -105,12 +106,17 @@ public class CachedSharedAnchor : MonoBehaviour
                 PlayerPrefs.SetString("cached_anchor_uuid", anchorUuid);
                 PlayerPrefs.Save();
 
-                SampleController.Instance.Log("CachedSharedAnchor: SaveLocal: done, uuid: " + anchorUuid);
+                SampleController.Instance.Log($"Successfully Saved cached spatial anchor: {anchorUuid}");
+            }
+            else
+            {
+                SampleController.Instance.LogError($"Failed to save spatial anchor to local storage");
             }
         });
     }
 
-    private bool IsReadyToShare() {
+    private bool IsReadyToShare()
+    {
         var userIds = PhotonAnchorManager.GetUserList().Select(userId => userId.ToString()).ToArray();
         if (userIds.Length == 0)
         {
@@ -130,15 +136,16 @@ public class CachedSharedAnchor : MonoBehaviour
     {
         SampleController.Instance.Log(nameof(ShareAnchor));
 
-        if (!IsReadyToShare()){
+        if (!IsReadyToShare())
+        {
             return;
         }
 
         OVRSpatialAnchor.SaveOptions saveOptions;
         saveOptions.Storage = OVRSpace.StorageLocation.Cloud;
 
-        _spatialAnchor.Save(saveOptions, (spatialAnchor, isSuccessful) =>
-        {            
+        _spatialAnchor.SaveAsync(saveOptions).ContinueWith((isSuccessful) =>
+        {
             if (isSuccessful)
             {
                 SampleController.Instance.Log("Successfully saved anchor(s) to the cloud");
@@ -151,7 +158,7 @@ public class CachedSharedAnchor : MonoBehaviour
                     spaceUserList.Add(new OVRSpaceUser(ulong.Parse(strUsername)));
                 }
 
-                OVRSpatialAnchor.Share(new List<OVRSpatialAnchor> { spatialAnchor }, spaceUserList, OnShareComplete);
+                _spatialAnchor.ShareAsync(spaceUserList).ContinueWith(OnShareComplete);
             }
             else
             {
@@ -164,7 +171,8 @@ public class CachedSharedAnchor : MonoBehaviour
     {
         SampleController.Instance.Log(nameof(ReshareAnchor));
 
-        if (!IsReadyToShare()){
+        if (!IsReadyToShare())
+        {
             return;
         }
 
@@ -175,38 +183,34 @@ public class CachedSharedAnchor : MonoBehaviour
         {
             spaceUserList.Add(new OVRSpaceUser(ulong.Parse(strUsername)));
         }
-        OVRSpatialAnchor.Share(new List<OVRSpatialAnchor> { _spatialAnchor }, spaceUserList, OnShareComplete);
+
+        _spatialAnchor.ShareAsync(spaceUserList).ContinueWith(OnShareComplete);
     }
 
-    private static void OnShareComplete(ICollection<OVRSpatialAnchor> spatialAnchors, OVRSpatialAnchor.OperationResult result)
+    private void OnShareComplete(OVRSpatialAnchor.OperationResult result)
     {
         SampleController.Instance.Log(nameof(OnShareComplete) + " Result: " + result);
 
         if (result != OVRSpatialAnchor.OperationResult.Success)
         {
-            foreach (var spatialAnchor in spatialAnchors)
+            _spatialAnchor.GetComponent<CachedSharedAnchor>().sharedAnchorImage.color = Color.red;
+
+            if (result == OVRSpatialAnchor.OperationResult.Failure_SpaceCloudStorageDisabled)
             {
-                spatialAnchor.GetComponent<CachedSharedAnchor>().sharedAnchorImage.color = Color.red;
+                SampleController.Instance.Log(SharedAnchor.SHARE_POINT_CLOUD_DATA_ERROR);
+                Application.OpenURL(SharedAnchor.SHARE_POINT_CLOUD_DATA_INFO_URL);
             }
+
             return;
         }
 
-        var uuids = new Guid[spatialAnchors.Count];
-        var uuidIndex = 0;
-
-        foreach (var spatialAnchor in spatialAnchors)
-        {
-            SampleController.Instance.Log("OnShareComplete: space: " + spatialAnchor.Space.Handle + ", uuid: " + spatialAnchor.Uuid);
-            spatialAnchor.GetComponent<CachedSharedAnchor>().sharedAnchorImage.color = Color.green;
-
-            uuids[uuidIndex] = spatialAnchor.Uuid;
-            ++uuidIndex;
-        }
-
-        PhotonAnchorManager.Instance.PublishAnchorUuids(uuids, (uint)uuids.Length, true);
+        _spatialAnchor.GetComponent<CachedSharedAnchor>().sharedAnchorImage.color = Color.green;
+        SampleController.Instance.Log($"{nameof(OnShareComplete)} - UUID: {_spatialAnchor.Uuid}");
+        PhotonAnchorManager.Instance.PublishAnchorUuids(new Guid[] { _spatialAnchor.Uuid }, 1, true);
     }
 
-    public void SendLocalAnchor() {
+    public void SendLocalAnchor()
+    {
         SampleController.Instance.Log("SendLocalAnchor: uuid: " + _spatialAnchor);
         var uuids = new Guid[1];
         uuids[0] = _spatialAnchor.Uuid;
@@ -219,7 +223,8 @@ public class CachedSharedAnchor : MonoBehaviour
         Invoke(nameof(WaitAlignToAnchor), 0.1f);
     }
 
-    private void WaitAlignToAnchor() {
+    private void WaitAlignToAnchor()
+    {
         SampleController.Instance.Log("WaitAlignToAnchor: uuid: " + _spatialAnchor.Uuid);
         AlignPlayer.Instance.AlignToCachedAnchor(this);
     }

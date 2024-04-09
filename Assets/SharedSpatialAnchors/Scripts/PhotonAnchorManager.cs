@@ -93,6 +93,15 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
         PackUuid(_fakeUuid, _fakePacket, ref offset);
     }
 
+    private void Update()
+    {
+        if(usePhotonMatchmaking)
+        {
+            if (controlPanel)
+                controlPanel.StatusText.text = $"Status: {PhotonPun.PhotonNetwork.NetworkClientState}";
+        }
+    }
+
     #endregion
 
     private void GetLoggedInUserCallback(Message msg)
@@ -169,7 +178,7 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        SampleController.Instance.Log("Photon::OnJoinRoomFailed: " + message);
+        SampleController.Instance.Log($"Photon::{nameof(OnJoinRoomFailed)}: {message}. Create or Join a new room.");
 
         if (controlPanel)
             controlPanel.DisplayLobbyPanel();
@@ -177,9 +186,13 @@ public class PhotonAnchorManager : PhotonPun.MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
-        SampleController.Instance.Log("Photon::OnJoinedRoom: joined room: " + PhotonPun.PhotonNetwork.CurrentRoom.Name);
+        SampleController.Instance.Log($"Photon::{nameof(OnJoinedRoom)}: joined room: {PhotonPun.PhotonNetwork.CurrentRoom.Name}");
 
-        controlPanel.RoomText.text = "Room: " + PhotonPun.PhotonNetwork.CurrentRoom.Name;
+        if (usePhotonMatchmaking)
+        {
+            if(controlPanel)
+                controlPanel.RoomText.text = "Photon Room: " + PhotonPun.PhotonNetwork.CurrentRoom.Name;
+        }
 
         AddUserToUserListState(_oculusUserId);
 

@@ -102,7 +102,8 @@ namespace Common
             var success = OVRPlugin.RequestSceneCapture(req, out id);
             if (!success)
             {
-                SampleController.Instance.Log("Failure requesting scene capture");
+                SampleController.Instance.Log("Failure requesting scene capture. Attempting to load room layout");
+                LoadRoomLayout();
             }
         }
 

@@ -50,7 +50,8 @@ public class PhotonGrabbableObject : MonoBehaviour
             case PointerEventType.Select:
                 if (_grabbable.SelectingPointsCount == 1)
                 {
-                    SampleController.Instance.Log("Grabbable object grabbed");
+                    if(Debug.isDebugBuild)
+                        Debug.Log("Grabbable object grabbed");
                     
                     TransferOwnershipToLocalPlayer();
                 }
@@ -58,7 +59,8 @@ public class PhotonGrabbableObject : MonoBehaviour
             case PointerEventType.Unselect:
                 if (_grabbable.SelectingPointsCount == 0)
                 {
-                    SampleController.Instance.Log("Grabbable object ungrabbed");
+                    if (Debug.isDebugBuild)
+                        Debug.Log("Grabbable object ungrabbed");
                 }
                 break;
         }
