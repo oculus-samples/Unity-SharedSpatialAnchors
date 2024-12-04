@@ -5,14 +5,11 @@ PluginImporter:
   serializedVersion: 2
   iconMap: {}
   executionOrder: {}
-  defineConstraints: []
   isPreloaded: 0
   isOverridable: 0
-  isExplicitlyReferenced: 0
-  validateReferences: 1
   platformData:
   - first:
-      : Any
+      '': Any
     second:
       enabled: 0
       settings:
@@ -27,25 +24,25 @@ PluginImporter:
         Exclude Win64: 0
         Exclude WindowsStoreApps: 1
   - first:
-      : OSXIntel
+      '': OSXIntel
     second:
       enabled: 0
       settings:
         CPU: AnyCPU
   - first:
-      : OSXIntel64
+      '': OSXIntel64
     second:
       enabled: 0
       settings:
         CPU: AnyCPU
   - first:
-      : WP8
+      '': WP8
     second:
       enabled: 0
       settings:
         CPU: AnyCPU
         DontProcess: False
-        PlaceholderPath: 
+        PlaceholderPath:
   - first:
       Android: Android
     second:
@@ -53,7 +50,7 @@ PluginImporter:
       settings:
         CPU: ARMv7
   - first:
-      Any: 
+      Any:
     second:
       enabled: 1
       settings: {}
@@ -88,7 +85,7 @@ PluginImporter:
     second:
       enabled: 1
       settings:
-        CPU: AnyCPU
+        CPU: x86_64
   - first:
       Standalone: LinuxUniversal
     second:
@@ -120,7 +117,7 @@ PluginImporter:
       settings:
         CPU: AnyCPU
         DontProcess: False
-        PlaceholderPath: 
+        PlaceholderPath:
         SDK: AnySDK
         ScriptingBackend: AnyScriptingBackend
   - first:
@@ -133,8 +130,8 @@ PluginImporter:
     second:
       enabled: 0
       settings:
-        CompileFlags: 
-        FrameworkDependencies: 
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+        CompileFlags:
+        FrameworkDependencies:
+  userData:
+  assetBundleName:
+  assetBundleVariant:

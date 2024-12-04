@@ -12,14 +12,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7d75bea1662418ab5f9e0c22110bc09, type: 3}
   m_Name: ImmersiveDebuggerSettings
   m_EditorClassIdentifier: 
-  debugTypes: []
+  debugTypes:
+  - AssemblyName: Meta.XR.ImmersiveDebugger
+    DebugTypes:
+    - TestSceneUsage
+    - UIEditorSetup
+  - AssemblyName: Meta.XR.BuildingBlocks
+    DebugTypes:
+    - Meta.XR.BuildingBlocks.QrCodeScanner
+  - AssemblyName: Meta.XR.MultiplayerBlocks.Shared
+    DebugTypes:
+    - Meta.XR.MultiplayerBlocks.Shared.CustomMatchmaking
+    - Meta.XR.MultiplayerBlocks.Shared.FriendsMatchmaking
   immersiveDebuggerEnabled: 0
   immersiveDebuggerDisplayAtStartup: 0
-  immersiveDebuggerToggleDisplayButton: 2
+  immersiveDebuggerToggleDisplayButton: 8388608
   showInspectors: 0
-  showConsole: 0
+  showConsole: 1
   followOverride: 1
   rotateOverride: 0
-  showInfoLog: 0
+  showInfoLog: 1
   showWarningLog: 1
   showErrorLog: 1
+  collapsedIdenticalLogEntries: 1
+  maximumNumberOfLogEntries: 1000
+  panelDistance: 1
+  createEventSystem: 1
+  automaticLayerCullingUpdate: 1
+  panelLayer: 20
+  meshRendererLayer: 21
+  overlayDepth: 10
+  inspectedDataEnabled: 0101
+  inspectedDataAssets:
+  - {fileID: 11400000, guid: 7d2b5c7a7c5e53542ab61e3e1f5a2785, type: 2}
+  - {fileID: 11400000, guid: 168f7a776bb65884397aab8376e40c7d, type: 2}
+  useCustomIntegrationConfig: 0
+  customIntegrationConfigClassName: 

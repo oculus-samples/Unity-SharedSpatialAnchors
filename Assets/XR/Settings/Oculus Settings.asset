@@ -20,10 +20,10 @@ MonoBehaviour:
   LowOverheadMode: 1
   OptimizeBufferDiscards: 1
   PhaseSync: 0
-  SymmetricProjection: 0
-  SubsampledLayout: 0
+  SymmetricProjection: 1
+  SubsampledLayout: 1
   FoveatedRenderingMethod: 0
-  LateLatching: 0
+  LateLatching: 1
   LateLatchingDebug: 0
   EnableTrackingOriginStageMode: 0
   SpaceWarp: 0

@@ -19,7 +19,7 @@ MonoBehaviour:
     AppIdVoice: 
     AppVersion: 
     UseNameServer: 1
-    FixedRegion: 
+    FixedRegion: usw
     Server: 
     Port: 0
     ProxyServer: 
@@ -49,6 +49,6 @@ MonoBehaviour:
   - SendSessionStart
   - CheckForLocalAnchors
   - OnColocatedAck
-  DisableAutoOpenWizard: 1
+  DisableAutoOpenWizard: 0
   ShowSettings: 1
   DevRegionSetOnce: 1
