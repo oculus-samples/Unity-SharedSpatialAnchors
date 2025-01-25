@@ -3110,7 +3110,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 16.999998, y: 0}
   m_SizeDelta: {x: -17, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &539537378
@@ -4272,6 +4272,9 @@ MonoBehaviour:
   _posOffset: {x: 0, y: -0.035, z: 0.1}
   _rotOffset: {x: 0.084257655, y: 0.04868803, z: -0.064553, w: 0.99315816}
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!4 &785300716
 Transform:
   m_ObjectHideFlags: 0
@@ -4388,7 +4391,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 598955023}
   m_HandleRect: {fileID: 598955022}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -9102,6 +9105,9 @@ MonoBehaviour:
   _posOffset: {x: 0, y: -0.035, z: 0.1}
   _rotOffset: {x: 0.084257655, y: 0.04868803, z: -0.064553, w: 0.99315816}
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!4 &1758589350
 Transform:
   m_ObjectHideFlags: 0
@@ -13402,7 +13408,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interactors:
-  - {fileID: 6968205761122650562}
   - {fileID: 8083374274907034972}
   - {fileID: 8105528930553429234}
   _activeState: {fileID: 0}
@@ -13497,7 +13502,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interactors:
-  - {fileID: 151398820724016511}
   - {fileID: 8553364198364995678}
   _activeState: {fileID: 0}
   _candidateComparer: {fileID: 0}
@@ -14055,7 +14059,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1211571425304485693
 Transform:
   m_ObjectHideFlags: 0
@@ -14434,6 +14438,9 @@ MonoBehaviour:
   _posOffset: {x: 0, y: 0, z: 0}
   _rotOffset: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!114 &1373515882193670014
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14452,6 +14459,9 @@ MonoBehaviour:
   _posOffset: {x: 0, y: 0, z: 0}
   _rotOffset: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!4 &1390067460094571882
 Transform:
   m_ObjectHideFlags: 0
@@ -20474,6 +20484,9 @@ MonoBehaviour:
   _posOffset: {x: -0.02, y: -0.075, z: 0.11}
   _rotOffset: {x: 0.084257655, y: 0.04868803, z: -0.064553, w: 0.99315816}
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!114 &2225697886096270236
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20492,6 +20505,9 @@ MonoBehaviour:
   _posOffset: {x: -0.02, y: -0.075, z: 0.11}
   _rotOffset: {x: 0.084257655, y: 0.04868803, z: -0.064553, w: 0.99315816}
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!1 &2238042072433955202
 GameObject:
   m_ObjectHideFlags: 0
@@ -23302,7 +23318,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &3268879849455030783
 GameObject:
   m_ObjectHideFlags: 0
@@ -23359,7 +23375,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!54 &3282029262589554742
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -25415,7 +25431,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interactors:
-  - {fileID: 435692190685701925}
   - {fileID: 2395223489014567097}
   _activeState: {fileID: 0}
   _candidateComparer: {fileID: 0}
@@ -25737,6 +25752,9 @@ MonoBehaviour:
   _rotOffset: {x: 0, y: 0, z: 0, w: 1}
   _useLegacyOrientation: 1
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!4 &4294660592711393932
 Transform:
   m_ObjectHideFlags: 0
@@ -25805,7 +25823,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!137 &4311164197544895699
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 0
@@ -29673,7 +29691,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5444815727563172543
 Transform:
   m_ObjectHideFlags: 0
@@ -30611,7 +30629,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5736984353851590885
 Transform:
   m_ObjectHideFlags: 0
@@ -30682,6 +30700,9 @@ MonoBehaviour:
   _rotOffset: {x: 0, y: 0, z: 0, w: 1}
   _useLegacyOrientation: 1
   _mirrorOffsetsForLeftHand: 1
+  _freezeRotationX: 0
+  _freezeRotationY: 0
+  _freezeRotationZ: 0
 --- !u!4 &5744352938149731187
 Transform:
   m_ObjectHideFlags: 0
@@ -30824,7 +30845,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interactors:
-  - {fileID: 8511116913355565209}
+  - {fileID: 8553364199337209108}
   - {fileID: 594323991}
   _activeState: {fileID: 5649509398204599566}
   _candidateComparer: {fileID: 0}
