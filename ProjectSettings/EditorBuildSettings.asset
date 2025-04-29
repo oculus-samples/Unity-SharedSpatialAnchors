@@ -14,7 +14,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ColocationSessionGroups.unity
     guid: 51824fa595108234e8dda6af5bd9cad7
+  - enabled: 0
+    path:
+    guid: 7c294ea7301214049b9f93a37b481c8d
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: ca8e257eaef0c3042a86010b1fb019f0, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e618e6ad86b9a954096d9f36d6b5bba4, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: dcfdcaa6b2b1c4f46b70dfae9b497a3b, type: 2}
     xr.sdk.mock-hmd.settings: {fileID: 11400000, guid: fa3fffa2e684f7f4a8ba6975e0c7d092, type: 2}

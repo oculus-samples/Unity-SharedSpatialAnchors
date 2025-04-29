@@ -1,4 +1,4 @@
-﻿// ----------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------
 // <summary>The Photon Chat Api enables clients to connect to a chat server and communicate with other clients.</summary>
 // <remarks>ChatClient is the main class of this api.</remarks>
 // <copyright company="Exit Games GmbH">Photon Chat Api - Copyright (C) 2014 Exit Games GmbH</copyright>

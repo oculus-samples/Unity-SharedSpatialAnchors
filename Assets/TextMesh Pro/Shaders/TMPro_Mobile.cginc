@@ -1,4 +1,4 @@
-﻿struct vertex_t {
+struct vertex_t {
     UNITY_VERTEX_INPUT_INSTANCE_ID
     float4	position		: POSITION;
     float3	normal			: NORMAL;

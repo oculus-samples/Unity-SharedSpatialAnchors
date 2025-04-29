@@ -1,5 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This code is licensed under the MIT license (see LICENSE for details).
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
 
 using Guid = System.Guid;
 
@@ -14,24 +15,24 @@ using Guid = System.Guid;
 /// </remarks>
 public readonly struct AnchorSource
 {
-    public static AnchorSource New(ulong creatorHandle, Guid anchorId)
+    public static AnchorSource New(Guid anchorId)
     {
-        return new AnchorSource(Type.New, anchorId, creatorHandle, true);
+        return new AnchorSource(Type.New, anchorId, m: true);
     }
 
-    public static AnchorSource FromSave(Guid savedAnchorId, ulong creatorHandle = 0)
+    public static AnchorSource FromSave(Guid savedAnchorId, bool isMine = true)
     {
-        return new AnchorSource(Type.FromSave, savedAnchorId, creatorHandle, creatorHandle > 0);
+        return new AnchorSource(Type.FromSave, savedAnchorId, m: isMine);
     }
 
-    public static AnchorSource FromSpaceUserShare(Guid sharedAnchorId)
+    public static AnchorSource FromSpaceUserShare(Guid sharedAnchorId, bool isMine = false)
     {
-        return new AnchorSource(Type.FromSpaceUserShare, sharedAnchorId, 0, false);
+        return new AnchorSource(Type.FromSpaceUserShare, sharedAnchorId, m: isMine);
     }
 
-    public static AnchorSource FromGroupShare(Guid groupId)
+    public static AnchorSource FromGroupShare(Guid groupId, bool isMine = false)
     {
-        return new AnchorSource(Type.FromGroupShare, groupId, 0, false);
+        return new AnchorSource(Type.FromGroupShare, groupId, m: isMine);
     }
 
 
@@ -46,84 +47,28 @@ public readonly struct AnchorSource
     public readonly bool IsSet;
     public readonly Type Origin;
     public readonly Guid Uuid;
-    public readonly ulong Handle;
-    public readonly bool IsMine; // TODO AnchorSource.IsMine is not fully reliable for colocation group sharing (it is more reliable in scene "Sharing to Users")
+    public readonly bool IsMine;
 
 
     public override string ToString()
     {
         if (!IsSet)
             return "(unknown)";
-        if (IsMine)
-            return $"{Origin}(Mine)";
-        if (Uuid != Guid.Empty)
-            return $"{Origin}({Uuid.Brief()})";
-        return $"{Origin}(null)";
-    }
-
-
-    // The idea behind the following helpers is that the out-params document which fields should be valid in each
-    // true-returning case.
-
-    public bool IsNew(out ulong creatorHandle)
-    {
-        creatorHandle = Handle;
-        return IsSet && Origin == Type.New && Handle != 0;
-    }
-
-    public bool IsNew(out Guid anchorId)
-    {
-        anchorId = Uuid;
-        return IsSet && Origin == Type.New && Uuid != Guid.Empty;
-    }
-
-    public bool IsFromSave(out Guid savedAnchorId)
-    {
-        savedAnchorId = Uuid;
-        return IsSet && Origin == Type.FromSave && Uuid != Guid.Empty;
-    }
-
-    public bool IsShared(out Guid sharedAnchorId)
-    {
-        sharedAnchorId = Uuid;
-        if (!IsSet || sharedAnchorId == Guid.Empty)
-            return false;
-
-        switch (Origin)
-        {
-            case Type.FromGroupShare:
-            case Type.FromSpaceUserShare:
-                return true;
-            case Type.FromSave:
-                return !IsMine;
-            case Type.New:
-                break; // TODO need to unify the sample implementations so that we have an authority on this kind of flag
-        }
-        return false;
-    }
-
-    public bool IsFromSpaceUserShare(out Guid sharedAnchorId)
-    {
-        sharedAnchorId = Uuid;
-        return IsSet && Origin == Type.FromSpaceUserShare && Uuid != Guid.Empty;
-    }
-
-    public bool IsFromGroupShare(out Guid groupId)
-    {
-        groupId = Uuid;
-        return IsSet && Origin == Type.FromGroupShare && Uuid != Guid.Empty;
+        string origin =
+            Origin == Type.FromGroupShare ? $"{Origin}[{Uuid.Brief()}]"
+                                          : $"{Origin}";
+        return IsMine ? $"{origin}(Mine)" : origin;
     }
 
 
     //
     // private impl.
 
-    AnchorSource(Type t, Guid g, ulong u, bool m)
+    AnchorSource(Type t, Guid g, bool m)
     {
         IsSet = true;
         Origin = t;
         Uuid = g;
-        Handle = u;
         IsMine = m;
     }
 
