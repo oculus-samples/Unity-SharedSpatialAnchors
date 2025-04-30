@@ -19,7 +19,7 @@ MonoBehaviour:
     AppIdVoice: 
     AppVersion: 
     UseNameServer: 1
-    FixedRegion: 
+    FixedRegion: usw
     Server: 
     Port: 0
     ProxyServer: 
@@ -36,6 +36,19 @@ MonoBehaviour:
   RpcList:
   - ClickRpc
   - DestroyRpc
+  - DestroySpaceship
+  - Fire
+  - RespawnSpaceship
+  - GetAnchor
+  - SendAnchor
+  - AddOculusID
+  - RemoveOculusID
+  - ShareAnchor
+  - ConfirmOculusIDDelivered
+  - CheckForAnchorsShared
+  - SendSessionStart
+  - CheckForLocalAnchors
+  - OnColocatedAck
   DisableAutoOpenWizard: 0
   ShowSettings: 1
   DevRegionSetOnce: 1

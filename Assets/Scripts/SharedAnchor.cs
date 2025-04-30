@@ -1,6 +1,5 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// This code is licensed under the MIT license (see LICENSE for details).
 
 using System;
 using System.Collections;
@@ -68,7 +67,7 @@ public class SharedAnchor : MonoBehaviour
 
         bool success = shareResult.IsSuccess();
 
-        var uuids = new HashSet<Guid>(anchors.Count);
+        var uuids = new List<Guid>(anchors.Count);
         foreach (var anchor in anchors)
         {
             anchor.ShareSucceeded = success;
@@ -83,24 +82,12 @@ public class SharedAnchor : MonoBehaviour
 
         Sampleton.Log($"+ Shared {uuids.Count} spatial anchors: {loggedResult}");
 
-        PhotonAnchorManager.PublishAnchorsToUsers(uuids, new[] { oneUser });
+        PhotonAnchorManager.PublishAnchorsToRoom(uuids);
     }
 
-    public static async void ShareAllMineTo(IReadOnlyCollection<ulong> users, bool reshareOnly = false)
+    public static async void ShareAllMineTo(ICollection<ulong> users, bool reshareOnly = false)
     {
         Sampleton.Log($"{nameof(ShareAllMineTo)}:");
-
-        var anchors = (
-            from a in AllMine
-            where !reshareOnly || a.ShareSucceeded
-            select a
-        ).ToList();
-
-        if (anchors.Count == 0)
-        {
-            Sampleton.Log($"- SKIP: no loaded anchors to share.");
-            return;
-        }
 
         var spaceUsers = new List<OVRSpaceUser>(users.Count);
         foreach (var uid in users)
@@ -116,6 +103,18 @@ public class SharedAnchor : MonoBehaviour
             }
         }
 
+        var anchors = (
+            from a in AllMine
+            where !reshareOnly || a.ShareSucceeded
+            select a
+        ).ToList();
+
+        if (anchors.Count == 0)
+        {
+            Sampleton.Log($"- SKIP: no loaded anchors to share.");
+            return;
+        }
+
         Sampleton.Log($"+ sharing {anchors.Count} anchors to {spaceUsers.Count} uids..");
 
         // KEY API CALL: static OVRSpatialAnchor.ShareAsync(anchors, users)
@@ -125,7 +124,7 @@ public class SharedAnchor : MonoBehaviour
 
         bool success = shareResult.IsSuccess();
 
-        var uuids = new HashSet<Guid>(anchors.Count);
+        var uuids = new List<Guid>(anchors.Count);
         foreach (var anchor in anchors)
         {
             anchor.ShareSucceeded = success;
@@ -140,26 +139,35 @@ public class SharedAnchor : MonoBehaviour
 
         Sampleton.Log($"+ Shared {uuids.Count} spatial anchors: {loggedResult}");
 
-        PhotonAnchorManager.PublishAnchorsToUsers(AllMine.Select(a => a.Uuid), users);
+        PhotonAnchorManager.PublishAnchorsToRoom(AllMine.Select(a => a.Uuid));
     }
 
 
     //
     // Public Properties & UnityEvent Callbacks (for Buttons)
 
-    public Guid Uuid => m_SpatialAnchor ? m_SpatialAnchor.Uuid : Guid.Empty;
+    public Guid Uuid
+    {
+        get
+        {
+            if (!m_CachedUuid.HasValue)
+            {
+                if (!m_SpatialAnchor) // yikes
+                    return Guid.Empty;
+                m_CachedUuid = m_SpatialAnchor.Uuid;
+            }
+            return m_CachedUuid.Value;
+        }
+    }
+    Guid? m_CachedUuid; // in case we need it for cleanup after the OVRSpatialAnchor has already met its demise.
 
     public bool IsSaved
     {
-        get => LocallySaved.AnchorIsRemembered(Uuid);
+        get => SharedAnchorLoader.IsPersisted(Uuid);
         set
         {
-            if (value)
-                LocallySaved.RememberAnchor(Uuid, Source.IsMine);
-            else
-                LocallySaved.ForgetAnchor(Uuid);
             if (m_SaveIcon)
-                m_SaveIcon.color = value ? SampleColors.Green : SampleColors.Gray;
+                m_SaveIcon.color = value ? k_ColorGreen : k_ColorGray;
         }
     }
 
@@ -170,7 +178,7 @@ public class SharedAnchor : MonoBehaviour
         {
             m_ShareSucceeded = value;
             if (m_ShareIcon)
-                m_ShareIcon.color = value ? SampleColors.Green : SampleColors.Red;
+                m_ShareIcon.color = value ? k_ColorGreen : k_ColorRed;
         }
     }
     bool m_ShareSucceeded;
@@ -182,7 +190,7 @@ public class SharedAnchor : MonoBehaviour
         {
             m_IsSelectedForAlign = value;
             if (m_AlignIcon)
-                m_AlignIcon.color = value ? SampleColors.Green : SampleColors.Gray;
+                m_AlignIcon.color = value ? k_ColorGreen : k_ColorGray;
         }
     }
     bool m_IsSelectedForAlign;
@@ -214,12 +222,6 @@ public class SharedAnchor : MonoBehaviour
             return;
         }
 
-        if (!LocallySaved.AnchorsCanGrow)
-        {
-            LocallySaved.LogCannotGrow(nameof(OnSaveLocalButtonPressed));
-            return;
-        }
-
         Sampleton.Log($"{nameof(OnSaveLocalButtonPressed)}: {Uuid}");
 
         // API call: instance OVRSpatialAnchor.SaveAnchorAsync()
@@ -237,6 +239,7 @@ public class SharedAnchor : MonoBehaviour
 
         Sampleton.Log($"+ Saved Spatial Anchor: {loggedResult}");
 
+        SharedAnchorLoader.AddPersistedAnchor(Uuid, Source.IsMine);
         IsSaved = true;
     }
 
@@ -269,9 +272,7 @@ public class SharedAnchor : MonoBehaviour
             return;
         }
 
-        var uuid = Uuid;
-
-        Sampleton.Log($"{nameof(OVRSpatialAnchor.EraseAnchorAsync)}: {uuid.Brief()}");
+        Sampleton.Log($"{nameof(OVRSpatialAnchor.EraseAnchorAsync)}:");
 
         var anchor = m_SpatialAnchor;
         m_SpatialAnchor = null;
@@ -290,7 +291,7 @@ public class SharedAnchor : MonoBehaviour
 
         Sampleton.Log($"+ Erased Spatial Anchor: {loggedResult}");
 
-        LocallySaved.IgnoreAnchor(uuid);
+        SharedAnchorLoader.RemovePersistedAnchor(Uuid);
 
         Destroy(gameObject);
     }
@@ -310,12 +311,13 @@ public class SharedAnchor : MonoBehaviour
 
     public void ShareWithRoom()
     {
-        Sampleton.Log($"{nameof(ShareWithRoom)}: anchor {Uuid.Brief()}");
-
-        // userIds is an array of scoped Oculus User IDs of peers in this Photon Room:
-        if (!IsReadyToShare(out var userIds, printReason: true))
+        if (!IsReadyToShare(printReason: true))
             return;
 
+        Sampleton.Log($"{nameof(ShareWithRoom)}: anchor {Uuid.Brief()}");
+
+        // get the scoped Oculus User IDs of our peers from Photon:
+        var userIds = PhotonAnchorManager.GetRoomUserIds();
         // (note: Photon won't have any valid IDs if your app hasn't gone through the DUC & Horizon store entitlement steps yet!)
 
         ShareToUsers(userIds);
@@ -345,6 +347,12 @@ public class SharedAnchor : MonoBehaviour
 
     AnchorSource m_Source;
 
+    static readonly Color k_ColorGray = new Color32(0x8B, 0x8C, 0x8E, 0xFF);
+    static readonly Color k_ColorGreen = new Color32(0x5A, 0xCA, 0x25, 0xFF);
+    static readonly Color k_ColorRed = new Color32(0xDD, 0x25, 0x35, 0xFF);
+
+    const int k_MaxAsyncAttempts = 3;
+
 
     //
     // MonoBehaviour Messages
@@ -359,6 +367,13 @@ public class SharedAnchor : MonoBehaviour
 
     async void Awake()
     {
+        if (!m_SpatialAnchor && !TryGetComponent(out m_SpatialAnchor))
+        {
+            Debug.LogError($"<{nameof(SharedAnchor)}> on '{name}' has done the impossible...", this);
+            Destroy(this);
+            return;
+        }
+
         var canvas = GetComponentInChildren<Canvas>();
         if (canvas)
             canvas.gameObject.SetActive(false); // don't render controls until creation & localization is complete
@@ -366,7 +381,7 @@ public class SharedAnchor : MonoBehaviour
         // handy API: instance OVRSpatialAnchor.WhenCreatedAsync()
         if (await m_SpatialAnchor.WhenCreatedAsync())
         {
-            Sampleton.Log($"{nameof(SharedAnchor)}: Created!");
+            Sampleton.Log($"{nameof(SharedAnchor)}: Created!\n+ {Uuid}");
         }
         else
         {
@@ -377,16 +392,9 @@ public class SharedAnchor : MonoBehaviour
 
         var uuid = Uuid;
 
-        Sampleton.Log($"+ Uuid: {uuid}");
-
         s_Instances[uuid] = this;
 
-        if (!m_Source.IsSet)
-            m_Source = AnchorSource.New(uuid);
-
-        gameObject.name =
-            m_Source.Origin == AnchorSource.Type.FromSpaceUserShare ? $"anchor:{uuid:N}-SHARED"
-                                                                    : $"anchor:{uuid:N}";
+        gameObject.name = $"anchor:{uuid:N}";
         m_AnchorName.text = $"{uuid}\n({nameof(Source)}: {m_Source})";
 
         // handy API: instance OVRSpatialAnchor.WhenLocalizedAsync()
@@ -403,47 +411,88 @@ public class SharedAnchor : MonoBehaviour
 
         if (canvas)
             canvas.gameObject.SetActive(true);
+
+        if (m_Source.IsSet)
+            return;
+
+        if (PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong userId))
+            m_Source = AnchorSource.New(userId, uuid);
     }
 
     void OnDestroy()
     {
         _ = s_Instances.Remove(Uuid);
+        SharedAnchorLoader.LoadedAnchorIds.Remove(Uuid);
     }
 
 
     //
     // impl. methods
 
-    bool IsReadyToShare(out IReadOnlyCollection<ulong> userIds, bool printReason = true)
+    bool IsReadyToShare(bool printReason = true)
     {
-        userIds = null;
-
         if (!m_SpatialAnchor)
         {
             if (printReason)
-                Sampleton.LogError("- Can't share - no associated spatial anchor");
+                Sampleton.Log("- Can't share - no associated spatial anchor");
             return false;
         }
 
-        if (!PhotonNetwork.IsConnected)
+        if (!Photon.Pun.PhotonNetwork.IsConnected)
         {
             if (printReason)
-                Sampleton.LogError("- Can't share - not connected to the Photon network");
+                Sampleton.Log("- Can't share - not connected to the Photon network");
             return false;
         }
 
-        userIds = PhotonAnchorManager.RoomUserIds;
-        if (userIds is null || userIds.Count == 0)
+        var userIds = PhotonAnchorManager.GetRoomUserIds();
+        if (userIds.Count == 0)
         {
             if (printReason)
-                Sampleton.LogError("- Can't share - no users to share with or can't get user list from Photon");
+                Sampleton.Log("- Can't share - no users to share with or can't get user list from Photon");
             return false;
         }
 
         return true;
     }
 
-    async void ShareToUsers(IReadOnlyCollection<ulong> userIds)
+    [Obsolete("You should no longer need to save an anchor before sharing it.")]
+    async void SaveThenShare()
+    {
+        int attempt = 0;
+
+        Retry:
+
+        // API call: instance OVRSpatialAnchor.SaveAnchorAsync()
+        var saveResult = await m_SpatialAnchor.SaveAnchorAsync();
+
+        string loggedResult = saveResult.Status.ForLogging();
+
+        if (saveResult.Success)
+        {
+            Sampleton.Log($"+ Saved Spatial Anchor: {loggedResult}");
+            if (IsReadyToShare(printReason: true))
+            {
+                // get the scoped Oculus User IDs of our peers from Photon:
+                var userIds = PhotonAnchorManager.GetRoomUserIds();
+                // (note: Photon won't have any valid IDs if your app hasn't gone through the DUC & Horizon store entitlement steps yet!)
+                ShareToUsers(userIds);
+            }
+            return;
+        }
+
+        Sampleton.LogError($"- Saving Spatial Anchor FAILED: {loggedResult}");
+
+        if (++attempt < k_MaxAsyncAttempts)
+        {
+            Sampleton.Log($"- Retry {attempt}/{k_MaxAsyncAttempts} ...");
+            goto Retry;
+        }
+
+        Sampleton.LogError($"{nameof(SaveThenShare)} FAILED: Max save attempts exceeded");
+    }
+
+    async void ShareToUsers(ICollection<ulong> userIds)
     {
         Assert.IsNotNull(m_SpatialAnchor, "m_SpatialAnchor != null");
 
@@ -480,10 +529,10 @@ public class SharedAnchor : MonoBehaviour
         ShareSucceeded = shareResult.IsSuccess();
         if (ShareSucceeded)
         {
-            Sampleton.Log($"+ Shared Spatial Anchor: {loggedResult}");
             // In this context of the sample, we need to transmit this now-shared anchor's id by some other means to our
             // peers. The "means" that we presently choose to demo with is Photon Realtime + PUN.
-            PhotonAnchorManager.PublishAnchorToUsers(Uuid, userIds);
+            PhotonAnchorManager.PublishAnchorToRoom(Uuid);
+            Sampleton.Log($"+ Shared Spatial Anchor: {loggedResult}");
             return;
         }
 

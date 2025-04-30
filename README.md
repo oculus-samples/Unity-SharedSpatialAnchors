@@ -1,4 +1,4 @@
-![Readme Banner](Documentation/Media/readme-banner.png 'Unity Shared Spatial Anchor Sample')
+![Sample Banner](Documentation/Media/colocated-block-toss.gif 'Unity SSA Sample')
 
 # Unity-SharedSpatialAnchors
 
@@ -92,7 +92,7 @@ git grep -lF '// KEY API CALL'
 |                               |                                                                                                                                                         |
 |:------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------|
 | "Before You Begin"            | https://developers.meta.com/horizon/documentation/unity/unity-before-you-begin<br/>(use the below Unity version)                                        |
-| Unity Editor Version          | 1. This project uses **2022.3.15f1**[^1]. Install this version for best results.<br/>2. Make sure to install all Android modules.                       |
+| Unity Editor Version          | 1. This project uses **2021.3.32f1**[^1]. Install this version for best results.<br/>2. Make sure to install all Android modules.                       |
 | Get & open the sample project | e.g. `git clone git@github.com:oculus-samples/Unity-SharedSpatialAnchors.git`                                                                           |
 | [dashboard.oculus.com]        | Register a new **dummy** app at [dashboard.oculus.com] and hook the App ID into Unity.<br/>This is only required for sharing anchors directly to users. |
 | [dashboard.photonengine.com]  | Register your app with [Photon][dashboard.photonengine.com] and hook the app ID into Unity.<br/>Can skip if not sampling Photon-driven scenes/features. |
@@ -161,7 +161,7 @@ Some scenes in this sample project use Photon Realtime to share anchor data and 
 [dashboard.photonengine.com]: https://dashboard.photonengine.com
 [Meta Quest Developer Hub]: https://developers.meta.com/horizon/documentation/unity/unity-quickstart-mqdh
 
-[^1]: Paste this into your browser's URL bar: `unityhub://2022.3.15f1`
+[^1]: Paste this into your browser's URL bar: `unityhub://2021.3.32f1/3b9dae9532f5`
 [^2]: https://doc.photonengine.com/docs/content/oss-pun.pdf
 [^3]: https://doc.photonengine.com/docs/content/OSS-.NET_Client_SDKs.pdf
 

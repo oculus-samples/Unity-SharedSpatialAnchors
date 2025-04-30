@@ -1,11 +1,11 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// This code is licensed under the MIT license (see LICENSE for details).
 
 using Oculus.Platform;
 using User = Oculus.Platform.Models.User;
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -25,6 +25,8 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
     // public interface
 
     #region Static section
+
+    public static ulong CurrentUserID => s_Instance && s_Instance.m_My != null ? s_Instance.m_My.ID : 0;
 
     public static Transform TrackingSpaceRoot
     {
@@ -302,16 +304,15 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
 
     public void LoadRememberedAnchors()
     {
-        var anchors = LocallySaved.Anchors;
-        if (anchors.Count == 0)
+        if (!ColoDiscoAnchor.HasRememberedAnchor)
         {
-            Sampleton.LogError($"{nameof(LoadRememberedAnchors)}: No remembered anchors for this scene.");
+            Sampleton.LogError($"{nameof(LoadRememberedAnchors)}: No remembered anchors.");
             return;
         }
 
-        Sampleton.Log($"{nameof(LoadRememberedAnchors)}: Requesting {anchors.Count} remembered anchors..");
+        Sampleton.Log($"{nameof(LoadRememberedAnchors)}: Requesting the last remembered anchor..");
 
-        LoadAnchorsById(anchors);
+        LoadAnchorsById(new[] { ColoDiscoAnchor.RememberedAnchorId });
     }
 
 
@@ -403,6 +404,8 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
     [SerializeField]
     TMP_Text m_AdvertBtnLabel, m_DiscoBtnLabel;
     [SerializeField]
+    TMP_Text m_StatusLabel;
+    [SerializeField]
     TMP_Text m_GroupListLabel;
 
     [SerializeField]
@@ -417,7 +420,6 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
 
 
     static ColoDiscoMan s_Instance;
-    static NetworkReachability s_Reachability = NetworkReachability.ReachableViaCarrierDataNetwork;
 
     bool m_AutoShare;
     bool m_IsAdvertising, m_IsDiscovering;
@@ -429,6 +431,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
     readonly Dictionary<Guid, Group> m_KnownGroups = new();
     readonly Dictionary<Guid, ColoDiscoAnchor> m_KnownAnchors = new();
     readonly List<GameObject> m_Spawned = new();
+    readonly List<(int, string)> m_StatusLines = new(); // TODO status text should be encapsulated outta here
 
     #endregion Fields
 
@@ -469,7 +472,13 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
             Debug.LogError($"\"{name}\" seems to be improperly set-up.", this);
         }
 
-        var child = transform.FindChildRecursive("Text: Group List");
+        var child = transform.FindChildRecursive("Text: Status Text");
+        if (!child || !child.TryGetComponent(out m_StatusLabel))
+        {
+            Debug.LogError($"\"{name}\" seems to be improperly set-up.", this);
+        }
+
+        child = transform.FindChildRecursive("Text: Group List");
         if (!child || !child.TryGetComponent(out m_GroupListLabel))
         {
             Debug.LogError($"\"{name}\" seems to be improperly set-up.", this);
@@ -519,7 +528,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
             m_HardcodedGroupUUID = UnityEngine.Application.buildGUID;
         }
 
-        SampleStatus.SetLine("Active Group UUID:\n(none)", order: 0);
+        UISetStatusText("Active Group UUID:\n(none)", order: 0);
 
         foreach (var uiThing in m_DisabledWithoutValidUser)
         {
@@ -558,55 +567,52 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
         OVRColocationSession.ColocationSessionDiscovered -= ReceivedSessionData;
     }
 
-    void Start()
+    IEnumerator Start()
     {
         Sampleton.Log($"Scene loaded: {gameObject.scene.name}\n({gameObject.scene.path})");
         Sampleton.Log($"OVRPlugin.version: {OVRPlugin.version}");
 
-        try
-        {
-            // API call: static Oculus.Platform.Core.Initialize()
-            Core.Initialize();
+        // API call: static Oculus.Platform.Core.Initialize()
+        Core.Initialize();
 
-            string log = "Attempting to get logged in user info, " +
-                         (m_RequireLoggedInUser ? "which is REQUIRED"
-                                                : "though it is NOT REQUIRED") +
-                         " by this version of the sample...";
-            Sampleton.Log(log);
+        string log = "Attempting to get logged in user info, " +
+                     (m_RequireLoggedInUser ? "which is REQUIRED"
+                                            : "though it is NOT REQUIRED") +
+                     " by this version of the sample...";
+        Sampleton.Log(log);
 #if UNITY_EDITOR || UNITY_STANDALONE
-            Sampleton.Log("    <color=\"grey\">* this may take upwards of several minutes when using PC Link...</color>");
+        Sampleton.Log("    <color=\"grey\">* this may take upwards of several minutes when using PC Link...</color>");
 #endif
 
-            // API call: static Oculus.Platform.Users.GetLoggedInUser()
-            Users.GetLoggedInUser().OnComplete(ReceivedLoggedInUser);
-        }
-        catch (UnityException e)
-        {
-            // "UnityException: Update your app id by selecting 'Oculus Platform' -> 'Edit Settings'"
-            Sampleton.Log(
-                $"Oculus.Platform.Core.Initialize FAILED: {e.Message}",
-                m_RequireLoggedInUser ? LogType.Exception : LogType.Warning
-            );
-        }
+        // API call: static Oculus.Platform.Users.GetLoggedInUser()
+        Users.GetLoggedInUser().OnComplete(ReceivedLoggedInUser);
 
         // KEY API CALL: static event OVRColocationSession.ColocationSessionDiscovered
         OVRColocationSession.ColocationSessionDiscovered += ReceivedSessionData;
 
-        SampleStatus.DoBuildInfo(10);
+        yield return null;
+
+        var buildInfoRequest = Resources.LoadAsync<TextAsset>("buildInfo");
+
+        yield return buildInfoRequest;
+
+        const int kOrder = 10;
+        if (buildInfoRequest.asset is not TextAsset textAsset || textAsset.dataSize < 10)
+        {
+            UISetStatusText("<build unknown>", kOrder);
+        }
+        else
+        {
+            string text = textAsset.text;
+            int hash = text.IndexOf('#');
+            if (hash > 0)
+                text = $"rev {text.Substring(hash)}\nbuilt {text.Remove(hash - 1)}";
+            UISetStatusText(text, kOrder);
+        }
     }
 
     void Update()
     {
-        var reachability = UnityEngine.Application.internetReachability;
-        if (reachability != s_Reachability)
-        {
-            Sampleton.Log(
-                $"NetworkReachability: {reachability} (t={Time.realtimeSinceStartup:F1})",
-                type: reachability == NetworkReachability.NotReachable ? LogType.Error : LogType.Log
-            );
-            s_Reachability = reachability;
-        }
-
         PoseOrigin.UseLocalCoords = OVRInput.Get(OVRInput.RawButton.LShoulder);
 
         if (OVRInput.IsControllerConnected(OVRInput.Controller.RTouch))
@@ -755,7 +761,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
         if (m_KnownGroups.TryGetValue(groupId, out var nextGroup) && nextGroup.ListButton)
             nextGroup.ListButton.interactable = false;
 
-        SampleStatus.SetLine(
+        UISetStatusText(
             $"Active Group UUID:\n{(isEmpty ? "(none)" : groupId.ToString())}",
             order: 0
         );
@@ -814,6 +820,41 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
         else if (orig.Length > kMaxOrigLen)
             orig = orig.Remove(kMaxOrigLen);
         return $"{orig} ({groupId.Brief()})";
+    }
+
+    void UISetStatusText(string text, int order)
+    {
+        Action<int> replace;
+        Func<int, bool> insert;
+        if (string.IsNullOrEmpty(text))
+        {
+            replace = i => m_StatusLines.RemoveAt(i);
+            insert = _ => false;
+        }
+        else
+        {
+            replace = i => m_StatusLines[i] = (order, text);
+            insert = i => { m_StatusLines.Insert(i, (order, text)); return true; };
+        }
+
+        int i = m_StatusLines.Count;
+        while (i-- > 0)
+        {
+            var current = m_StatusLines[i].Item1;
+            if (order == current)
+            {
+                replace(i);
+                goto Apply;
+            }
+            if (order > current && insert(i + 1))
+            {
+                goto Apply;
+            }
+        }
+
+        insert(0);
+        Apply:
+        m_StatusLabel.text = string.Join("\n\n", m_StatusLines.Select(p => p.Item2));
     }
 
     void UIAddDiscoveryItem(string labelTxt, Guid groupId, bool isSelected)
@@ -1175,8 +1216,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
 
         foreach (var anchor in toShare)
         {
-            // (anchors are implicitly saved upon successful share)
-            anchor.IsSaved = LocallySaved.RememberAnchor(anchor.Uuid, anchor.Source.IsMine);
+            anchor.IsSaved = true; // (anchors are implicitly saved upon successful share)
             anchor.UpdateUI();
         }
     }
@@ -1184,7 +1224,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
     async void LoadGroupAnchorsAsync(Guid groupId)
     {
         var prefab = SampleController.Instance.anchorPrefab;
-        if (!prefab || prefab is not ColoDiscoAnchor discoPrefab)
+        if (!prefab || !(prefab is ColoDiscoAnchor discoPrefab))
         {
             Sampleton.LogError($"{nameof(LoadGroupAnchorsAsync)}: Invalid {nameof(ColoDiscoAnchor)} prefab reference!");
             Debug.LogError($"- See Also: {nameof(SampleController)}.cs", SampleController.Instance);
@@ -1193,40 +1233,32 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
 
         Sampleton.Log($"* group: {groupId.Brief()}");
 
-        OVRResult<List<OVRSpatialAnchor.UnboundAnchor>, OVRSpatialAnchor.OperationResult> loadResult;
-        if (OnlyRememberedAnchors)
-        {
-            var remembered = LocallySaved.Anchors;
-            if (remembered.Count == 0)
-            {
-                Sampleton.Log($"- No anchors chosen to be remembered! Nothing to load.", LogType.Warning);
-                return;
-            }
+        var unboundAnchors = new List<OVRSpatialAnchor.UnboundAnchor>();
 
-            Sampleton.Log($"+ {nameof(OnlyRememberedAnchors)}: Filtering for {remembered.Count} specific (remembered) anchors.");
-
-            // KEY API CALL: static OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(groupUuid, allowedAnchorUuids, unboundAnchors)
-            loadResult = await OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(
-                groupId,
-                allowedAnchorUuids: remembered,
-                unboundAnchors: new List<OVRSpatialAnchor.UnboundAnchor>()
-            );
-        }
-        else
-        {
-            // KEY API CALL: static OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(groupUuid, unboundAnchors)
-            loadResult = await OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(
-                groupId,
-                unboundAnchors: new List<OVRSpatialAnchor.UnboundAnchor>()
-            );
-        }
+        // KEY API CALL: static OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(groupUuid, unboundAnchors)
+        var loadResult = await OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(groupId, unboundAnchors);
 
         var loggedResult = loadResult.Status.ForLogging();
 
-        if (!loadResult.TryGetValue(out var unboundAnchors))
+        // smol note:  the `out` parameter below does reassign the value of the `unboundAnchors` variable, however it
+        // will be reassigned to *itself* since it's the same list we passed into LoadUnboundSharedAnchorsAsync.
+
+        if (!loadResult.TryGetValue(out unboundAnchors))
         {
             Sampleton.LogError($"- FAILED: {loggedResult}");
             return;
+        }
+
+        if (OnlyRememberedAnchors)
+        {
+            if (!ColoDiscoAnchor.HasRememberedAnchor)
+            {
+                Sampleton.Log($"- No anchors chosen to be remembered! Nothing to load.");
+                return;
+            }
+
+            // TODO v72+ offers a better way to filter for specific anchors when loading from a group UUID. This is a stopgap until then.
+            unboundAnchors.RemoveAll(unb => !ColoDiscoAnchor.IsRemembered(unb.Uuid));
         }
 
         if (unboundAnchors.Count == 0)
@@ -1332,11 +1364,10 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
                 spatialAnchor.gameObject.SetActive(false);
             }
 
-            bool isSaved = LocallySaved.AnchorIsRemembered(uuid, out bool isMine);
-
             spatialAnchor.Source =
-                isSaved || !groupId.HasValue ? AnchorSource.FromSave(uuid, isMine: isMine)
-                                             : AnchorSource.FromGroupShare(groupId.Value, isMine: isMine);
+                groupId.HasValue ? AnchorSource.FromGroupShare(groupId.Value)
+                                 : AnchorSource.FromSave(uuid, ColoDiscoAnchor.IsRemembered(uuid) ? CurrentUserID : 0);
+
             try
             {
                 // KEY API CALL: instance OVRSpatialAnchor.UnboundAnchor.BindTo(spatialAnchor)
@@ -1425,11 +1456,11 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
     /// <remarks>
     ///   Included for comparing group sharing/loading with the original OVRSpaceUser-based sharing and loading API.
     /// </remarks>
-    /// <seealso cref="SharedAnchorLoader.RetrieveAnchorsFromCloud"/>
-    async void LoadAnchorsById(IReadOnlyCollection<Guid> anchorIds)
+    /// <seealso cref="SharedAnchorLoader.LoadAnchorsFromRemote"/>
+    async void LoadAnchorsById(ICollection<Guid> anchorIds)
     {
         var prefab = SampleController.Instance.anchorPrefab;
-        if (!prefab || prefab is not ColoDiscoAnchor discoPrefab)
+        if (!prefab || !(prefab is ColoDiscoAnchor discoPrefab))
         {
             Sampleton.LogError($"{nameof(LoadGroupAnchorsAsync)}: Invalid {nameof(ColoDiscoAnchor)} prefab reference!");
             Debug.LogError($"- See Also: {nameof(SampleController)}.cs", SampleController.Instance);

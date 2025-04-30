@@ -27,22 +27,19 @@ MonoBehaviour:
   virtualKeyboardSupport: 0
   colocationSessionSupport: 2
   sceneSupport: 0
-  boundaryVisibilitySupport: 1
+  boundaryVisibilitySupport: 0
   disableBackups: 1
   enableNSCConfig: 1
   securityXmlPath: 
-  horizonOsSdkEnabled: 0
-  minHorizonOsSdkVersion: 68
-  targetHorizonOsSdkVersion: 74
   skipUnneededShaders: 0
   enableIL2CPPLTO: 0
   removeGradleManifest: 1
   focusAware: 1
   requiresSystemKeyboard: 0
-  experimentalFeaturesEnabled: 1
+  experimentalFeaturesEnabled: 0
   insightPassthroughEnabled: 0
-  _insightPassthroughSupport: 2
+  _insightPassthroughSupport: 0
   _processorFavor: 0
   systemSplashScreen: {fileID: 0}
   systemSplashScreenType: 0
-  _systemLoadingScreenBackground: 1
+  _systemLoadingScreenBackground: 0

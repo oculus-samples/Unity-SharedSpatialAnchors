@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ChatAppSettings.cs" company="Exit Games GmbH">
 //   Chat API for Photon - Copyright (C) 2018 Exit Games GmbH
 // </copyright>

@@ -1,6 +1,5 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// This code is licensed under the MIT license (see LICENSE for details).
 
 using TMPro;
 using UnityEngine;
@@ -15,6 +14,8 @@ using Photon.Pun;
 public class SampleController : MonoBehaviour
 {
     public static SampleController Instance { get; private set; }
+
+    // TODO SampleKit's Sampleton.Log is mo' betta!
 
     public static void Log(string message, LogType type = LogType.Log, LogOption opt = LogOption.NoStacktrace)
     {
@@ -158,7 +159,16 @@ public class SampleController : MonoBehaviour
     }
 
 
+    // TODO SampleKit's SceneConsole is mo' betta!
+
     static readonly System.Text.StringBuilder s_LogBuilder = new();
+    static readonly Dictionary<LogType, string> s_LogColors = new()
+    {
+        [LogType.Warning] = "<color=#FEFF00>",
+        [LogType.Error] = "<color=#CA2622>",
+        [LogType.Exception] = "<color=#CA2622>",
+        [LogType.Assert] = "<color=#CA2622>",
+    };
 
     void LogInScene(string message, LogType type)
     {
@@ -167,7 +177,7 @@ public class SampleController : MonoBehaviour
         if (s_LogBuilder.Length > 0)
             s_LogBuilder.Append('\n');
 
-        bool doColor = SampleColors.GetLogTag(type, out string colorTag);
+        bool doColor = s_LogColors.TryGetValue(type, out string colorTag);
         if (doColor)
             s_LogBuilder.Append(colorTag);
 

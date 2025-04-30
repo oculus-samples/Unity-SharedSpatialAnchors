@@ -1,6 +1,5 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// This code is licensed under the MIT license (see LICENSE for details).
 
 using Photon.Pun;
 using Photon.Realtime;
@@ -75,14 +74,8 @@ public class SharedAnchorControlPanel : MonoBehaviour
     public void OnReturnToMenuButtonPressed()
     {
         if (PhotonNetwork.InRoom)
-        {
             PhotonNetwork.LeaveRoom(becomeInactive: false);
-        }
-        else
-        {
-            PhotonNetwork.Disconnect();
-            SceneManager.LoadScene(0);
-        }
+        SceneManager.LoadScene(0);
     }
 
     public void OnCreateModeButtonPressed()
@@ -184,6 +177,9 @@ public class SharedAnchorControlPanel : MonoBehaviour
                 Destroy(roomTransform.gameObject);
         }
 
+        if (roomList.Count == 0)
+            return;
+
         foreach (var room in roomList)
         {
             var newLobbyRow = Instantiate(roomLayoutPanelRowPrefab, roomLayoutPanel.transform);
@@ -223,13 +219,11 @@ public class SharedAnchorControlPanel : MonoBehaviour
             roomLayoutPanelRowPrefab.SetActive(false);
         }
 
-        ToggleRoomButtons(PhotonNetwork.IsConnectedAndReady);
+        ToggleRoomButtons(PhotonNetwork.IsConnected);
         ToggleRoomLayoutPanel(false);
         DisplayLobbyPanel();
 
-        // init log with meta info
-
-        Sampleton.Log("OVRPlugin version: " + OVRPlugin.version);
+        Sampleton.Log("System version: " + OVRPlugin.version);
     }
 
 }

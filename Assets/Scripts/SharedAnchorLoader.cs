@@ -1,6 +1,5 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// This code is licensed under the MIT license (see LICENSE for details).
 
 using Photon.Pun;
 
@@ -10,10 +9,10 @@ using System.Linq;
 
 using UnityEngine;
 using UnityEngine.Assertions;
+using Object = UnityEngine.Object;
 
 // using static OVRSpatialAnchor; // This would be nice, but is commented out to help highlight where OVR calls are made in the sample.
 
-using Object = UnityEngine.Object;
 using Sampleton = SampleController; // only transitional
 
 /// <remarks>
@@ -24,35 +23,65 @@ public static class SharedAnchorLoader
     //
     // Public Interface
 
+    public static readonly HashSet<Guid> LoadedAnchorIds = new();
+
+
+    public static void AddPersistedAnchor(Guid uuid, bool isMine)
+    {
+        Assert.AreNotEqual(Guid.Empty, uuid, "anchor.Uuid != null");
+
+        if (!s_LocalAnchorIdsParsed.TryAdd(uuid, isMine))
+            return;
+
+        s_LocalAnchorIdsInOrder.Add(uuid.Serialize(isMine ? k_OwnedMarker : ""));
+        s_Dirty = true;
+    }
+
+    public static void RemovePersistedAnchor(Guid uuid)
+    {
+        Assert.AreNotEqual(Guid.Empty, uuid, "anchor.Uuid != null");
+
+        if (!s_LocalAnchorIdsParsed.Remove(uuid))
+            return;
+
+        s_LocalAnchorIdsInOrder.RemoveAll(str => str.EndsWith(uuid.Serialize()));
+        s_Dirty = true;
+    }
+
+    public static bool IsPersisted(Guid uuid)
+    {
+        DeserializePersistentAnchors(force: false);
+        return s_LocalAnchorIdsParsed.ContainsKey(uuid);
+    }
+
+    public static bool IsMine(Guid uuid)
+    {
+        DeserializePersistentAnchors(force: false);
+        if (s_LocalAnchorIdsParsed.TryGetValue(uuid, out bool isMine))
+            return isMine;
+        return SharedAnchor.Find(uuid, out var anchor) && anchor.Source.IsMine;
+    }
+
+
     public static void LoadSavedAnchors()
     {
-        var persistedAnchors = LocallySaved.Anchors.ToHashSet();
+        Sampleton.Log($"{nameof(LoadSavedAnchors)}:");
+
+        var persistedAnchors = DeserializePersistentAnchors();
         if (persistedAnchors.Count == 0)
         {
-            Sampleton.Log($"{nameof(LoadSavedAnchors)}: NO-OP: there are no anchors saved to this build/device.");
+            Sampleton.Log($"- NO-OP: there are no anchors saved to this build/device.");
             return;
         }
 
-        Sampleton.Log($"{nameof(LoadSavedAnchors)}: {persistedAnchors.Count} saved anchors:");
-
-        foreach (var uuid in persistedAnchors)
-        {
-            if (LocallySaved.AnchorIsMine(uuid))
-                Sampleton.Log($"  + {uuid.Brief()} (yours)");
-            else
-                Sampleton.Log($"  + {uuid.Brief()}");
-        }
+        Sampleton.Log($"+ Found {persistedAnchors.Count} anchor UUIDs saved to this build/device...");
 
         RetrieveAnchorsFromLocalThenCloud(persistedAnchors);
     }
 
     public static void ReloadSharedAnchors()
     {
-        var sharedAnchors = PhotonAnchorManager.AllPublishedAnchors.ToHashSet();
-
-        int nIgnored = sharedAnchors.Count;
-        sharedAnchors.ExceptWith(LocallySaved.AnchorsIgnored);
-        nIgnored = sharedAnchors.Count - nIgnored;
+        var sharedAnchors = PhotonAnchorManager.PublishedAnchors;
 
         if (sharedAnchors.Count == 0)
         {
@@ -62,27 +91,116 @@ public static class SharedAnchorLoader
 
         Sampleton.Log($"{nameof(ReloadSharedAnchors)}: {sharedAnchors.Count} anchors");
 
-        foreach (var uuid in sharedAnchors)
-        {
-            if (LocallySaved.AnchorIsMine(uuid))
-                Sampleton.Log($"  + {uuid.Brief()} (yours)");
-            else
-                Sampleton.Log($"  + {uuid.Brief()}");
-        }
-
-        if (nIgnored > 0)
-            Sampleton.Log($"  - (ignored {nIgnored} anchors)");
-
         RetrieveAnchorsFromCloud(sharedAnchors);
     }
 
+    public static void LoadAnchorsFromRemote(HashSet<Guid> uuids)
+    {
+        // Load anchors received from remote participant
+        Sampleton.Log($"{nameof(LoadAnchorsFromRemote)} uuids count: {uuids.Count}");
+
+        if (uuids.Count == 0)
+        {
+            Sampleton.Log($"{nameof(LoadAnchorsFromRemote)}: no new anchors to load");
+            return;
+        }
+
+        RetrieveAnchorsFromCloud(uuids);
+    }
+
+    //
+    // Fields
+
+    static readonly Dictionary<Guid, bool> s_LocalAnchorIdsParsed = new();
+    static readonly List<string> s_LocalAnchorIdsInOrder = new();
+
+    static bool s_Dirty;        // persistent data needs save.
+    static bool s_Stale = true; // persistent data needs load.
+
+    const int k_MaxLoadRetries = 3;
+    const string k_UuidSeparator = "\n";
+    const string k_OwnedMarker = "@";
+
+    static string PersistedUuidsKey
+    {
+        get
+        {
+            if (s_PersistedUuidsKey == "saved_uuids")
+                s_PersistedUuidsKey += $"[{Application.buildGUID}]";
+            return s_PersistedUuidsKey;
+        }
+    }
+    static string s_PersistedUuidsKey = "saved_uuids";
 
     //
     // impl.
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void RuntimeInit()
+    {
+        DeserializePersistentAnchors(force: true);
+
+        Application.focusChanged += hasFocus =>
+        {
+            if (hasFocus)
+                _ = DeserializePersistentAnchors(force: true);
+            else
+                _ = SerializePersistentAnchors(force: true);
+        };
+    }
+
+
+    static ICollection<Guid> DeserializePersistentAnchors(bool force = false)
+    {
+        if (!s_Stale && !force)
+            return s_LocalAnchorIdsParsed.Keys;
+
+        Sampleton.Log(nameof(DeserializePersistentAnchors));
+
+        s_Stale = false;
+
+        s_LocalAnchorIdsParsed.Clear();
+        s_LocalAnchorIdsInOrder.Clear();
+
+        var rawAnchorIdList = PlayerPrefs.GetString(PersistedUuidsKey);
+        if (string.IsNullOrEmpty(rawAnchorIdList))
+            return s_LocalAnchorIdsParsed.Keys;
+
+        foreach (var rawGuid in rawAnchorIdList.Split(k_UuidSeparator))
+        {
+            bool isMine = rawGuid.StartsWith(k_OwnedMarker);
+            bool ok = Guid.TryParse(isMine ? rawGuid.Substring(k_OwnedMarker.Length) : rawGuid, out var parsedUuid);
+
+            Assert.IsTrue(ok, $"Guid.Parse(\"{rawGuid}\") failed.");
+
+            if (s_LocalAnchorIdsParsed.TryAdd(parsedUuid, isMine))
+                s_LocalAnchorIdsInOrder.Add(rawGuid);
+        }
+
+        return s_LocalAnchorIdsParsed.Keys;
+    }
+
+    static bool SerializePersistentAnchors(bool force = false)
+    {
+        if (!s_Dirty && !force)
+            return false;
+
+        Sampleton.Log(nameof(SerializePersistentAnchors));
+
+        if (s_LocalAnchorIdsInOrder.Count == 0)
+            PlayerPrefs.DeleteKey(PersistedUuidsKey);
+        else
+            PlayerPrefs.SetString(PersistedUuidsKey, string.Join(k_UuidSeparator, s_LocalAnchorIdsInOrder));
+
+        s_Dirty = false;
+        s_Stale = false;
+        return true;
+    }
+
+
     static async void RetrieveAnchorsFromLocalThenCloud(ICollection<Guid> anchorIds)
     {
-        Sampleton.Log($"--> {nameof(OVRSpatialAnchor.LoadUnboundAnchorsAsync)}:");
+        Sampleton.Log($"{nameof(OVRSpatialAnchor.LoadUnboundAnchorsAsync)} w/ {anchorIds.Count} anchor uuids:");
 
         // KEY API CALL: static OVRSpatialAnchor.LoadUnboundAnchorsAsync(uuids, unboundAnchors)
         var loadResult = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(anchorIds, new List<OVRSpatialAnchor.UnboundAnchor>());
@@ -92,12 +210,12 @@ public static class SharedAnchorLoader
 
         if (!loadResult.TryGetValue(out var unboundAnchors))
         {
-            Sampleton.Log($"  - {loggedResult} (attempt to load from local)\n  + Checking shared...");
+            Sampleton.Log($"- Load Attempt #1: {loggedResult}\n  - (local; next attempt = cloud)");
             RetrieveAnchorsFromCloud(anchorIds);
             return;
         }
 
-        Sampleton.Log($"  + Load Success! {loggedResult}\n  + {unboundAnchors.Count} unbound spatial anchors");
+        Sampleton.Log($"+ Load Success! {loggedResult}\n+ {unboundAnchors.Count} unbound spatial anchors");
 
         if (unboundAnchors.Count > 0)
             BindAnchorsAsync(unboundAnchors);
@@ -106,7 +224,7 @@ public static class SharedAnchorLoader
             return;
 
         Sampleton.Log(
-            $"  *** Not all requested anchors could load!\n" +
+            $"*** Not all requested anchors could load!\n" +
             $"  + (retrying {anchorIds.Count - unboundAnchors.Count}/{anchorIds.Count} uuids)"
         );
 
@@ -116,9 +234,16 @@ public static class SharedAnchorLoader
         RetrieveAnchorsFromCloud(anchorIds);
     }
 
-    static async void RetrieveAnchorsFromCloud(ICollection<Guid> anchorIds)
+    static async void RetrieveAnchorsFromCloud(ICollection<Guid> anchorIds, int retry = 0)
     {
-        Sampleton.Log($"--> {nameof(OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync)}:");
+        if (retry == 0)
+        {
+            Sampleton.Log($"{nameof(OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync)} w/ {anchorIds.Count} anchor uuids:");
+            foreach (var uuid in anchorIds)
+                Sampleton.Log($"  -> {uuid.Brief()}");
+        }
+
+        Retry:
 
         // KEY API CALL: static OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(uuids, unboundAnchors)
         var loadResult = await OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync(anchorIds, new List<OVRSpatialAnchor.UnboundAnchor>());
@@ -129,18 +254,16 @@ public static class SharedAnchorLoader
 
         if (!loadResult.TryGetValue(out var unboundAnchors))
         {
-            Sampleton.LogError($"  - Load FAILED: {loggedResult}");
-            if (loadResult.Status.RetryingMightSucceed())
+            if (++retry < k_MaxLoadRetries)
             {
-                Sampleton.Log(
-                    $"  - Hint: This result code indicates retrying after some delay, or after moving around your physical space some more, <i>might</i> succeed.",
-                    LogType.Warning
-                );
+                Sampleton.Log($"- Load Attempt #{retry}: {loggedResult}");
+                goto Retry;
             }
+            Sampleton.LogError($"- Load FAILED: {loggedResult}");
             return;
         }
 
-        Sampleton.Log($"  + Load Success! {loggedResult}\n+ {unboundAnchors.Count} unbound spatial anchors");
+        Sampleton.Log($"+ Load Success! {loggedResult}\n+ {unboundAnchors.Count} unbound spatial anchors");
 
         if (unboundAnchors.Count > 0)
             BindAnchorsAsync(unboundAnchors);
@@ -149,12 +272,14 @@ public static class SharedAnchorLoader
 
     static async void BindAnchorsAsync(List<OVRSpatialAnchor.UnboundAnchor> unboundAnchors)
     {
+        bool hasPlatformId = PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong platId);
+
         var areCreated = new OVRTask<bool>[unboundAnchors.Count];
         int i = 0;
         while (i < unboundAnchors.Count)
         {
             var uuid = unboundAnchors[i].Uuid;
-            bool wasSaved = LocallySaved.AnchorIsRemembered(uuid, out bool isMine);
+            bool wasSaved = s_LocalAnchorIdsParsed.TryGetValue(uuid, out bool isMine);
 
             var spatialAnchor = InstantiateAnchorForBinding(wasSaved, out var sharedAnchor);
             if (!spatialAnchor)
@@ -165,9 +290,10 @@ public static class SharedAnchorLoader
 
             if (sharedAnchor)
             {
-                sharedAnchor.Source =
-                    wasSaved ? AnchorSource.FromSave(uuid, isMine: isMine)
-                             : AnchorSource.FromSpaceUserShare(uuid, isMine: isMine);
+                if (hasPlatformId && isMine)
+                    sharedAnchor.Source = AnchorSource.FromSave(uuid, platId);
+                else
+                    sharedAnchor.Source = AnchorSource.FromSpaceUserShare(uuid);
             }
 
             try
@@ -203,6 +329,8 @@ public static class SharedAnchorLoader
                 Sampleton.LogError($"  - creation FAILED for {uuid.Brief()}");
                 continue;
             }
+
+            LoadedAnchorIds.Add(uuid);
 
             Sampleton.Log($"  + spatial anchor created and bound to {uuid.Brief()}");
         }

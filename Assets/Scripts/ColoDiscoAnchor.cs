@@ -1,6 +1,5 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// This code is licensed under the MIT license (see LICENSE for details).
 
 using System;
 using System.Collections.Generic;
@@ -34,6 +33,39 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
 
     public static ColoDiscoAnchor Alignment { get; private set; } // TODO refactor
 
+    public static bool HasRememberedAnchor // TODO refactor
+        => PlayerPrefs.HasKey(k_RememberedAnchorKey);
+
+    public static Guid RememberedAnchorId // TODO refactor
+    {
+        get
+        {
+            if (!s_RememberedAnchorId.HasValue)
+            {
+                string ser = PlayerPrefs.GetString(k_RememberedAnchorKey, null);
+                _ = Guid.TryParse(ser, out var parsed);
+                s_RememberedAnchorId = parsed;
+            }
+            return s_RememberedAnchorId.Value;
+        }
+        private set
+        {
+            if (value == Guid.Empty)
+            {
+                PlayerPrefs.DeleteKey(k_RememberedAnchorKey);
+                Sampleton.Log($"{k_RememberedAnchorKey} cleared from PlayerPrefs.");
+                s_RememberedAnchorId = null;
+                return;
+            }
+            PlayerPrefs.SetString(k_RememberedAnchorKey, value.Serialize());
+            Sampleton.Log($"{value.Brief()} persisted to PlayerPrefs!");
+            s_RememberedAnchorId = value;
+        }
+    }
+
+    public static bool IsRemembered(Guid anchorId) // TODO refactor
+        => anchorId != Guid.Empty && anchorId == RememberedAnchorId;
+
 
     // instance
 
@@ -64,26 +96,25 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
 
         if (Alignment == this)
         {
-            m_AlignIcon.color = SampleColors.Green;
+            m_AlignIcon.color = k_ColorGreen;
             m_AlignBtn.interactable = false;
         }
         else
         {
-            m_AlignIcon.color = SampleColors.Gray;
+            m_AlignIcon.color = k_ColorGray;
             m_AlignBtn.interactable = true;
         }
 
-        if (LocallySaved.AnchorIsRemembered(Uuid))
+        if (s_RememberedAnchor == this)
         {
-            m_RememberIcon.color = SampleColors.Green;
-            m_RememberLabel.SetText("Forget UUID");
+            m_RememberIcon.color = k_ColorGreen;
+            m_RememberBtn.interactable = false;
         }
         else
         {
-            m_RememberIcon.color = SampleColors.Gray;
-            m_RememberLabel.SetText("Remember UUID");
+            m_RememberIcon.color = k_ColorGray;
+            m_RememberBtn.interactable = true;
         }
-        m_RememberBtn.interactable = LocallySaved.AnchorsCanGrow;
 
         var groups = ColoDiscoMan.GetGroupsFor(Uuid);
 
@@ -93,7 +124,7 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
 
         // local function section:
 
-        static void list2ui<T>(IEnumerable<T> list, TMP_Text ui)
+        void list2ui<T>(IEnumerable<T> list, TMP_Text ui)
         {
             if (!ui)
                 return;
@@ -140,18 +171,26 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
             if (!Source.IsMine)
             {
                 loggedResult += $"\n  (You aren't the original creator of {uuid.Brief()}.)";
-                if (m_EraseIcon)
-                    m_EraseIcon.color = SampleColors.Yellow;
-            }
-            else if (m_EraseIcon)
-            {
-                m_EraseIcon.color = SampleColors.Alert;
+                try // not being lazy
+                {
+                    transform
+                        .FindChildRecursive("Button: Erase")
+                        .FindChildRecursive("Icon")
+                        .GetComponent<Image>().color = k_ColorYellow;
+                }
+                catch (Exception e)
+                {
+                    Sampleton.Log($"{e.GetType().Name}: {e.Message}", LogType.Exception, LogOption.None);
+                    Debug.Log(e);
+                    // pass
+                }
             }
             Sampleton.LogError($"- Erase Anchor FAILED! {loggedResult}");
             return;
         }
 
-        LocallySaved.IgnoreAnchor(uuid);
+        if (RememberedAnchorId == uuid)
+            RememberedAnchorId = Guid.Empty;
 
         ColoDiscoMan.NotifyAnchorErased(uuid);
 
@@ -190,34 +229,17 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
         UpdateUI();
     }
 
-    public async void ToggleRememberUuid()
+    public void RememberUuid()
     {
-        if (LocallySaved.AnchorIsRemembered(Uuid))
-        {
-            if (LocallySaved.ForgetAnchor(Uuid))
-                Sampleton.Log($"+ Forget Anchor: {SampleColors.RichText.Noice}Success</color>");
-            else
-                Sampleton.LogError($"- Forget Anchor: {SampleColors.RichText.Alert}Failure</color>");
-        }
-        else
-        {
-            string loggedResult = null;
-            if (!IsSaved)
-            {
-                var saveResult = await SaveAnchorAsync();
-                IsSaved = saveResult.Success;
-                loggedResult = saveResult.Status.ForLogging();
-            }
+        var previous = s_RememberedAnchor;
 
-            IsSaved = IsSaved && LocallySaved.RememberAnchor(Uuid, Source.IsMine);
-
-            if (IsSaved)
-                Sampleton.Log($"+ Remember (Save) Anchor: {loggedResult}");
-            else
-                Sampleton.LogError($"- Remember (Save) Anchor FAILED! (SaveAnchorAsync returned {loggedResult})");
-        }
+        RememberedAnchorId = Uuid;
+        s_RememberedAnchor = this;
 
         UpdateUI();
+
+        if (previous)
+            previous.UpdateUI();
     }
 
 
@@ -237,15 +259,21 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
     Button m_RememberBtn;
     [SerializeField]
     Image m_RememberIcon;
-    [SerializeField]
-    TMP_Text m_RememberLabel;
-    [SerializeField]
-    Image m_EraseIcon;
 
     AnchorSource m_Source;
 
     static readonly System.Text.StringBuilder s_Stringer = new();
 
+    static ColoDiscoAnchor s_RememberedAnchor;
+    static Guid? s_RememberedAnchorId;
+
+    const string k_RememberedAnchorKey = nameof(ColoDiscoAnchor) + ".SpecialAnchor";
+
+    // TODO refactor these up since they're identical to SharedAnchor's
+    static readonly Color k_ColorGray = new Color32(0x8B, 0x8C, 0x8E, 0xFF);
+    static readonly Color k_ColorGreen = new Color32(0x5A, 0xCA, 0x25, 0xFF);
+    static readonly Color k_ColorRed = new Color32(0xDD, 0x25, 0x35, 0xFF);
+    static readonly Color k_ColorYellow = Color.yellow;
 
     //
     // Unity Messages
@@ -277,21 +305,9 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
         }
         else
         {
-            var icon = btn.FindChildRecursive("Icon");
+            var icon = m_RememberBtn.transform.FindChildRecursive("Icon");
             if (!icon || !icon.TryGetComponent(out m_RememberIcon))
                 Debug.LogError($"\"{name}\" seems to be improperly set-up.", this);
-
-            m_RememberLabel = btn.GetComponentInChildren<TMP_Text>();
-            if (!m_RememberLabel)
-                Debug.LogError($"\"{name}\" seems to be improperly set-up.", this);
-        }
-
-        btn = transform.FindChildRecursive("Button: Erase");
-        if (btn)
-        {
-            var icon = btn.FindChildRecursive("Icon");
-            if (icon)
-                m_EraseIcon = icon.GetComponent<Image>();
         }
 
         var listBox = transform.FindChildRecursive("List: Groups Shared");
@@ -303,14 +319,10 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
 
     async void Awake() // Can't override Start, but since we immediately await, Awake is equivalent enough.
     {
-        var canvas = GetComponentInChildren<Canvas>();
-        if (canvas)
-            canvas.gameObject.SetActive(false); // don't render controls until creation & localization is complete
-
         // handy API: instance OVRSpatialAnchor.WhenCreatedAsync()
         if (await WhenCreatedAsync())
         {
-            Sampleton.Log($"{nameof(ColoDiscoAnchor)}: Created!");
+            Sampleton.Log($"{nameof(ColoDiscoAnchor)}: Created!\n+ {Uuid}");
         }
         else
         {
@@ -319,34 +331,41 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
             return;
         }
 
-        var uuid = Uuid;
+        gameObject.name = $"anchor:{Uuid:N}";
+        m_UuidLabel.text = $"{Uuid}";
 
-        Sampleton.Log($"+ Uuid: {uuid}");
-
-        if (!m_Source.IsSet)
-            m_Source = AnchorSource.New(uuid);
-
-        gameObject.name =
-            m_Source.Origin == AnchorSource.Type.FromGroupShare ? $"anchor:{uuid:N}-SHARED"
-                                                                : $"anchor:{uuid:N}";
+        if (RememberedAnchorId == Uuid)
+        {
+            RememberUuid();
+        }
 
         // handy API: instance OVRSpatialAnchor.WhenLocalizedAsync()
         if (!await WhenLocalizedAsync())
         {
-            Sampleton.LogError($"- Localization FAILED! ({uuid.Brief()})");
+            Sampleton.LogError($"- Localization FAILED! ({Uuid.Brief()})");
             Destroy(gameObject);
             return;
         }
 
-        Sampleton.Log($"+ Loaded spatial anchor {uuid.Brief()}; bound and localized! ({m_Source.Origin})");
+        if (m_Source.IsSet)
+        {
+            if (m_Source.Origin != AnchorSource.Type.FromSave) // TODO: edge case where anchor was shared AND loaded from save
+                gameObject.name += "-SHARED";
+            Sampleton.Log($"+ Loaded spatial anchor {Uuid.Brief()}; bound and localized! ({m_Source.Origin})");
+        }
+        else
+        {
+            // we can reasonably assume this is a brand-new anchor:
+            m_Source = AnchorSource.New(ColoDiscoMan.CurrentUserID, Uuid);
+            Sampleton.Log($"+ New spatial anchor {Uuid.Brief()} created and localized!");
+        }
 
         if (!Alignment)
+        {
             SetAsAlignmentAnchor();
+        }
 
         UpdateUI();
-
-        if (canvas)
-            canvas.gameObject.SetActive(true);
 
         ColoDiscoMan.NotifyAnchorLocalized(this);
     }

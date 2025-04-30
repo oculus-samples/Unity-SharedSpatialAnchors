@@ -1,6 +1,5 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// This code is licensed under the MIT license (see LICENSE for details).
 
 using System;
 using System.Buffers.Binary;
@@ -61,7 +60,7 @@ public sealed class CustomAdvertData
 
             bytes = SampleExtensions.SerializeToByteArray(pod);
 
-            return bytes.Length <= OVRColocationSession.Data.MaxMetadataSize;
+            return bytes.Length <= k_MaxDataLength;
         }
         catch (Exception e)
         {
@@ -115,6 +114,10 @@ public sealed class CustomAdvertData
     }
 
     const int k_MaxDisplayName = 60;              // somewhat arbitrary
+    const int k_MaxDataLength = 1024;             // from OVRColocationSession.cs, but it's private soo copied
+    const int k_BlockHeaderSize = sizeof(ushort); // won't need more than ~65k items of any kind (inc. chars)
+
+    static readonly char[] s_StrBuffer = new char[k_MaxDisplayName];
 
 
     // instance
