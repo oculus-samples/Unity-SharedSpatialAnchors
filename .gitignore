@@ -1,5 +1,6 @@
 # This .gitignore file should be placed at the root of your Unity project directory
 #
+.utmp/
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -27,6 +28,9 @@
 
 # Visual Studio Code
 .vscode/
+
+# Rider cache
+.idea/
 
 # Gradle cache directory
 .gradle/
@@ -61,6 +65,7 @@ sysinfo.txt
 *.apk
 *.aab
 *.unitypackage
+*.unitypackage.meta
 *.app
 
 # Crashlytics generated file
@@ -74,4 +79,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 .DS_Store
-Packages/packages-lock.json
+Builds
+
+# From com.unity.performance.profile-analyzer
+ProfileAnalyzer/

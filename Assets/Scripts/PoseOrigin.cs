@@ -1,5 +1,4 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This code is licensed under the MIT license (see LICENSE for details).
 
 using System.Collections;
 using System.Collections.Generic;

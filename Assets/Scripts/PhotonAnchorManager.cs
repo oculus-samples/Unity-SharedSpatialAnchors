@@ -1,5 +1,4 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
-// This code is licensed under the MIT license (see LICENSE for details).
 
 using Oculus.Platform;
 
@@ -9,6 +8,7 @@ using Photon.Realtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 using UnityEngine;
 
@@ -16,23 +16,121 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Sampleton = SampleController; // only transitional
 
 /// <summary>
-/// Manages Photon Room creation and maintenence, and tracks anchor sharing information.
+/// Manages Photon Room creation and maintenance, and tracks anchor sharing information.
 /// </summary>
 public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 {
     //
     // Static interface
 
-    public static HashSet<Guid> PublishedAnchors
-        => s_PublishedAnchors.TryGetValue(PhotonNetwork.CurrentRoom, out var anchorSet) ? anchorSet
-         : s_PublishedAnchors[PhotonNetwork.CurrentRoom] = new();
-
-    public static void PublishAnchorToRoom(Guid oneAnchor)
+    /// <remarks>
+    ///     This collection may contain anchor Guids shared by multiple users.
+    /// </remarks>
+    public static IReadOnlyCollection<Guid> AllPublishedAnchors
     {
-        PublishAnchorsToRoom(new HashSet<Guid> { oneAnchor });
+        get
+        {
+            var room = PhotonNetwork.CurrentRoom;
+            if (room is null)
+                return Array.Empty<Guid>();
+
+            int myId = PhotonNetwork.LocalPlayer.ActorNumber;
+            var anchors = new HashSet<Guid>();
+
+            // looping through this way allows us to reload shared anchors even
+            // from players who have left the room (after sharing of course)
+            foreach (var (boxKey, boxVal) in room.CustomProperties)
+            {
+                if (boxKey is not string key || !key.EndsWith(".sharees"))
+                    continue;
+
+                if (boxVal is not int[] actorIds || !actorIds.Contains(myId))
+                    continue;
+
+                if (!room.CustomProperties.TryGetValue(key.Replace(".sharees", ".anchors"), out var box))
+                    continue;
+
+                if (box is Guid[] uuids)
+                    anchors.UnionWith(uuids);
+            }
+
+            return anchors;
+        }
     }
 
-    public static void PublishAnchorsToRoom(IEnumerable<Guid> anchorUuids)
+    /// <summary>
+    ///     Anchors published to the current room by this local player.
+    /// </summary>
+    public static IReadOnlyCollection<Guid> PublishedAnchors
+    {
+        get
+        {
+            var room = PhotonNetwork.CurrentRoom;
+            if (room is null ||
+                !PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong myId) ||
+                !room.CustomProperties.TryGetValue($"{myId}.anchors", out var box))
+            {
+                return Array.Empty<Guid>();
+            }
+
+            if (box is not Guid[] uuids)
+            {
+                Sampleton.LogError("- ERR: Expected CustomProperties[\"{ocid}.anchors\"] to be type Guid[]");
+                return Array.Empty<Guid>();
+            }
+
+            return uuids;
+        }
+    }
+
+    /// <remarks>
+    ///     Photon won't have any valid Platform (Oculus) IDs if your app hasn't gone through
+    ///     the DUC & Horizon store entitlement steps yet!
+    /// </remarks>
+    public static IReadOnlyCollection<ulong> RoomUserIds
+    {
+        get
+        {
+            var room = PhotonNetwork.CurrentRoom;
+            if (room is null || !s_Instance)
+                return Array.Empty<ulong>();
+
+            return s_Instance.m_RoomUserIds.Keys;
+        }
+    }
+
+    public static IReadOnlyCollection<int> ShareeActorIds
+    {
+        get
+        {
+            var room = PhotonNetwork.CurrentRoom;
+            if (room is null ||
+                !PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong ocid) ||
+                !room.CustomProperties.TryGetValue($"{ocid}.sharees", out var box))
+            {
+                return Array.Empty<int>();
+            }
+
+            if (box is not int[] actorIds)
+            {
+                Sampleton.LogError("- ERR: Expected CustomProperties[\"{ocid}.sharees\"] to be type int[]");
+                return Array.Empty<int>();
+            }
+
+            return actorIds;
+        }
+    }
+
+
+    public static void PublishAnchorToUsers(Guid oneAnchor, IReadOnlyCollection<ulong> userIds)
+    {
+        if (!s_Instance || !PhotonNetwork.InRoom)
+            return;
+
+        s_Instance.PublishAnchorsToUsers(new HashSet<Guid> { oneAnchor }, userIds);
+    }
+
+    public static void PublishAnchorsToUsers(IEnumerable<Guid> anchorUuids, IReadOnlyCollection<ulong> userIds)
     {
         if (!s_Instance || !PhotonNetwork.InRoom)
             return;
@@ -40,14 +138,32 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         if (anchorUuids is not HashSet<Guid> uuidSet)
             uuidSet = new HashSet<Guid>(anchorUuids);
 
-        s_Instance.PublishAnchorUuids(uuidSet);
+        s_Instance.PublishAnchorsToUsers(uuidSet, userIds);
     }
 
 
+    // static impl.
+
     static PhotonAnchorManager s_Instance;
 
-    static readonly Dictionary<RoomInfo, HashSet<Guid>> s_PublishedAnchors = new();
-    static readonly HashSet<ulong> s_RoomUserIds = new();
+    // Keeping this block to illustrate each user's contribution to the Room.CustomProperties layout:
+    // static readonly Hashtable s_RoomPropLayout = new()
+    // {
+    //     ["{ocid}.anchors"] = Array.Empty<Guid>(),
+    //     ["{ocid}.sharees"] = Array.Empty<int>(), // actor numbers
+    // };
+
+    // This arch utilizes actor numbers to identify sharees, so that when a
+    // player leaves and returns to a Room, they will be assigned a new
+    // ActorNumber and will therefore be seen as requiring any shared anchors
+    // from other room members to be shared again (even if superfluously)
+    // before they will be loaded.
+    //
+    // This also prevents them from trying to load anchors that were shared to
+    // the room while they were absent, which would be an error UNTIL the owner
+    // of these shared anchors completes SharedAnchor.ShareAllMineTo(saidUser)
+    // - see OnPlayerEnteredRoom.
+
 
     //
     // instance impl.
@@ -55,14 +171,11 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     [SerializeField]
     SharedAnchorControlPanel controlPanel;
 
-    const string k_PubAnchorsKey = "anchors";
-    const byte k_PacketFormat = 1;
-    const int k_UuidSize = 16;
 
-    string m_OculusUsername;
-    ulong m_OculusUserID;
+    readonly Dictionary<ulong, int> m_RoomUserIds = new();
 
     Coroutine m_OnDisconnectDelayCall;
+
 
     #region [Monobehaviour Methods]
 
@@ -80,16 +193,30 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     IEnumerator Start()
     {
-        if (!PhotonNetwork.IsConnected)
-            PhotonNetwork.ConnectUsingSettings();
+        PhotonNetwork.ConnectUsingSettings();
 
-        Core.LogMessages = true; // uses a lot of heap memory, but helpful for debugging platform connection issues.
+        // init Oculus.Platform.Core + GetLoggedInUser (for username, scoped OC_ID)
+        Sampleton.Log($"Oculus.Platform.Core.Initialize()...");
+        try
+        {
+            Core.LogMessages = true; // uses a lot of heap memory, but helpful for debugging platform connection issues.
 
-        // (maybe a) KEY API CALL: static Oculus.Platform.Core.Initialize()
-        Core.Initialize();
+            // (maybe a) KEY API CALL: static Oculus.Platform.Core.Initialize()
+            Core.Initialize();
+        }
+        catch (UnityException e)
+        {
+            Sampleton.LogError($"Oculus.Platform.Core.Initialize FAILED: {e.Message}");
+            // "UnityException: Update your app id by selecting 'Oculus Platform' -> 'Edit Settings'"
+            //  (   Although note, this error message is outdated.
+            //      The modern menu path is 'Meta' > 'Platform' > 'Edit Settings'.  )
+        }
 
-        // (maybe a) KEY API CALL: static Oculus.Platform.Users.GetLoggedInUser()
-        Users.GetLoggedInUser().OnComplete(GetLoggedInUserCallback);
+        if (Core.IsInitialized())
+        {
+            // (maybe a) KEY API CALL: static Oculus.Platform.Users.GetLoggedInUser()
+            Users.GetLoggedInUser().OnComplete(GetLoggedInUserCallback);
+        }
 
         // ^ only key calls iff your app employs user-based anchor sharing instead of group-based.
 
@@ -105,6 +232,9 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     void OnApplicationPause(bool pause)
     {
+        if (pause)
+            return;
+
         if (PhotonNetwork.IsConnected)
         {
             Sampleton.Log("Application Un-paused: Attempting to reconnect and rejoin a Photon room");
@@ -123,7 +253,18 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     {
         if (msg.IsError)
         {
-            Sampleton.LogError($"{nameof(GetLoggedInUserCallback)}: FAILED: {msg.GetError()}");
+            var err = msg.GetError();
+            string codeStr = err.Code switch
+            {
+                2 => $"AUTHENTICATION_ERROR({err.Code})",
+                3 => $"NETWORK_ERROR({err.Code})",
+                4 => $"STORE_INSTALLATION_ERROR({err.Code})",
+                5 => $"CALLER_NOT_SIGNED({err.Code})",
+                6 => $"UNKNOWN_SERVER_ERROR({err.Code})",
+                7 => $"PERMISSIONS_FAILURE({err.Code})",
+                _ => $"UNKNOWN_ERROR({err.Code})"
+            };
+            Sampleton.LogError($"{nameof(GetLoggedInUserCallback)}: FAILED: {codeStr}");
             return;
         }
 
@@ -132,31 +273,30 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         if (msg.Type != Message.MessageType.User_GetLoggedInUser)
             return;
 
-        m_OculusUsername = msg.GetUser().OculusID;
-        m_OculusUserID = msg.GetUser().ID;
+        var ocid = msg.GetUser().ID;
+        var username = msg.GetUser().OculusID;
 
-        Sampleton.Log($"+ oculus user name: '{m_OculusUsername}'\n+ oculus id: {m_OculusUserID}");
+        Sampleton.Log($"  + oculus user name: '{username}'");
+        Sampleton.Log($"  + oculus id: {ocid}");
 
-        var thisPlaya = PhotonNetwork.LocalPlayer;
+        PhotonNetwork.LocalPlayer.SetPlatformID(ocid);
 
-        if (m_OculusUserID == 0)
+        if (ocid == 0)
         {
-            m_OculusUsername = $"TestUser{UnityEngine.Random.Range(0, 10000):0000}";
-            Sampleton.LogError("You are not authenticated to use this app. This sample scene will not work.");
-        }
-        else
-        {
-            thisPlaya.SetPlatformID(m_OculusUserID);
+            Sampleton.LogError(
+                "You are not authenticated to use this app. User-based anchor sharing in this sample scene will not work."
+            );
+            return;
         }
 
-        thisPlaya.NickName = m_OculusUsername;
+        PhotonNetwork.NickName = username;
     }
 
     #region [Photon Callbacks]
 
     public override void OnConnectedToMaster()
     {
-        Sampleton.Log($"Photon::OnConnectedToMaster: successfully connected to region '{PhotonNetwork.CloudRegion}'");
+        Sampleton.Log($"Photon::OnConnectedToMaster: CloudRegion='{PhotonNetwork.CloudRegion}'");
 
         if (controlPanel)
             controlPanel.ToggleRoomButtons(true);
@@ -166,8 +306,6 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        s_RoomUserIds.Clear();
-
         switch (cause)
         {
             case DisconnectCause.DisconnectByServerLogic:
@@ -189,10 +327,10 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
             case DisconnectCause.ClientTimeout:
             case DisconnectCause.ServerTimeout:
             case DisconnectCause.DisconnectByServerReasonUnknown:
-                Sampleton.Log($"Photon::OnDisconnected: {cause}\n+ attempting auto ReconnectAndRejoin() next frame...");
+                Sampleton.Log($"Photon::OnDisconnected: {cause}\n+ attempting auto ReconnectAndRejoin() in 2 secs...");
                 if (m_OnDisconnectDelayCall is not null)
                     StopCoroutine(m_OnDisconnectDelayCall);
-                m_OnDisconnectDelayCall = StartCoroutine(DelayCall(() => PhotonNetwork.ReconnectAndRejoin(), 1e-2f));
+                m_OnDisconnectDelayCall = StartCoroutine(DelayCall(() => PhotonNetwork.ReconnectAndRejoin(), 2f));
                 return;
 
             default:
@@ -211,16 +349,22 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
             controlPanel.DisplayLobbyPanel();
     }
 
+    public override void OnCreatedRoom()
+    {
+        Sampleton.Log($"Photon::OnCreatedRoom:");
+    }
+
     public override void OnJoinedRoom()
     {
-        PublishedAnchors.Clear();
-
-        s_RoomUserIds.Clear(); // defers refresh for next time GetRoomUserIds is called.
-
         var room = PhotonNetwork.CurrentRoom;
+        Sampleton.Log($"Photon::OnJoinedRoom: \"{room.Name}\"");
 
-        if (room.MasterClientId != PhotonNetwork.LocalPlayer.ActorNumber)
-            Sampleton.Log($"Photon::OnJoinedRoom: {room.Name}");
+        m_RoomUserIds.Clear();
+        foreach (var (actorId, player) in room.Players)
+        {
+            if (player.TryGetPlatformID(out ulong ocid))
+                m_RoomUserIds[ocid] = actorId;
+        }
 
         if (controlPanel)
             controlPanel.SetRoomText($"Photon Room: {room.Name}");
@@ -229,17 +373,12 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
         if (controlPanel)
             controlPanel.DisplayMenuPanel();
-
-        if (room.PlayerCount < 2) // nobody else to share with me
-            return;
-
-        // Wait half a sec, give time for existing room members to [re]share their anchors with me:
-        _ = StartCoroutine(DelayCall(() => OnRoomPropertiesUpdate(room.CustomProperties), 0.5f));
     }
 
     public override void OnLeftRoom()
     {
-        s_RoomUserIds.Clear();
+        Sampleton.Log($"Photon::OnLeftRoom");
+        m_RoomUserIds.Clear();
         if (controlPanel)
             controlPanel.DisplayLobbyPanel();
     }
@@ -248,15 +387,17 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     {
         Sampleton.Log($"Photon::OnPlayerEnteredRoom: {newPlayer}");
 
-        if (newPlayer.TryGetPlatformID(out ulong uid))
+        if (newPlayer.TryGetPlatformID(out ulong ocid))
         {
-            SharedAnchor.ShareAllMineTo(uid, reshareOnly: true);
-            if (s_RoomUserIds.Count > 0)
-                s_RoomUserIds.Add(uid);
+            m_RoomUserIds[ocid] = newPlayer.ActorNumber;
+
+            Sampleton.Log("  * (auto-sharing your pre-shared anchors to them...)");
+
+            SharedAnchor.ShareAllMineTo(ocid, reshareOnly: true);
         }
         else
         {
-            s_RoomUserIds.Clear(); // enqueues a lazy refresh, but realistically this user is probably not authenticated
+            Sampleton.Log($"  - (player #{newPlayer.ActorNumber:00} lacks a valid Platform ID.)");
         }
 
         UpdateUserListUI();
@@ -264,6 +405,8 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
+        UpdateUserListUI();
+
         if (otherPlayer.IsInactive)
         {
             Sampleton.Log($"Photon::OnPlayerLeftRoom: {otherPlayer} has gone inactive.");
@@ -271,15 +414,6 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         }
 
         Sampleton.Log($"Photon::OnPlayerLeftRoom: {otherPlayer} has left.");
-
-        s_RoomUserIds.Clear(); // enqueues a lazy refresh
-
-        UpdateUserListUI();
-    }
-
-    public override void OnCreatedRoom()
-    {
-        Sampleton.Log($"Photon::OnCreatedRoom: User {PhotonNetwork.LocalPlayer} created room \"{PhotonNetwork.CurrentRoom.Name}\"");
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
@@ -290,23 +424,26 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     public override void OnRoomPropertiesUpdate(Hashtable changedProps)
     {
-        Sampleton.Log(nameof(OnRoomPropertiesUpdate));
+        Sampleton.Log($"Photon::OnRoomPropertiesUpdate: n={changedProps.Count}");
 
-        var bytes = new List<byte> { k_PacketFormat };
-        foreach (var (boxKey, boxVal) in changedProps)
+        var player = PhotonNetwork.LocalPlayer;
+        if (!player.TryGetPlatformID(out ulong ocid))
         {
-            string key = (string)boxKey;
-            if (!key.EndsWith('.' + k_PubAnchorsKey) || key.StartsWith(PhotonNetwork.NickName + '.'))
-                continue;
-            if (boxVal is not byte[] rawBytes)
-                continue;
-            if (rawBytes.Length <= 1 || rawBytes[0] != k_PacketFormat)
-                continue;
-            bytes.AddRange(new ArraySegment<byte>(rawBytes, 1, rawBytes.Length - 1));
+            Sampleton.Log("  - SKIPPED: not logged in to Platform.");
+            return;
         }
 
-        if (bytes.Count > k_UuidSize)
-            CheckForAnchorsShared(bytes.ToArray());
+        foreach (var (boxKey, boxVal) in changedProps)
+        {
+            if (boxKey is not string key || !key.EndsWith(".sharees") || key.StartsWith($"{ocid}."))
+                continue;
+
+            if (boxVal is int[] sharees && sharees.Contains(player.ActorNumber))
+            {
+                SharedAnchorLoader.ReloadSharedAnchors();
+                return;
+            }
+        }
     }
 
     #endregion
@@ -315,24 +452,19 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     public void OnCreateRoomButtonPressed()
     {
-        if (!PhotonNetwork.IsConnected)
+        if (!PhotonNetwork.IsConnectedAndReady)
         {
-            Sampleton.Log($"{nameof(OnCreateRoomButtonPressed)}: No Photon connection!\nAttempting to reconnect...");
-            PhotonNetwork.ConnectUsingSettings();
+            Sampleton.Log($"{nameof(OnCreateRoomButtonPressed)}: Photon connection not ready!", LogType.Warning);
+            if (!PhotonNetwork.IsConnected)
+                tryNewConnection();
             return;
         }
 
         Sampleton.Log($"{nameof(OnCreateRoomButtonPressed)}: Photon is connected.");
 
-        string username = PhotonNetwork.NickName;
-        if (string.IsNullOrEmpty(username))
-        {
-            PhotonNetwork.NickName = username = $"TestUser{UnityEngine.Random.Range(0, 10000):0000}";
-        }
+        string newRoomName = $"{PhotonNetwork.NickName}'s room";
 
-        string newRoomName = $"{username}'s room";
-
-        Sampleton.Log($"Attempting to host a new room named \"{newRoomName}\"...");
+        Sampleton.Log($"+ Attempting to host a new room named \"{newRoomName}\"...");
 
         var roomOptions = new RoomOptions
         {
@@ -347,183 +479,102 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         if (PhotonNetwork.JoinOrCreateRoom(newRoomName, roomOptions, TypedLobby.Default))
             return;
 
-        Sampleton.LogError($"ERR: Room creation request not sent to server!");
-    }
+        tryNewConnection();
 
-    public void OnJoinRoomButtonPressed(TMPro.TextMeshProUGUI roomName)
-    {
-        Sampleton.Log("OnJoinRoomButtonPressed");
+        return;
 
-        if (string.IsNullOrEmpty(PhotonNetwork.NickName))
+        static void tryNewConnection()
         {
-            PhotonNetwork.NickName = $"TestUser{UnityEngine.Random.Range(0, 10000):0000}";
-        }
-
-        JoinRoomFromLobby(roomName.text);
-    }
-
-    public void OnFindRoomButtonPressed()
-    {
-        if (PhotonNetwork.IsConnected)
-        {
-            if (controlPanel)
-                controlPanel.ToggleRoomLayoutPanel(true);
-        }
-        else
-        {
-            Sampleton.Log("Attempting to reconnect and rejoin a room");
+            Sampleton.LogError($"ERR: Room creation request not sent to server!");
+            Sampleton.Log($"  - Attempting PhotonNetwork.ConnectUsingSettings()...", LogType.Warning);
             PhotonNetwork.ConnectUsingSettings();
         }
     }
 
-    public void JoinRoomFromLobby(string roomToJoin)
+    public void OnJoinRoomButtonPressed(TMPro.TextMeshProUGUI roomName)
     {
-        var isValidRoomToJoin = !string.IsNullOrEmpty(roomToJoin);
-
-        if (!isValidRoomToJoin)
+        if (!roomName)
         {
+            Sampleton.LogError($"{nameof(OnJoinRoomButtonPressed)}: Missing reference to room name component!");
             return;
         }
 
-        Sampleton.Log($"{nameof(JoinRoomFromLobby)}: Room Name: " + roomToJoin);
+        if (string.IsNullOrEmpty(roomName.text))
+        {
+            Sampleton.LogError($"{nameof(OnJoinRoomButtonPressed)}: given room name is empty!");
+            return;
+        }
 
-        var roomOptions = new RoomOptions { IsVisible = true, MaxPlayers = 16, EmptyRoomTtl = 0, PlayerTtl = 300000 };
+        Sampleton.Log($"{nameof(OnJoinRoomButtonPressed)}: \"{roomName.text}\"");
 
-        PhotonNetwork.JoinOrCreateRoom(roomToJoin, roomOptions, TypedLobby.Default);
+        PhotonNetwork.JoinRoom(roomName.text);
+    }
+
+    public void OnFindRoomButtonPressed()
+    {
+        if (!PhotonNetwork.IsConnected)
+        {
+            if (PhotonNetwork.ConnectUsingSettings())
+                Sampleton.Log("PhotonNetwork disconnected. Try again after this attempt to reconnect...", LogType.Warning);
+            else
+                Sampleton.Log("PhotonNetwork disconnected, and cannot attempt to reconnect at this time.", LogType.Error);
+            return;
+        }
+
+        if (controlPanel)
+            controlPanel.ToggleRoomLayoutPanel(true);
     }
 
     #endregion
 
     #region [Send and read room data]
 
-    void PublishAnchorUuids(HashSet<Guid> uuidSet)
+    void PublishAnchorsToUsers(HashSet<Guid> uuidSet, IReadOnlyCollection<ulong> userIds)
     {
-        if (m_OculusUserID == 0 || string.IsNullOrEmpty(PhotonNetwork.NickName))
+        if (!PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong myId))
         {
-            Sampleton.LogError($"{nameof(PublishAnchorUuids)}: FAILED: a working platform (oculus) login is required.");
+            Sampleton.LogError($"{nameof(PublishAnchorsToUsers)}: FAILED: a working platform (oculus) login is required.");
             return;
         }
 
         var room = PhotonNetwork.CurrentRoom;
-        var roomAnchorSet = PublishedAnchors;
+        var alreadyShared = PublishedAnchors;
+        var sharedToActors = new HashSet<int>(ShareeActorIds);
 
-        int nNewIds = roomAnchorSet.Count;
-        roomAnchorSet.UnionWith(uuidSet);
-        nNewIds = roomAnchorSet.Count - nNewIds;
+        uuidSet.UnionWith(alreadyShared);
+
+        int nNewIds = uuidSet.Count - alreadyShared.Count;
+        nNewIds -= sharedToActors.Count;
+        sharedToActors.UnionWith(userIds.Select(id => m_RoomUserIds[id]));
+        nNewIds += sharedToActors.Count;
 
         if (nNewIds == 0)
         {
-            Sampleton.Log($"{nameof(PublishAnchorUuids)}: SKIP: zero new UUIDs.");
+            Sampleton.Log($"{nameof(PublishAnchorsToUsers)}: SKIP: zero new anchor/sharee ids.");
             return;
         }
 
-        Sampleton.Log($"{nameof(PublishAnchorUuids)}: {nNewIds} new UUIDs ({uuidSet.Count} total)");
+        Sampleton.Log($"{nameof(PublishAnchorsToUsers)}: {nNewIds}/{uuidSet.Count + sharedToActors.Count} new ids");
 
-        var rawBytes = new byte[1 + k_UuidSize * uuidSet.Count];
-        rawBytes[0] = k_PacketFormat;
-        int offset = 1;
-        foreach (var uuid in uuidSet)
-        {
-            Sampleton.Log($"  + anchor: {uuid}");
+        var uuidArr = new Guid[uuidSet.Count];
+        uuidSet.CopyTo(uuidArr);
 
-            var toSpan = new Span<byte>(rawBytes, offset, k_UuidSize);
-            if (!uuid.TryWriteBytes(toSpan))
-            {
-                Sampleton.LogError($"ERR: Failed to write {uuid} at index {offset}. (length: {rawBytes.Length})");
-                // dump any cached published anchors
-                s_PublishedAnchors.Remove(room);
-                return;
-            }
-            offset += k_UuidSize;
-        }
+        var actorIdArr = new int[sharedToActors.Count];
+        sharedToActors.CopyTo(actorIdArr);
 
         var props = new Hashtable
         {
-            [$"{PhotonNetwork.NickName}.{k_PubAnchorsKey}"] = rawBytes
+            [$"{myId}.anchors"] = uuidArr,    // (this only works thanks to PhotonExtensions.cs)
+            [$"{myId}.sharees"] = actorIdArr,
         };
 
-        room.SetCustomProperties(props); // prefer room properties so that the data can be queried anytime after sync
-
-        // photonView.RPC(nameof(CheckForAnchorsShared), RpcTarget.OthersBuffered, s_AnchorListByteBuffer);
-    }
-
-    // [PunRPC]
-    void CheckForAnchorsShared(byte[] uuidsPacket)
-    {
-        Debug.Log($"{nameof(CheckForAnchorsShared)}: BEGIN RPC ({nameof(uuidsPacket)}[{(uuidsPacket is null ? "null" : uuidsPacket.Length)}])");
-
-        if (uuidsPacket is null)
-        {
-            Sampleton.LogError($"  - ERR: {nameof(uuidsPacket)} was null!");
-            return;
-        }
-
-        if (uuidsPacket.Length % k_UuidSize != 1)
-        {
-            Sampleton.LogError($"  - ERR: invalid packet size: {uuidsPacket.Length}");
-            return;
-        }
-
-        if (uuidsPacket[0] != k_PacketFormat)
-        {
-            Sampleton.LogError($"  - ERR: invalid packet format: {uuidsPacket[0]}");
-            return;
-        }
-
-        var nUuidsShared = (uuidsPacket.Length - 1) / k_UuidSize;
-        if (nUuidsShared == 0)
-        {
-            Sampleton.Log($"  - SKIP: anchor packet is empty.");
-            return;
-        }
-
-        Sampleton.Log($"  + valid anchor packet received!");
-
-        var roomAnchorSet = PublishedAnchors;
-
-        var uuids = new HashSet<Guid>();
-        int offset = 1;
-        for (var i = 0; i < nUuidsShared; i++)
-        {
-            // using a ReadOnlySpan is efficient because the packet array never needs to be copied into buffers
-            var uuid = new Guid(new ReadOnlySpan<byte>(uuidsPacket, start: offset, length: k_UuidSize));
-            offset += k_UuidSize;
-
-            Debug.LogFormat(
-                LogType.Log,
-                LogOption.NoStacktrace,
-                context: this,
-                $"{nameof(CheckForAnchorsShared)}: unpacked {uuid}"
-            );
-
-            if (roomAnchorSet.Add(uuid))
-                uuids.Add(uuid);
-        }
-
-        Sampleton.Log($"{nameof(CheckForAnchorsShared)}: RPC DONE. {uuids.Count} anchor IDs received.");
-
-        if (uuids.Count > 0)
-            SharedAnchorLoader.LoadAnchorsFromRemote(uuids);
+        if (!room.SetCustomProperties(props))
+            Sampleton.LogError("- ERR: room.SetCustomProperties failed!");
     }
 
     #endregion
 
     #region [User list state handling]
-
-    public static HashSet<ulong> GetRoomUserIds(bool refresh = false)
-    {
-        if (!refresh && s_RoomUserIds.Count > 0)
-            return s_RoomUserIds;
-
-        s_RoomUserIds.Clear();
-        foreach (var player in PhotonNetwork.PlayerList)
-        {
-            if (player.TryGetPlatformID(out ulong uid))
-                s_RoomUserIds.Add(uid);
-        }
-
-        return s_RoomUserIds;
-    }
 
     void UpdateUserListUI()
     {
@@ -534,7 +585,12 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
         foreach (var player in PhotonNetwork.PlayerList)
         {
-            bob.Append("\n- ").Append(player.ToStringFull());
+            if (player.IsInactive)
+                continue;
+            if (player.TryGetPlatformID(out ulong ocid))
+                bob.Append($"{player} {{ocid={ocid}}}");
+            else
+                bob.Append($"{player} {{ocid=None}}");
         }
 
         controlPanel.SetUserText(bob.ToString());
