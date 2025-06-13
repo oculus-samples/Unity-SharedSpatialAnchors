@@ -1941,6 +1941,7 @@ MonoBehaviour:
   m_RememberBtn: {fileID: 4815826042345020329}
   m_RememberIcon: {fileID: 4898302231214049507}
   m_RememberLabel: {fileID: 1661237851034029241}
+  m_EraseIcon: {fileID: 1061034394}
 --- !u!1 &2058597533587082455
 GameObject:
   m_ObjectHideFlags: 0

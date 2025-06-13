@@ -1,4 +1,4 @@
-![Sample Banner](Documentation/Media/colocated-block-toss.gif 'Unity SSA Sample')
+![Readme Banner](Documentation/Media/readme-banner.png 'Unity Shared Spatial Anchor Sample')
 
 # Unity-SharedSpatialAnchors
 
