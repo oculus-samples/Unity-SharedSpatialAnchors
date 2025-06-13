@@ -138,19 +138,12 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
             if (!Source.IsMine)
             {
                 loggedResult += $"\n  (You aren't the original creator of {uuid.Brief()}.)";
-                try // not being lazy
-                {
-                    transform
-                        .FindChildRecursive("Button: Erase")
-                        .FindChildRecursive("Icon")
-                        .GetComponent<Image>().color = SampleColors.Yellow;
-                }
-                catch (Exception e)
-                {
-                    Sampleton.Log($"{e.GetType().Name}: {e.Message}", LogType.Exception, LogOption.None);
-                    Debug.Log(e);
-                    // pass
-                }
+                if (m_EraseIcon)
+                    m_EraseIcon.color = SampleColors.Yellow;
+            }
+            else if (m_EraseIcon)
+            {
+                m_EraseIcon.color = SampleColors.Alert;
             }
             Sampleton.LogError($"- Erase Anchor FAILED! {loggedResult}");
             return;
@@ -195,15 +188,31 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
         UpdateUI();
     }
 
-    public void ToggleRememberUuid()
+    public async void ToggleRememberUuid()
     {
         if (LocallySaved.AnchorIsRemembered(Uuid))
         {
-            LocallySaved.ForgetAnchor(Uuid);
+            if (LocallySaved.ForgetAnchor(Uuid))
+                Sampleton.Log($"+ Forget Anchor: {SampleColors.RichText.Noice}Success</color>");
+            else
+                Sampleton.LogError($"- Forget Anchor: {SampleColors.RichText.Alert}Failure</color>");
         }
         else
         {
-            LocallySaved.RememberAnchor(Uuid, Source.IsMine);
+            string loggedResult = null;
+            if (!IsSaved)
+            {
+                var saveResult = await SaveAnchorAsync();
+                IsSaved = saveResult.Success;
+                loggedResult = saveResult.Status.ForLogging();
+            }
+
+            IsSaved = IsSaved && LocallySaved.RememberAnchor(Uuid, Source.IsMine);
+
+            if (IsSaved)
+                Sampleton.Log($"+ Remember (Save) Anchor: {loggedResult}");
+            else
+                Sampleton.LogError($"- Remember (Save) Anchor FAILED! (SaveAnchorAsync returned {loggedResult})");
         }
 
         UpdateUI();
@@ -228,6 +237,8 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
     Image m_RememberIcon;
     [SerializeField]
     TMP_Text m_RememberLabel;
+    [SerializeField]
+    Image m_EraseIcon;
 
     AnchorSource m_Source;
 
@@ -271,6 +282,14 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
             m_RememberLabel = btn.GetComponentInChildren<TMP_Text>();
             if (!m_RememberLabel)
                 Debug.LogError($"\"{name}\" seems to be improperly set-up.", this);
+        }
+
+        btn = transform.FindChildRecursive("Button: Erase");
+        if (btn)
+        {
+            var icon = btn.FindChildRecursive("Icon");
+            if (icon)
+                m_EraseIcon = icon.GetComponent<Image>();
         }
 
         var listBox = transform.FindChildRecursive("List: Groups Shared");

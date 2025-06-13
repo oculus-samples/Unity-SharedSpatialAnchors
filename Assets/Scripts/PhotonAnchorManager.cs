@@ -306,11 +306,20 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     public override void OnDisconnected(DisconnectCause cause)
     {
+        const float kRetryDelaySec = 2f;
+
+        var reachability = UnityEngine.Application.internetReachability;
+        if (reachability == NetworkReachability.NotReachable)
+        {
+            // cause is typically DnsExceptionOnConnect
+            Sampleton.Log($"Photon::OnDisconnected: {cause}\n- NetworkReachability.<b>{reachability} (check your wifi)</b>", LogType.Error);
+            return;
+        }
+
         switch (cause)
         {
-            case DisconnectCause.DisconnectByServerLogic:
-            case DisconnectCause.DisconnectByDisconnectMessage:
-            case DisconnectCause.DnsExceptionOnConnect:
+            // unexpected (error) cases:
+            case DisconnectCause.DisconnectByServerLogic: // error since the sample code never sends this signal
             case DisconnectCause.ServerAddressInvalid:
             case DisconnectCause.InvalidRegion:
             case DisconnectCause.InvalidAuthentication:
@@ -322,17 +331,22 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
                 Sampleton.LogError($"Photon:OnDisconnected: {cause}\n- will NOT attempt to automatically ReconnectAndRejoin()");
                 return;
 
+            // warning/retry cases:
             case DisconnectCause.Exception:
             case DisconnectCause.ExceptionOnConnect:
+            case DisconnectCause.DnsExceptionOnConnect:
             case DisconnectCause.ClientTimeout:
             case DisconnectCause.ServerTimeout:
+            case DisconnectCause.DisconnectByDisconnectMessage: // Photon's server can send this; logcat has details
             case DisconnectCause.DisconnectByServerReasonUnknown:
-                Sampleton.Log($"Photon::OnDisconnected: {cause}\n+ attempting auto ReconnectAndRejoin() in 2 secs...");
+                Sampleton.Log($"Photon::OnDisconnected: {cause}", LogType.Warning);
+                Sampleton.Log($"+ Attempting auto ReconnectAndRejoin() in {kRetryDelaySec:0} secs..");
                 if (m_OnDisconnectDelayCall is not null)
                     StopCoroutine(m_OnDisconnectDelayCall);
-                m_OnDisconnectDelayCall = StartCoroutine(DelayCall(() => PhotonNetwork.ReconnectAndRejoin(), 2f));
+                m_OnDisconnectDelayCall = StartCoroutine(DelayCall(() => PhotonNetwork.ReconnectAndRejoin(), kRetryDelaySec));
                 return;
 
+            // expected cases:
             default:
             case DisconnectCause.None:
             case DisconnectCause.DisconnectByClientLogic:

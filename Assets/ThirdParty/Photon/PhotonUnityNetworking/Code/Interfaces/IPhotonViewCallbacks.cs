@@ -1,4 +1,4 @@
-﻿namespace Photon.Pun
+namespace Photon.Pun
 {
     using Photon.Realtime;
 

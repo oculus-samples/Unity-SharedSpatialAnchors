@@ -1,4 +1,4 @@
-﻿// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // <copyright file="Extensions.cs" company="Exit Games GmbH">
 //   Photon Extensions - Copyright (C) 2018 Exit Games GmbH
 // </copyright>

@@ -4,7 +4,6 @@ using Oculus.Platform;
 using User = Oculus.Platform.Models.User;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -416,6 +415,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
 
 
     static ColoDiscoMan s_Instance;
+    static NetworkReachability s_Reachability = NetworkReachability.ReachableViaCarrierDataNetwork;
 
     bool m_AutoShare;
     bool m_IsAdvertising, m_IsDiscovering;
@@ -595,6 +595,16 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
 
     void Update()
     {
+        var reachability = UnityEngine.Application.internetReachability;
+        if (reachability != s_Reachability)
+        {
+            Sampleton.Log(
+                $"NetworkReachability: {reachability} (t={Time.realtimeSinceStartup:F1})",
+                type: reachability == NetworkReachability.NotReachable ? LogType.Error : LogType.Log
+            );
+            s_Reachability = reachability;
+        }
+
         PoseOrigin.UseLocalCoords = OVRInput.Get(OVRInput.RawButton.LShoulder);
 
         if (OVRInput.IsControllerConnected(OVRInput.Controller.RTouch))
@@ -1163,7 +1173,8 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
 
         foreach (var anchor in toShare)
         {
-            anchor.IsSaved = true; // (anchors are implicitly saved upon successful share)
+            // (anchors are implicitly saved upon successful share)
+            anchor.IsSaved = LocallySaved.RememberAnchor(anchor.Uuid, anchor.Source.IsMine);
             anchor.UpdateUI();
         }
     }

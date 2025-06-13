@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="PhotonAppSettings.cs" company="Exit Games GmbH">
 // </copyright>
 // <author>developer@photonengine.com</author>
