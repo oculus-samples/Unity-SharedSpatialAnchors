@@ -26,60 +26,19 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     /// <remarks>
     ///     This collection may contain anchor Guids shared by multiple users.
     /// </remarks>
-    public static IReadOnlyCollection<Guid> AllPublishedAnchors
-    {
-        get
-        {
-            var room = PhotonNetwork.CurrentRoom;
-            if (room is null)
-                return Array.Empty<Guid>();
-
-            int myId = PhotonNetwork.LocalPlayer.ActorNumber;
-            var anchors = new HashSet<Guid>();
-
-            // looping through this way allows us to reload shared anchors even
-            // from players who have left the room (after sharing of course)
-            foreach (var (boxKey, boxVal) in room.CustomProperties)
-            {
-                if (boxKey is not string key || !key.EndsWith(".sharees"))
-                    continue;
-
-                if (boxVal is not int[] actorIds || !actorIds.Contains(myId))
-                    continue;
-
-                if (!room.CustomProperties.TryGetValue(key.Replace(".sharees", ".anchors"), out var box))
-                    continue;
-
-                if (box is Guid[] uuids)
-                    anchors.UnionWith(uuids);
-            }
-
-            return anchors;
-        }
-    }
-
-    /// <summary>
-    ///     Anchors published to the current room by this local player.
-    /// </summary>
-    public static IReadOnlyCollection<Guid> PublishedAnchors
+    public static IReadOnlyCollection<Guid> AnchorsSharedWithMe
     {
         get
         {
             var room = PhotonNetwork.CurrentRoom;
             if (room is null ||
-                !PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong myId) ||
-                !room.CustomProperties.TryGetValue($"{myId}.anchors", out var box))
+                !PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong uid) ||
+                !room.CustomProperties.TryGetValue($"{k_PropPrefixUser}{uid}", out var box) ||
+                box is not Guid[] anchors)
             {
                 return Array.Empty<Guid>();
             }
-
-            if (box is not Guid[] uuids)
-            {
-                Sampleton.LogError("- ERR: Expected CustomProperties[\"{ocid}.anchors\"] to be type Guid[]");
-                return Array.Empty<Guid>();
-            }
-
-            return uuids;
+            return anchors;
         }
     }
 
@@ -92,32 +51,18 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         get
         {
             var room = PhotonNetwork.CurrentRoom;
-            if (room is null || !s_Instance)
+            if (room is null)
                 return Array.Empty<ulong>();
 
-            return s_Instance.m_RoomUserIds.Keys;
-        }
-    }
+            var userIds = new List<ulong>(capacity: room.PlayerCount);
 
-    public static IReadOnlyCollection<int> ShareeActorIds
-    {
-        get
-        {
-            var room = PhotonNetwork.CurrentRoom;
-            if (room is null ||
-                !PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong ocid) ||
-                !room.CustomProperties.TryGetValue($"{ocid}.sharees", out var box))
+            foreach (var player in room.Players.Values)
             {
-                return Array.Empty<int>();
+                if (player.TryGetPlatformID(out ulong uid))
+                    userIds.Add(uid);
             }
 
-            if (box is not int[] actorIds)
-            {
-                Sampleton.LogError("- ERR: Expected CustomProperties[\"{ocid}.sharees\"] to be type int[]");
-                return Array.Empty<int>();
-            }
-
-            return actorIds;
+            return userIds;
         }
     }
 
@@ -146,23 +91,15 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     static PhotonAnchorManager s_Instance;
 
+    const string k_PropKeyVersion = "ver";
+    const string k_PropPrefixUser = "u:";
+
     // Keeping this block to illustrate each user's contribution to the Room.CustomProperties layout:
     // static readonly Hashtable s_RoomPropLayout = new()
     // {
-    //     ["{ocid}.anchors"] = Array.Empty<Guid>(),
-    //     ["{ocid}.sharees"] = Array.Empty<int>(), // actor numbers
+    //     [k_PropKeyVersion] = 0,                              // increments with each successful [re]share to the room
+    //     [$"{k_PropPrefixUser}{ocid}"] = Array.Empty<Guid>(), // ocid = Platform User ID, vals = loadable anchor IDs
     // };
-
-    // This arch utilizes actor numbers to identify sharees, so that when a
-    // player leaves and returns to a Room, they will be assigned a new
-    // ActorNumber and will therefore be seen as requiring any shared anchors
-    // from other room members to be shared again (even if superfluously)
-    // before they will be loaded.
-    //
-    // This also prevents them from trying to load anchors that were shared to
-    // the room while they were absent, which would be an error UNTIL the owner
-    // of these shared anchors completes SharedAnchor.ShareAllMineTo(saidUser)
-    // - see OnPlayerEnteredRoom.
 
 
     //
@@ -171,8 +108,6 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     [SerializeField]
     SharedAnchorControlPanel controlPanel;
 
-
-    readonly Dictionary<ulong, int> m_RoomUserIds = new();
 
     Coroutine m_OnDisconnectDelayCall;
 
@@ -207,9 +142,7 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         catch (UnityException e)
         {
             Sampleton.LogError($"Oculus.Platform.Core.Initialize FAILED: {e.Message}");
-            // "UnityException: Update your app id by selecting 'Oculus Platform' -> 'Edit Settings'"
-            //  (   Although note, this error message is outdated.
-            //      The modern menu path is 'Meta' > 'Platform' > 'Edit Settings'.  )
+            // "UnityException: Update your app id by selecting 'Meta' > 'Platform' > 'Edit Settings'"
         }
 
         if (Core.IsInitialized())
@@ -373,11 +306,11 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         var room = PhotonNetwork.CurrentRoom;
         Sampleton.Log($"Photon::OnJoinedRoom: \"{room.Name}\"");
 
-        m_RoomUserIds.Clear();
-        foreach (var (actorId, player) in room.Players)
+        if (PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong uid) &&
+            room.CustomProperties.TryGetValue($"{k_PropPrefixUser}{uid}", out var box) &&
+            box is Guid[] preSharedAnchors)
         {
-            if (player.TryGetPlatformID(out ulong ocid))
-                m_RoomUserIds[ocid] = actorId;
+            SharedAnchorLoader.LoadSharedAnchors(preSharedAnchors);
         }
 
         if (controlPanel)
@@ -392,7 +325,6 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     public override void OnLeftRoom()
     {
         Sampleton.Log($"Photon::OnLeftRoom");
-        m_RoomUserIds.Clear();
         if (controlPanel)
             controlPanel.DisplayLobbyPanel();
     }
@@ -403,8 +335,6 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
         if (newPlayer.TryGetPlatformID(out ulong ocid))
         {
-            m_RoomUserIds[ocid] = newPlayer.ActorNumber;
-
             Sampleton.Log("  * (auto-sharing your pre-shared anchors to them...)");
 
             SharedAnchor.ShareAllMineTo(ocid, reshareOnly: true);
@@ -447,17 +377,19 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
             return;
         }
 
-        foreach (var (boxKey, boxVal) in changedProps)
+        if (!changedProps.TryGetValue($"{k_PropPrefixUser}{ocid}", out var box))
         {
-            if (boxKey is not string key || !key.EndsWith(".sharees") || key.StartsWith($"{ocid}."))
-                continue;
-
-            if (boxVal is int[] sharees && sharees.Contains(player.ActorNumber))
-            {
-                SharedAnchorLoader.ReloadSharedAnchors();
-                return;
-            }
+            // nothing new for us.
+            return;
         }
+
+        if (box is not Guid[] anchors)
+        {
+            Sampleton.LogError("  - ERR: expected CustomProperties[ocid] to be type Guid[]");
+            return;
+        }
+
+        SharedAnchorLoader.LoadSharedAnchors(anchors);
     }
 
     #endregion
@@ -545,45 +477,52 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     void PublishAnchorsToUsers(HashSet<Guid> uuidSet, IReadOnlyCollection<ulong> userIds)
     {
-        if (!PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong myId))
-        {
-            Sampleton.LogError($"{nameof(PublishAnchorsToUsers)}: FAILED: a working platform (oculus) login is required.");
-            return;
-        }
-
         var room = PhotonNetwork.CurrentRoom;
-        var alreadyShared = PublishedAnchors;
-        var sharedToActors = new HashSet<int>(ShareeActorIds);
+        var curProps = room.CustomProperties;
 
-        uuidSet.UnionWith(alreadyShared);
-
-        int nNewIds = uuidSet.Count - alreadyShared.Count;
-        nNewIds -= sharedToActors.Count;
-        sharedToActors.UnionWith(userIds.Select(id => m_RoomUserIds[id]));
-        nNewIds += sharedToActors.Count;
-
-        if (nNewIds == 0)
+        Hashtable expected; // allows us to rule out possible concurrent modification errors
+        if (curProps.TryGetValue(k_PropKeyVersion, out var box) && box is int version)
         {
-            Sampleton.Log($"{nameof(PublishAnchorsToUsers)}: SKIP: zero new anchor/sharee ids.");
-            return;
+            expected = new Hashtable
+            {
+                [k_PropKeyVersion] = version,
+            };
+        }
+        else
+        {
+            expected = null;
+            version = 0;
         }
 
-        Sampleton.Log($"{nameof(PublishAnchorsToUsers)}: {nNewIds}/{uuidSet.Count + sharedToActors.Count} new ids");
-
-        var uuidArr = new Guid[uuidSet.Count];
-        uuidSet.CopyTo(uuidArr);
-
-        var actorIdArr = new int[sharedToActors.Count];
-        sharedToActors.CopyTo(actorIdArr);
-
-        var props = new Hashtable
+        var newProps = new Hashtable
         {
-            [$"{myId}.anchors"] = uuidArr,    // (this only works thanks to PhotonExtensions.cs)
-            [$"{myId}.sharees"] = actorIdArr,
+            [k_PropKeyVersion] = version + 1,
         };
 
-        if (!room.SetCustomProperties(props))
-            Sampleton.LogError("- ERR: room.SetCustomProperties failed!");
+        var uuidArr = uuidSet.ToArray();
+        var scratchUuidSet = new HashSet<Guid>(uuidSet.Count);
+        foreach (ulong uid in userIds)
+        {
+            string key = $"{k_PropPrefixUser}{uid}";
+
+            // (note: setting Guid[] values directly only works here thanks to our PhotonExtensions.cs)
+            if (curProps.TryGetValue(key, out box) && box is Guid[] alreadyShared)
+            {
+                scratchUuidSet.Clear();
+                scratchUuidSet.UnionWith(alreadyShared);
+                int precount = scratchUuidSet.Count;
+                scratchUuidSet.UnionWith(uuidSet);
+                if (scratchUuidSet.Count > precount)
+                    newProps[key] = scratchUuidSet.ToArray();
+            }
+            else
+            {
+                newProps[key] = uuidArr;
+            }
+        }
+
+        if (!room.SetCustomProperties(newProps, expected))
+            Sampleton.LogError("- ERR: room.SetCustomProperties failed! (possible concurrency failure)");
     }
 
     #endregion
@@ -601,6 +540,7 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         {
             if (player.IsInactive)
                 continue;
+            bob.Append('\n');
             if (player.TryGetPlatformID(out ulong ocid))
                 bob.Append($"{player} {{ocid={ocid}}}");
             else

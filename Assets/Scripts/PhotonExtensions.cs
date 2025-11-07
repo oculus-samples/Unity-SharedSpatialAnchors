@@ -21,12 +21,12 @@ public static class PhotonExtensions
         uid = 0;
         if (photonPlayer is null ||
             !photonPlayer.CustomProperties.TryGetValue(k_PlatIDKey, out var box) ||
-            box is not long rawUid)
+            box is not ulong rawUid)
         {
             return false;
         }
 
-        uid = new Reinterpret64 { Signed = rawUid }.Unsigned;
+        uid = rawUid;
 
         return uid > 0;
     }
@@ -35,8 +35,7 @@ public static class PhotonExtensions
     {
         var props = new Hashtable
         {
-            // PUN weirdly can't transmit unsigned integers, even though they ZigZag signed ints into unsigned internally...
-            [k_PlatIDKey] = new Reinterpret64 { Unsigned = uid }.Signed,
+            [k_PlatIDKey] = uid,
         };
 
         if (photonPlayer.SetCustomProperties(props))
@@ -52,22 +51,6 @@ public static class PhotonExtensions
     const string k_PlatIDKey = "ocid";
 
 
-    static ulong EnZigZag64(long signed)
-        => (ulong)((signed << 1) ^ (signed >> 63));
-
-    static long DeZigZag64(ulong unsigned)
-        => (long)((unsigned >> 1) ^ (0L - (unsigned & 1)));
-
-    [StructLayout(LayoutKind.Explicit)]
-    struct Reinterpret64
-    {
-        [FieldOffset(0)]
-        public long Signed;
-        [FieldOffset(0)]
-        public ulong Unsigned;
-    }
-
-
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void RegisterAdditionalTypeSerialization()
     {
@@ -75,6 +58,10 @@ public static class PhotonExtensions
 
         if (!Protocol.TryRegisterType(typeof(Guid), (byte)'G', guidWrite, guidRead))
             Sampleton.LogError($"Photon ERR: failed to register {nameof(Guid)} serde");
+
+        // PUN weirdly can't transmit unsigned integers, even though they ZigZag signed ints into unsigned internally...
+        if (!Protocol.TryRegisterType(typeof(ulong), (byte)'U', ulongWrite, ulongRead))
+            Sampleton.LogError($"Photon ERR: failed to register {nameof(UInt64)} serde");
 
         // default fallback username
         PhotonNetwork.NickName = $"Anon{UnityEngine.Random.Range(0, 10000):0000}";
@@ -93,6 +80,22 @@ public static class PhotonExtensions
             if (bytes?.Length == 16)
                 return new Guid(bytes);
             return Guid.Empty;
+        }
+
+        static byte[] ulongWrite(object box)
+        {
+            if (box is ulong ul)
+                return BitConverter.GetBytes(ul);
+            if (box is long l)
+                return BitConverter.GetBytes(l);
+            return new byte[8];
+        }
+
+        static object ulongRead(byte[] bytes)
+        {
+            if (bytes?.Length == 8)
+                return BitConverter.ToUInt64(bytes);
+            return 0UL;
         }
     }
 

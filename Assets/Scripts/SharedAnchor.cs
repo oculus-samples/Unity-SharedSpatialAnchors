@@ -212,6 +212,14 @@ public class SharedAnchor : MonoBehaviour
             return;
         }
 
+        if (IsSaved)
+        {
+            IsSaved = false;
+            // only "un"saves the UUID serialized by the app logic~
+            // (distinct from the "Erase" API call)
+            return;
+        }
+
         if (!LocallySaved.AnchorsCanGrow)
         {
             LocallySaved.LogCannotGrow(nameof(OnSaveLocalButtonPressed));
@@ -478,6 +486,7 @@ public class SharedAnchor : MonoBehaviour
         ShareSucceeded = shareResult.IsSuccess();
         if (ShareSucceeded)
         {
+            IsSaved = true; // shared anchors are implicitly cloud-saved
             Sampleton.Log($"+ Shared Spatial Anchor: {loggedResult}");
             // In this context of the sample, we need to transmit this now-shared anchor's id by some other means to our
             // peers. The "means" that we presently choose to demo with is Photon Realtime + PUN.

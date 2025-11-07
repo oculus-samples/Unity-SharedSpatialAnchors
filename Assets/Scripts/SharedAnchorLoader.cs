@@ -1,7 +1,5 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
-using Photon.Pun;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +44,16 @@ public static class SharedAnchorLoader
 
     public static void ReloadSharedAnchors()
     {
-        var sharedAnchors = PhotonAnchorManager.AllPublishedAnchors.ToHashSet();
+        var sharedAnchors = PhotonAnchorManager.AnchorsSharedWithMe.ToHashSet();
+        LoadSharedAnchors(sharedAnchors);
+    }
+
+    public static void LoadSharedAnchors(IReadOnlyCollection<Guid> anchors)
+    {
+        if (anchors is not HashSet<Guid> sharedAnchors)
+        {
+            sharedAnchors = new HashSet<Guid>(anchors);
+        }
 
         int nIgnored = sharedAnchors.Count;
         sharedAnchors.ExceptWith(LocallySaved.AnchorsIgnored);
@@ -54,7 +61,15 @@ public static class SharedAnchorLoader
 
         if (sharedAnchors.Count == 0)
         {
-            Sampleton.Log($"{nameof(ReloadSharedAnchors)}: NO-OP: no anchors are published to this room.", LogType.Warning);
+            Sampleton.Log(
+                $"{nameof(ReloadSharedAnchors)}: NO-OP:" +
+                $" either no anchors are published to this room, or their owner(s) could not share them to you yet.",
+                LogType.Warning
+            );
+            Sampleton.Log(
+                $"- Note that if anchor owners are inactive, tasked-out, or doffed," +
+                $" then they cannot re-share their anchors until they return to the app."
+            );
             return;
         }
 

@@ -580,7 +580,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
         }
         catch (UnityException e)
         {
-            // "UnityException: Update your app id by selecting 'Oculus Platform' -> 'Edit Settings'"
+            // "UnityException: Update your app id by selecting 'Meta' > 'Platform' > 'Edit Settings'"
             Sampleton.Log(
                 $"Oculus.Platform.Core.Initialize FAILED: {e.Message}",
                 m_RequireLoggedInUser ? LogType.Exception : LogType.Warning
