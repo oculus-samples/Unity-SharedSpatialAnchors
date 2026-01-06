@@ -1,15 +1,19 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
-using TMPro;
-using UnityEngine;
-using UnityEngine.Serialization;
+using Meta.XR.Samples;
+
 using Oculus.Interaction;
-using System.Collections.Generic;
-using Photon.Pun;
+
+using TMPro;
+
+using UnityEngine;
+
 
 /// <summary>
 /// Main manager for sample interaction
 /// </summary>
+[MetaCodeSample("SharedSpatialAnchors")]
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
 public class SampleController : MonoBehaviour
 {
     public static SampleController Instance { get; private set; }

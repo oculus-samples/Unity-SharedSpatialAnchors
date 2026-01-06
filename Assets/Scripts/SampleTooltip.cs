@@ -1,9 +1,16 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using TMPro;
 
 using UnityEngine;
 
+/// <summary>
+///   Currently only used in the main menu, this class provides a static interface
+///   for building/showing/clearing tooltip text, typically from "on hover" UI events.
+/// </summary>
+[MetaCodeSample("SharedSpatialAnchors")]
 public class SampleTooltip : MonoBehaviour
 {
     //

@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using JetBrains.Annotations;
 
 using System;
@@ -12,6 +14,12 @@ using TMPro;
 using UnityEngine;
 
 
+/// <summary>
+///   Provides a static interface for sample code to set "status" lines - text that
+///   should be visible from any runtime sample scene.
+/// </summary>
+[MetaCodeSample("SharedSpatialAnchors")]
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
 [RequireComponent(typeof(TMP_Text))]
 public class SampleStatus : MonoBehaviour
 {

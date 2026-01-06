@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using Oculus.Interaction;
 
 using Photon.Pun;
@@ -9,6 +11,7 @@ using UnityEngine;
 using Sampleton = SampleController; // only transitional
 
 [RequireComponent(typeof(PhotonView), typeof(Grabbable))]
+[MetaCodeSample("SharedSpatialAnchors")]
 public class PhotonGrabbableObject : MonoBehaviour
 {
     //

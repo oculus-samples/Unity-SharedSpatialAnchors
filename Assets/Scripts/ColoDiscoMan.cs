@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using Oculus.Platform;
 using User = Oculus.Platform.Models.User;
 
@@ -17,7 +19,15 @@ using UnityEngine.UI;
 
 using Sampleton = SampleController; // only transitional
 
-public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGroupSharingManager
+/// <summary>
+///   This is where to find the key API calls for <see cref="OVRColocationSession"/>, as well as the Group Sharing
+///   overloads from <see cref="OVRSpatialAnchor"/>.
+/// </summary>
+/// <remarks>
+///   AKA ColocationSessionDiscoveryAndGroupSharingManager, ColoDiscoMan is for short.
+/// </remarks>
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
+public class ColoDiscoMan : MonoBehaviour
 {
     //
     // public interface
@@ -354,6 +364,7 @@ public class ColoDiscoMan : MonoBehaviour // AKA ColocationSessionDiscoveryAndGr
     //
     // private impl.
 
+    [MetaCodeSample("SharedSpatialAnchors")]
     sealed class Group // aka Session
     {
         public Guid Uuid;

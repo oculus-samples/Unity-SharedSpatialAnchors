@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using System;
 using System.Collections.Generic;
 
@@ -11,20 +13,26 @@ using UnityEngine.UI;
 using Sampleton = SampleController; // only transitional
 
 
-/// <remarks>
-///   OVRSpatialAnchor allows you to inherit from it, however beware of which Unity Messages you choose to implement!
-///   Ill-defined states are known to occur if you implement any of:
-///     - Start
-///     - Update
-///     - LateUpdate
-///     - OnDestroy
-///   You've been warned!
-/// </remarks>
+/// <summary>
+///   A sample extension of <see cref="OVRSpatialAnchor"/>, showcasing Colocation Session Discovery and Group Sharing.
+/// </summary>
 /// <remarks>
 ///   All key API calls relating to this component are implemented in <see cref="ColoDiscoMan"/>. This is in contrast to
 ///   how <see cref="SharedAnchor"/> and <see cref="SharedAnchorLoader"/> are split.
+///   <br/><br/>
+///   <see cref="OVRSpatialAnchor"/> allows us to inherit from it, however we must beware of which Unity Messages we
+///   choose to implement! <br/>
+///   Undefined states are known to occur if we implement any of:
+///   <ul>
+///     <li>Start</li>
+///     <li>Update</li>
+///     <li>LateUpdate</li>
+///     <li>OnDestroy</li>
+///   </ul>
+///   Otherwise, this subclassing is OK.
 /// </remarks>
-public sealed class ColoDiscoAnchor : OVRSpatialAnchor
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
+public class ColoDiscoAnchor : OVRSpatialAnchor
 {
 
     //
@@ -81,7 +89,7 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
             m_RememberIcon.color = SampleColors.Gray;
             m_RememberLabel.SetText("Remember UUID");
         }
-        m_RememberBtn.interactable = LocallySaved.AnchorsCanGrow;
+        m_RememberBtn.interactable = true;
 
         var groups = ColoDiscoMan.GetGroupsFor(Uuid);
 
@@ -150,6 +158,7 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
         }
 
         LocallySaved.IgnoreAnchor(uuid);
+        LocallySaved.CommitToDisk();
 
         ColoDiscoMan.NotifyAnchorErased(uuid);
 
@@ -213,9 +222,12 @@ public sealed class ColoDiscoAnchor : OVRSpatialAnchor
                 Sampleton.Log($"+ Remember (Save) Anchor: {loggedResult}");
             else
                 Sampleton.LogError($"- Remember (Save) Anchor FAILED! (SaveAnchorAsync returned {loggedResult})");
+
         }
 
         UpdateUI();
+
+        LocallySaved.CommitToDisk();
     }
 
 

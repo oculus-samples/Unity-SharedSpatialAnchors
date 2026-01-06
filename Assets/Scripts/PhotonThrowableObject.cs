@@ -1,11 +1,14 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using Oculus.Interaction;
 
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class PhotonThowableObject : PhotonGrabbableObject
+[MetaCodeSample("SharedSpatialAnchors")]
+public class PhotonThrowableObject : PhotonGrabbableObject
 {
     [SerializeField]
     Rigidbody m_Physics;

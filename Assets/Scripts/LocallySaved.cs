@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using JetBrains.Annotations;
 
 using System;
@@ -13,6 +15,20 @@ using UnityEngine.SceneManagement;
 
 using Sampleton = SampleController; // only transitional
 
+/// <summary>
+///   Stores/Loads anchors on the local app-space disk.
+/// </summary>
+/// <remarks>
+///   Save data is segregated by Application.buildGUID (unless in the Editor) and the active scene name,
+///   and can be found under Application.persistentDataPath.  You can check runtime logs for the actual
+///   full paths written to. <br/><br/>
+///   The only automatic <see cref="CommitToDisk"/> this class does is on Application.quitting and
+///   Application.focusChanged(false).  Else, it is up to callers to call <see cref="CommitToDisk"/>
+///   as they see fit; currently, that means after every explicitly-intentional save request made by
+///   the user.
+/// </remarks>
+[MetaCodeSample("SharedSpatialAnchors")]
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
 static class LocallySaved
 {
     [NotNull]
@@ -23,12 +39,16 @@ static class LocallySaved
     public static IReadOnlyCollection<Guid> AnchorsIgnored => GetActiveDataStore().IgnoredAnchors;
 
 
-    public static bool AnchorsCanGrow => GetActiveDataStore().RememberedAnchors.Count < k_MaxAnchorMemory;
-
-    public static void LogCannotGrow(string caller)
+    public static void CommitToDisk()
     {
-        Sampleton.LogError($"{caller}: Not saving! Maximum saved anchor count ({k_MaxAnchorMemory}) reached.");
-        Sampleton.Log($"- NOTE: This is an artificial limit set by this sample.", LogType.Warning);
+        if (PerSceneData.GlobalData.IsDirty)
+            PerSceneData.GlobalData.Save();
+
+        foreach (var sceneData in s_PerSceneData.Values)
+        {
+            if (sceneData.IsDirty)
+                sceneData.Save();
+        }
     }
 
 
@@ -49,7 +69,7 @@ static class LocallySaved
 
     public static bool AnchorIsIgnored(Guid anchorId)
     {
-        return GetActiveDataStore().IgnoredAnchors.Contains(anchorId);
+        return anchorId == Guid.Empty || GetActiveDataStore().IgnoredAnchors.Contains(anchorId);
     }
 
 
@@ -59,8 +79,17 @@ static class LocallySaved
             return false;
 
         var dataStore = GetActiveDataStore();
-        if (dataStore.RememberedAnchors.Count >= k_MaxAnchorMemory)
-            return false;
+
+        if (!dataStore.WarnedAnchorCap && dataStore.RememberedAnchors.Count >= k_MaybeTooManySavedAnchors)
+        {
+            Sampleton.Log(
+                $"WARN: You have locally saved over {k_MaybeTooManySavedAnchors} anchors.\n" +
+                $"- This is likely more than you need for one space.\n" +
+                $"- You can clear your saved anchors from the app's Main Menu > \"Clear Local Save Data\" button.",
+                LogType.Warning
+            );
+            dataStore.WarnedAnchorCap = true;
+        }
 
         if (dataStore.RememberedAnchors.Remove(anchorId, out bool wasMine))
             dataStore.IsDirty |= isMine ^ wasMine;
@@ -85,6 +114,9 @@ static class LocallySaved
 
     public static bool IgnoreAnchor(Guid anchorId)
     {
+        if (anchorId == Guid.Empty)
+            return false;
+
         var dataStore = GetActiveDataStore();
         dataStore.IsDirty |= dataStore.RememberedAnchors.Remove(anchorId);
         dataStore.IsDirty |= dataStore.IgnoredAnchors.Add(anchorId);
@@ -102,13 +134,31 @@ static class LocallySaved
     }
 
 
-    public static void DeleteAll()
+    public static void DeleteAll(bool wipeDisk)
     {
-        PerSceneData.GlobalData.Clear();
+        PerSceneData.GlobalData.Clear(wipeDisk);
         foreach (var data in s_PerSceneData.Values)
         {
-            data.Clear();
+            data.Clear(wipeDisk);
         }
+
+#if UNITY_EDITOR
+        if (!wipeDisk)
+            return;
+
+        // if called at edit-time, s_PerSceneData is probably empty, even if there *is* save data in persistentDataPath.
+
+        if (PerSceneData.GlobalData.FileInfo.Directory is not { } dataDir)
+            return;
+
+        dataDir.Refresh();
+
+        if (!dataDir.Exists)
+            return;
+
+        dataDir.Delete(recursive: true);
+
+#endif // UNITY_EDITOR
     }
 
 
@@ -116,7 +166,7 @@ static class LocallySaved
     // private impl.
 
     const string k_OwnedMarker = "@";
-    const int k_MaxAnchorMemory = 60;
+    const int k_MaybeTooManySavedAnchors = 60;
 
     static readonly Dictionary<string, PerSceneData> s_PerSceneData = new();
 
@@ -151,35 +201,31 @@ static class LocallySaved
             sceneData.Load();
         };
 
-        Application.quitting += commitAllToDisk;
+        Application.quitting += CommitToDisk;
 
         // Using the Home button to quit the app WON'T trigger Application.quitting,
         // however it WILL have triggered Application.focusChanged (before user can click the "Quit" button).
         Application.focusChanged += isFocused =>
         {
             if (!isFocused)
-                commitAllToDisk();
-        };
-
-        return;
-
-        static void commitAllToDisk()
-        {
-            if (PerSceneData.GlobalData.IsDirty)
-                PerSceneData.GlobalData.Save();
-
-            foreach (var sceneData in s_PerSceneData.Values)
             {
-                if (sceneData.IsDirty)
-                    sceneData.Save();
+                CommitToDisk();
+                return;
             }
-        }
+
+            var reloadSceneData = GetActiveDataStore();
+            if (reloadSceneData.IsDirty) // don't clobber new data
+                return;
+            reloadSceneData.Load();
+        };
     }
 
 
+    [MetaCodeSample("SharedSpatialAnchors")]
     sealed class PerSceneData
     {
-        public static readonly PerSceneData GlobalData = new(nameof(GlobalData));
+        public static readonly PerSceneData GlobalData = new(null);
+        const string GlobalDataName = "DontDestroyOnLoad";
 
         public readonly string SceneName;
         public readonly Dictionary<Guid, bool> RememberedAnchors = new();
@@ -187,100 +233,63 @@ static class LocallySaved
 
         public readonly FileInfo FileInfo;
         public bool IsDirty;
+        public bool WarnedAnchorCap;
+
+        public bool IsEmpty => RememberedAnchors.Count + IgnoredAnchors.Count == 0;
 
         public PerSceneData(string sceneName)
         {
-            SceneName = string.IsNullOrEmpty(sceneName) ? nameof(GlobalData)
+            SceneName = string.IsNullOrEmpty(sceneName) ? GlobalDataName
                                                         : sceneName;
             IgnoredAnchors.Add(Guid.Empty);
-            FileInfo = Application.isEditor ? new FileInfo($"{Application.persistentDataPath}/{nameof(PerSceneData)}/{SceneName}.save")
-                                            : new FileInfo($"{Application.persistentDataPath}/{Application.buildGUID}/{SceneName}.save");
+
+            string rootDir = Application.persistentDataPath.Replace('\\', '/'); // extraneous Replace()
+            FileInfo = Application.isEditor ? new FileInfo($"{rootDir}/{nameof(PerSceneData)}/{SceneName}.save")
+                                            : new FileInfo($"{rootDir}/{Application.buildGUID}/{SceneName}.save");
         }
 
         public void Save(bool pretty = true)
         {
-            Assert.IsNotNull(FileInfo, "FileInfo != null");
-            Assert.IsNotNull(FileInfo.Directory, "FileInfo.Directory != null");
+            Assert.IsNotNull(FileInfo, $"PerSceneData({SceneName}).FileInfo");
+            Assert.IsNotNull(FileInfo.Directory, $"PerSceneData({SceneName}).FileInfo.Directory");
 
             FileInfo.Refresh();
+
+            if (IsEmpty)
+            {
+                FileInfo.Delete();
+                IsDirty = false;
+                return;
+            }
+
             if (!FileInfo.Directory.Exists)
                 FileInfo.Directory.Create();
+
+            bool createdNew = !FileInfo.Exists;
 
             FileInfo.Delete();
 
             using var file = new StreamWriter(
                 stream: FileInfo.Open(FileMode.Create, FileAccess.Write, FileShare.Read),
                 encoding: SampleExtensions.EncodingForSerialization,
-                bufferSize: 4096, // std Android block size // also, this is a sample, we shouldn't care x~x
+                bufferSize: 4096, // std Android block size
                 leaveOpen: false
             );
 
-            // lol:
-            // var pod = new POD
-            // {
-            //     SceneName = SceneName,
-            //     RememberedAnchors = RememberedAnchors.Select(kvp => kvp.Key.Serialize(kvp.Value ? k_OwnedMarker : "")).ToArray(),
-            //     IgnoredAnchors = IgnoredAnchors.Select(guid => guid.Serialize()).ToArray(),
-            // };
-            // file.Write(JsonUtility.ToJson(pod, pretty));
-            // return;
-
-            // nahh.
-
-            // more fun:
-            string openObj, closeObj, openArr, closeArr, comma, colon, nl, idt;
-            if (pretty)
+            var pod = new POD
             {
-                openObj = "{\n";
-                closeObj = "}";
-                openArr = "[\n";
-                closeArr = "]";
-                comma = ",\n";
-                colon = ": ";
-                nl = "\n";
-                idt = "  ";
-            }
-            else
-            {
-                openObj = "{";
-                closeObj = "}";
-                openArr = "[";
-                closeArr = "]";
-                comma = ",";
-                colon = ":";
-                nl = "";
-                idt = "";
-            }
+                SceneName = SceneName,
+                RememberedAnchors = RememberedAnchors.Select(kvp => kvp.Key.Serialize(kvp.Value ? k_OwnedMarker : "")).ToArray(),
+                IgnoredAnchors = IgnoredAnchors.Select(guid => guid.Serialize()).ToArray(),
+            };
 
-            file.Write(openObj);
-            {
-                file.Write($"{idt}\"{nameof(SceneName)}\"{colon}\"{SceneName}\"{comma}");
-
-                file.Write($"{idt}\"{nameof(RememberedAnchors)}\"{colon}{openArr}");
-                bool doComma = false;
-                foreach (var (uuid, isMine) in RememberedAnchors)
-                {
-                    if (doComma)
-                        file.Write(comma);
-                    doComma = true;
-                    file.Write($"{idt}{idt}\"{uuid.Serialize(isMine ? k_OwnedMarker : "")}\"");
-                }
-                file.Write($"{nl}{idt}{closeArr}{comma}");
-
-                file.Write($"{idt}\"{nameof(IgnoredAnchors)}\"{colon}{openArr}");
-                doComma = false;
-                foreach (var uuid in IgnoredAnchors)
-                {
-                    if (doComma)
-                        file.Write(comma);
-                    doComma = true;
-                    file.Write($"{idt}{idt}\"{uuid.Serialize()}\"");
-                }
-                file.Write($"{nl}{idt}{closeArr}");
-            }
-            file.Write(closeObj);
+            file.NewLine = "\n";
+            file.Write(JsonUtility.ToJson(pod, pretty));
 
             IsDirty = false;
+
+            if (createdNew)
+                Sampleton.Log($"INFO: Created new local file '{FileInfo}' (for anchor UUIDs)");
         }
 
         public void Load()
@@ -288,7 +297,7 @@ static class LocallySaved
             FileInfo.Refresh();
             if (!FileInfo.Exists)
             {
-                IsDirty = RememberedAnchors.Count + IgnoredAnchors.Count > 0;
+                IsDirty = !IsEmpty;
                 return;
             }
 
@@ -327,20 +336,22 @@ static class LocallySaved
                 IgnoredAnchors.Add(Guid.Parse(rawUuid));
             }
 
+            WarnedAnchorCap = false; // reset "warn once" behaviour whenever deserializing saved anchors
             IsDirty = false;
         }
 
         public void Clear(bool wipeDisk = true)
         {
+            IsDirty = !wipeDisk && !IsEmpty;
             RememberedAnchors.Clear();
             IgnoredAnchors.Clear();
-            IsDirty = false;
 
             if (!wipeDisk)
                 return;
             FileInfo.Refresh();
             FileInfo.Delete();
         }
+
 
         [Serializable]
         struct POD
@@ -349,6 +360,7 @@ static class LocallySaved
             public string[] RememberedAnchors;
             public string[] IgnoredAnchors;
         }
+
     } // end nested class PerSceneData
 
 } // end static class LocallySaved

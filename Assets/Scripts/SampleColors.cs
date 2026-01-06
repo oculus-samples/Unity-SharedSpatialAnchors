@@ -1,7 +1,15 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using UnityEngine;
 
+
+/// <summary>
+///   Colors for sample code to easily apply to UI, editor console logs, etc.
+/// </summary>
+[MetaCodeSample("SharedSpatialAnchors")]
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
 static class SampleColors
 {
     public static readonly Color32 Gray
@@ -47,6 +55,7 @@ static class SampleColors
     }
 
 
+    [MetaCodeSample("SharedSpatialAnchors")]
     public static class RichText
     {
         // ReSharper disable MemberHidesStaticFromOuterClass

@@ -1,10 +1,15 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
+using Sampleton = SampleController;
 
+
+[MetaCodeSample("SharedSpatialAnchors")]
 public class MenuController : MonoBehaviour
 {
     [SerializeField, FormerlySerializedAs("referencePoint")]
@@ -43,10 +48,15 @@ public class MenuController : MonoBehaviour
         SceneManager.LoadScene(iSceneIndex);
     }
 
+#if UNITY_EDITOR
+    [UnityEditor.MenuItem("Edit/Clear Local Save Data", priority = 280)]
+#endif
     public static void ClearLocalSaveData()
     {
         PlayerPrefs.DeleteAll();
-        LocallySaved.DeleteAll();
+        Sampleton.Log($"{nameof(ClearLocalSaveData)}: PlayerPrefs cleared.");
+        LocallySaved.DeleteAll(wipeDisk: true);
+        Sampleton.Log($"{nameof(ClearLocalSaveData)}: LocallySaved (serialized anchors) cleared.");
     }
 
     public static void ExitAppOrPlaymode()

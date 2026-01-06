@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -20,6 +22,7 @@ using Sampleton = SampleController;
 ///   You can locate key API calls throughout the sample code by searching for "KEY API CALL" (use CTRL+F in most IDEs).
 /// </remarks>
 [RequireComponent(typeof(OVRSpatialAnchor))]
+[MetaCodeSample("SharedSpatialAnchors")]
 public class SharedAnchor : MonoBehaviour
 {
     //
@@ -217,12 +220,7 @@ public class SharedAnchor : MonoBehaviour
             IsSaved = false;
             // only "un"saves the UUID serialized by the app logic~
             // (distinct from the "Erase" API call)
-            return;
-        }
-
-        if (!LocallySaved.AnchorsCanGrow)
-        {
-            LocallySaved.LogCannotGrow(nameof(OnSaveLocalButtonPressed));
+            LocallySaved.CommitToDisk();
             return;
         }
 
@@ -244,6 +242,7 @@ public class SharedAnchor : MonoBehaviour
         Sampleton.Log($"+ Saved Spatial Anchor: {loggedResult}");
 
         IsSaved = true;
+        LocallySaved.CommitToDisk();
     }
 
     public void OnHideButtonPressed()
@@ -297,6 +296,7 @@ public class SharedAnchor : MonoBehaviour
         Sampleton.Log($"+ Erased Spatial Anchor: {loggedResult}");
 
         LocallySaved.IgnoreAnchor(uuid);
+        LocallySaved.CommitToDisk();
 
         Destroy(gameObject);
     }

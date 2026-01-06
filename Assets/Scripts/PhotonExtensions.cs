@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using ExitGames.Client.Photon;
 
 using Photon.Pun;
@@ -13,6 +15,7 @@ using UnityEngine;
 using Sampleton = SampleController;
 
 
+[MetaCodeSample("SharedSpatialAnchors")]
 public static class PhotonExtensions
 {
 

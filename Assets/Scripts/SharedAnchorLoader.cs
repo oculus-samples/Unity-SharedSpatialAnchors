@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +14,14 @@ using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 using Sampleton = SampleController; // only transitional
 
+/// <summary>
+///   A static interface for loading locally-saved or shared spatial anchors for the local client,
+///   in the "SharedSpatialAnchors" sample scene only.
+/// </summary>
 /// <remarks>
 ///   You can locate key API calls throughout the sample code by searching for "KEY API CALL" (use CTRL+F in most IDEs).
 /// </remarks>
+[MetaCodeSample("SharedSpatialAnchors")]
 public static class SharedAnchorLoader
 {
     //

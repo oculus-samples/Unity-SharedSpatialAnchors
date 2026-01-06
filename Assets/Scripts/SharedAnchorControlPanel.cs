@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using Photon.Pun;
 using Photon.Realtime;
 
@@ -13,6 +15,10 @@ using TMPro;
 
 using Sampleton = SampleController; // only transitional
 
+/// <summary>
+///   Left-hand UI controller for the "SharedSpatialAnchors" sample scene.
+/// </summary>
+[MetaCodeSample("SharedSpatialAnchors")]
 public class SharedAnchorControlPanel : MonoBehaviour
 {
     //

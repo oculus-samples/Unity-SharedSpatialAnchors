@@ -1,11 +1,15 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
 using UnityEngine;
 
+[MetaCodeSample("SharedSpatialAnchors")]
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
 static class SampleExtensions
 {
     public static readonly Encoding EncodingForSerialization

@@ -1,11 +1,14 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using System.Collections;
 
 using UnityEngine;
 
 using Sampleton = SampleController; // only transitional
 
+[MetaCodeSample("SharedSpatialAnchors")]
 public class AlignPlayer : MonoBehaviour
 {
     public static AlignPlayer Instance { get; private set; }

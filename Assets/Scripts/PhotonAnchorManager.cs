@@ -1,5 +1,7 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using Oculus.Platform;
 
 using Photon.Pun;
@@ -18,6 +20,7 @@ using Sampleton = SampleController; // only transitional
 /// <summary>
 /// Manages Photon Room creation and maintenance, and tracks anchor sharing information.
 /// </summary>
+[MetaCodeSample("SharedSpatialAnchors")]
 public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 {
     //

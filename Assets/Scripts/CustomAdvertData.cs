@@ -1,23 +1,24 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using Meta.XR.Samples;
+
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 using UnityEngine;
-using UnityEngine.Assertions;
-
-using ByteSpan = System.Span<byte>;
-using ROByteSpan = System.ReadOnlySpan<byte>;
 
 using Sampleton = SampleController; // only transitional
 
 
 /// <summary>
-///  Stores & serializes data intended for calls to <see cref="OVRColocationSession.StartAdvertisementAsync"/>.
+///   Stores and serializes data intended for calls to
+///   <see cref="OVRColocationSession.StartAdvertisementAsync"/>.
 /// </summary>
+/// <remarks>
+///   Used by <see cref="ColoDiscoMan"/>.
+/// </remarks>
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
 public sealed class CustomAdvertData
 {
     public string DisplayName => m_DisplayName ?? "<err>";

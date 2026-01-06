@@ -1,6 +1,9 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
-using Guid = System.Guid;
+using Meta.XR.Samples;
+
+using System;
+
 
 /// <summary>
 ///   Utility struct for storing write-once info regarding where an instantiated anchor came from.
@@ -11,7 +14,9 @@ using Guid = System.Guid;
 ///   app is likely to be structured MUCH less generically, so your code can make more fenced guarantees with itself and
 ///   be able to safely assume more about state.
 /// </remarks>
-public readonly struct AnchorSource
+[MetaCodeSample("SharedSpatialAnchors")]
+[MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
+public readonly struct AnchorSource : IEquatable<AnchorSource>
 {
     public static AnchorSource New(Guid anchorId)
     {
@@ -47,6 +52,24 @@ public readonly struct AnchorSource
     public readonly Guid Uuid;
     public readonly bool IsMine;
 
+
+    public bool Equals(AnchorSource other)
+    {
+        return IsSet == other.IsSet &&
+               IsMine == other.IsMine &&
+               Origin == other.Origin &&
+               Uuid.Equals(other.Uuid);
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is AnchorSource other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(IsSet, (int)Origin, Uuid, IsMine);
+    }
 
     public override string ToString()
     {
