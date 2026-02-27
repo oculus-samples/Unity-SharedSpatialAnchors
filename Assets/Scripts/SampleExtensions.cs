@@ -43,6 +43,39 @@ static class SampleExtensions
     public static string Brief(in this Guid guid)
         => $"{guid.ToString("N").Remove(8)}[..]";
 
+    public static string Brief(this Pose p, string posFmt = "#.00", string rotFmt = "0°")
+    {
+        const float kPosEpsilon = 5e-2f; // 5 cm
+        const float kRotEpsilon = 5e-1f; // half a degree
+
+        var pos = p.position;
+
+        string brief = "<default>";
+        if (pos.sqrMagnitude > kPosEpsilon * kPosEpsilon)
+        {
+            brief = string.Format($"[{{0:{posFmt}}},{{1:{posFmt}}},{{2:{posFmt}}}]", pos.x, pos.y, pos.z);
+        }
+
+        // use the quat's raw rotational component to determine its significance:
+        float r = 2 * Mathf.Acos(p.rotation.w) * Mathf.Rad2Deg;
+        if (r * r > kRotEpsilon * kRotEpsilon)
+        {
+            var rot = p.rotation.eulerAngles;
+
+            // convert from [0°,360°) to [-180°,180°), since it's often easier to visualize
+            if (rot.x > 180f)
+                rot.x -= 360f;
+            if (rot.y > 180f)
+                rot.y -= 360f;
+            if (rot.z > 180f)
+                rot.z -= 360f;
+
+            brief = string.Format($"({{0:{rotFmt}}},{{1:{rotFmt}}},{{2:{rotFmt}}}) @ {brief}", rot.x, rot.y, rot.z);
+        }
+
+        return brief;
+    }
+
 
     public static string ForLogging(this OVRSpatialAnchor.OperationResult status, bool details = true)
         => StatusForLogging(status, details);

@@ -14,7 +14,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 using Sampleton = SampleController; // only transitional
@@ -34,35 +33,17 @@ public class ColoDiscoMan : MonoBehaviour
 
     #region Static section
 
-    public static Transform TrackingSpaceRoot
-    {
-        get
-        {
-            if (!s_Instance)
-                return null;
-            if (s_Instance.m_TrackingSpaceRoot)
-                return s_Instance.m_TrackingSpaceRoot;
-            if (!OVRManager.instance)
-                return null;
-            s_Instance.m_TrackingSpaceRoot = OVRManager.instance.GetComponentInChildren<OVRCameraRig>().trackingSpace;
-            return s_Instance.m_TrackingSpaceRoot;
-        }
-    }
+    public static IReadOnlyCollection<GameObject> CurrentNonAnchoredObjects
+        => s_Instance ? s_Instance.m_Spawned.ToArray()
+                      : Array.Empty<GameObject>();
 
     public static void NotifyAnchorLocalized(ColoDiscoAnchor anchor)
     {
         Assert.IsNotNull(s_Instance, "s_Instance should be initialized!");
+        Assert.IsNotNull(anchor, "anchor");
+        Assert.AreNotEqual(Guid.Empty, anchor.Uuid, nameof(anchor.Uuid));
 
-        var uuid = anchor.Uuid;
-        if (s_Instance.m_KnownAnchors.TryGetValue(uuid, out var existing) && existing)
-        {
-            Sampleton.Log($"{nameof(NotifyAnchorLocalized)}: SKIPPING known anchor {uuid.Brief()}");
-            return;
-        }
-
-        s_Instance.m_KnownAnchors[uuid] = anchor;
-
-        Sampleton.Log($"{nameof(NotifyAnchorLocalized)}: {uuid.Brief()}");
+        Sampleton.Log($"{nameof(NotifyAnchorLocalized)}: {anchor.Uuid.Brief()}");
 
         s_Instance.NotifyAnchorLocalizedAsync(anchor);
     }
@@ -77,15 +58,6 @@ public class ColoDiscoMan : MonoBehaviour
         {
             _ = group.SharedAnchors.Remove(uuid);
         }
-    }
-
-    public static void NotifyAnchorAlignment(ColoDiscoAnchor anchor, ColoDiscoAnchor previous)
-    {
-        Assert.IsNotNull(s_Instance, "s_Instance should be initialized!");
-
-        _ = previous;
-
-        s_Instance.AlignPlayer(anchor.transform);
     }
 
     public static void ShareToActiveGroup(ColoDiscoAnchor anchor)
@@ -170,17 +142,16 @@ public class ColoDiscoMan : MonoBehaviour
         else
             newGroup.Metadata = new CustomAdvertData(m_My.OculusID, m_My.ID, anchors: null);
 
-        var alignmentAnchor = ColoDiscoAnchor.Alignment;
+        var alignmentAnchor = Alignment.OriginAnchor as ColoDiscoAnchor;
         if (alignmentAnchor)
         {
             newGroup.Metadata.Anchors.Add(alignmentAnchor.Uuid);
 
-            var worldToLocal = alignmentAnchor.transform.ToOVRPose().Inverse();
-
             foreach (var spawn in m_Spawned)
             {
-                var ovrPose = worldToLocal * spawn.transform.ToOVRPose();
-                newGroup.Metadata.Poses.Add(new Pose(ovrPose.position, ovrPose.orientation));
+                var poseInAnchorSpace = new Pose(spawn.transform.position, spawn.transform.rotation);
+                // no fancy calculations, since the alignmentAnchor is everyone's origin :)
+                newGroup.Metadata.Poses.Add(poseInAnchorSpace);
             }
         }
 
@@ -364,7 +335,7 @@ public class ColoDiscoMan : MonoBehaviour
     //
     // private impl.
 
-    [MetaCodeSample("SharedSpatialAnchors")]
+    [MetaCodeSample("SharedSpatialAnchors-ColocationSessionGroups")]
     sealed class Group // aka Session
     {
         public Guid Uuid;
@@ -372,7 +343,8 @@ public class ColoDiscoMan : MonoBehaviour
         public CustomAdvertData Metadata;
         public Button ListButton;
         public readonly HashSet<Guid> SharedAnchors = new();
-    }
+        public bool SpawnedNonAnchors;
+    } // end nested class Group
 
     #region Fields
 
@@ -395,8 +367,6 @@ public class ColoDiscoMan : MonoBehaviour
 
     [Header("[Manual] - you MAY need to fixup these refs:")]
 
-    [SerializeField, FormerlySerializedAs("m_PlayerFace")]
-    Transform m_TrackingSpaceRoot;
     [SerializeField]
     Transform m_RigAnchor;
 
@@ -457,13 +427,6 @@ public class ColoDiscoMan : MonoBehaviour
         else if (!Guid.TryParse(m_HardcodedGroupUUID, out _))
         {
             Debug.LogError($"\"{m_HardcodedGroupUUID}\" is not parseable as a Guid!", this);
-        }
-
-        if (!m_TrackingSpaceRoot)
-        {
-            var find = FindObjectOfType<OVRCameraRig>();
-            if (find)
-                m_TrackingSpaceRoot = find.trackingSpace;
         }
 
         if (!m_RigAnchor)
@@ -628,16 +591,20 @@ public class ColoDiscoMan : MonoBehaviour
 
     void SpawnWithButton(OVRInput.RawButton btn, GameObject prefab)
     {
-        if (!prefab || !ColoDiscoAnchor.Alignment || !OVRInput.GetUp(btn))
+        if (!prefab || !OVRInput.GetUp(btn))
             return;
 
-        if (!OVRManager.instance.TryGetComponent(out OVRCameraRig rig))
+        if (!Alignment.IsSet)
         {
-            Sampleton.LogError($"{nameof(SpawnWithButton)}: No OVRCameraRig attached to OVRManager!");
+            Sampleton.Log($"{nameof(SpawnWithButton)}: Align to a spatial anchor first!", LogType.Warning);
             return;
         }
 
-        var rightHand = rig.rightControllerAnchor;
+        var cameraRig = FindFirstObjectByType<OVRCameraRig>();
+        if (!cameraRig)
+            throw new InvalidOperationException("No loaded OVRCameraRig found.");
+
+        var rightHand = cameraRig.rightControllerAnchor;
 
         var spawn = Instantiate(
             original: prefab,
@@ -645,99 +612,19 @@ public class ColoDiscoMan : MonoBehaviour
             rotation: rightHand.rotation
         );
 
-        if (spawn.TryGetComponent(out PoseOrigin poo))
+        spawn.name = spawn.name.Replace("(Clone)", $" {m_Spawned.Count}");
+
+        m_Spawned.Add(spawn);
+
+        if (spawn.TryGetComponent(out PoseOrigin poseViz))
         {
-            poo.UpdateCoordsNow();
+            poseViz.UpdateCoordsNow();
         }
 
         Sampleton.Log($"{nameof(SpawnWithButton)}: created \"{spawn.name}\"");
-
-        m_Spawned.Add(spawn);
     }
 
     #endregion Unity messages
-
-
-    #region Alignment
-    // TODO refactor alignment-related code (from all scenes) into its own sample scene
-    //     (these other scenes will do automatic alignment if necessary, to remain focused on the subject matter)
-
-    void AlignPlayer(Transform anchor)
-    {
-        var player = TrackingSpaceRoot;
-
-        if (!player)
-        {
-            Sampleton.LogError($"{nameof(AlignPlayer)}: No OVRCameraRig.trackingSpace?");
-            return;
-        }
-
-        var toLocal = player.worldToLocalMatrix;
-        var rot = Quaternion.Inverse(anchor.rotation);
-
-        player.SetPositionAndRotation(
-            position: rot * -anchor.position,
-            rotation: Quaternion.Euler(0, rot.eulerAngles.y, 0)
-        );
-
-        if (m_Spawned.Count == 0)
-            return;
-
-        var toWorld = player.localToWorldMatrix;
-
-        foreach (var spawn in m_Spawned)
-        {
-            var matr = toWorld * (toLocal * spawn.transform.localToWorldMatrix);
-            var pos = matr.GetPosition();
-            rot = matr.rotation;
-
-            if (spawn.TryGetComponent(out PoseOrigin poe))
-            {
-                poe.TweenTo(
-                    pos: pos,
-                    rot: rot,
-                    overSec: Mathf.Min((pos - poe.transform.position).magnitude, 7.5f)
-                );
-            }
-            else
-            {
-                spawn.transform.SetPositionAndRotation(
-                    position: pos,
-                    rotation: rot
-                );
-            }
-        }
-    }
-
-    void ProcessSpawnQueueAligned(Transform anchor, ICollection<Pose> queue)
-    {
-        if (!m_SpawnWithA || queue.Count == 0)
-            return;
-
-        Sampleton.Log($"{nameof(ProcessSpawnQueueAligned)}:");
-
-        foreach (var pose in queue)
-        {
-            var spawn = Instantiate(
-                original: m_SpawnWithA,
-                position: anchor.position + anchor.rotation * pose.position,
-                rotation: anchor.rotation * pose.rotation
-            );
-
-            spawn.name = spawn.name.Replace("(Clone)", $"{m_Spawned.Count}");
-
-            if (spawn.TryGetComponent(out PoseOrigin poo))
-            {
-                poo.UpdateCoordsNow();
-            }
-
-            Sampleton.Log($"+ created \"{spawn.name}\"");
-
-            m_Spawned.Add(spawn);
-        }
-    }
-
-    #endregion Alignment
 
 
     #region UI helpers
@@ -775,11 +662,6 @@ public class ColoDiscoMan : MonoBehaviour
         }
 
         m_ActiveGroup = groupId;
-
-        if (nextGroup is not null && ColoDiscoAnchor.Alignment)
-        {
-            ProcessSpawnQueueAligned(ColoDiscoAnchor.Alignment.transform, nextGroup.Metadata.Poses);
-        }
     }
 
     /// <summary>
@@ -918,7 +800,7 @@ public class ColoDiscoMan : MonoBehaviour
         if (msg.IsError)
         {
             var err = msg.GetError();
-            string codeStr = err.Code switch // lol ever heard of an enum?
+            string codeStr = err.Code switch
             {
                 2 => $"AUTHENTICATION_ERROR({err.Code})",
                 3 => $"NETWORK_ERROR({err.Code})",
@@ -1094,6 +976,55 @@ public class ColoDiscoMan : MonoBehaviour
 
     void NotifyAnchorLocalizedAsync(ColoDiscoAnchor anchor, bool autoShare = false)
     {
+        if (m_KnownAnchors.TryGetValue(anchor.Uuid, out var existing) && existing)
+        {
+            Sampleton.Log($"  x NO-OP: {anchor.Uuid.Brief()} is already known.");
+            return;
+        }
+
+        m_KnownAnchors[anchor.Uuid] = anchor;
+
+        // auto-align to anchors we created (eliminates some pesky edge cases)
+        bool autoAlign = !Alignment.IsSet && anchor.Source.IsMine;
+
+        // .. or to the alignment anchor designated by the current group:
+        if (m_KnownGroups.TryGetValue(m_ActiveGroup, out var group))
+        {
+            // currently, Metadata.Anchors is only used to transmit the alignment anchor uuid.
+            autoAlign |= group.Metadata.Anchors.Contains(anchor.Uuid);
+        }
+
+        if (autoAlign)
+        {
+            Alignment.SetOrigin(anchor, CurrentNonAnchoredObjects);
+        }
+
+        if (Alignment.IsSet && group?.SpawnedNonAnchors == false && m_SpawnWithA)
+        {
+            bool hasPoseViz = m_SpawnWithA.GetComponent<PoseOrigin>();
+
+            foreach (var pose in group.Metadata.Poses)
+            {
+                var start = hasPoseViz ? Pose.identity : pose;
+                var spawn = Instantiate(
+                    original: m_SpawnWithA,
+                    position: start.position,
+                    rotation: start.rotation
+                );
+
+                spawn.name = spawn.name.Replace("(Clone)", $" {m_Spawned.Count}");
+                m_Spawned.Add(spawn);
+
+                if (spawn.TryGetComponent(out PoseOrigin poseViz))
+                {
+                    poseViz.UpdateCoordsNow();
+                    poseViz.TweenTo(pose.position, pose.rotation);
+                }
+            }
+
+            group.SpawnedNonAnchors = true;
+        }
+
         m_ShareAllBtn.interactable = true;
 
         if (!ShareAutomatically && !autoShare)
@@ -1117,9 +1048,8 @@ public class ColoDiscoMan : MonoBehaviour
         while (i-- > 0)
         {
             var anchor = toShare[i];
-            // remove anything deleted ("hidden"), disabled, ~~or not owned by us~~ (scratch that last for now)
-            // TODO anchor.Source.IsMine is not fully reliable in this scene (it is more reliable in "Sharing to Users")
-            if (!anchor || !anchor.isActiveAndEnabled) // || !anchor.Source.IsMine)
+            // remove anything deleted ("hidden") or disabled
+            if (!anchor || !anchor.isActiveAndEnabled)
             {
                 toShare.RemoveAt(i);
                 // note: We could technically still try sharing these destroyed anchors (we have the original UUID in
@@ -1341,11 +1271,11 @@ public class ColoDiscoMan : MonoBehaviour
                 spatialAnchor.gameObject.SetActive(false);
             }
 
-            bool isSaved = LocallySaved.AnchorIsRemembered(uuid, out bool isMine);
+            bool isMine = LocallySaved.AnchorIsMine(uuid);
 
             spatialAnchor.Source =
-                isSaved || !groupId.HasValue ? AnchorSource.FromSave(uuid, isMine: isMine)
-                                             : AnchorSource.FromGroupShare(groupId.Value, isMine: isMine);
+                groupId.HasValue ? AnchorSource.FromGroupShare(groupId.Value, isMine)
+                                 : AnchorSource.FromSave(uuid, isMine);
             try
             {
                 // KEY API CALL: instance OVRSpatialAnchor.UnboundAnchor.BindTo(spatialAnchor)

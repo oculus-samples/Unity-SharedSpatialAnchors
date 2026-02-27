@@ -5,7 +5,7 @@ using Meta.XR.Samples;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -27,12 +27,22 @@ public static class SharedAnchorLoader
     //
     // Public Interface
 
+    // note: the overloads with Task<int> out params are provided for cases where your code needs to wait
+    //       for anchors to finish loading before continuing.  The int results indicate how many anchors
+    //       were loaded; in most cases, a value of 0 means something went wrong.
+
     public static void LoadSavedAnchors()
+    {
+        LoadSavedAnchors(out _);
+    }
+
+    public static void LoadSavedAnchors(out Task<int> completion)
     {
         var persistedAnchors = LocallySaved.Anchors.ToHashSet();
         if (persistedAnchors.Count == 0)
         {
             Sampleton.Log($"{nameof(LoadSavedAnchors)}: NO-OP: there are no anchors saved to this build/device.");
+            completion = Task.FromResult(0);
             return;
         }
 
@@ -46,16 +56,26 @@ public static class SharedAnchorLoader
                 Sampleton.Log($"  + {uuid.Brief()}");
         }
 
-        RetrieveAnchorsFromLocalThenCloud(persistedAnchors);
+        completion = RetrieveAnchorsFromLocalThenCloud(persistedAnchors);
     }
 
     public static void ReloadSharedAnchors()
     {
+        ReloadSharedAnchors(out _);
+    }
+
+    public static void ReloadSharedAnchors(out Task<int> completion)
+    {
         var sharedAnchors = PhotonAnchorManager.AnchorsSharedWithMe.ToHashSet();
-        LoadSharedAnchors(sharedAnchors);
+        LoadSharedAnchors(sharedAnchors, out completion);
     }
 
     public static void LoadSharedAnchors(IReadOnlyCollection<Guid> anchors)
+    {
+        LoadSharedAnchors(anchors, out _);
+    }
+
+    public static void LoadSharedAnchors(IReadOnlyCollection<Guid> anchors, out Task<int> completion)
     {
         if (anchors is not HashSet<Guid> sharedAnchors)
         {
@@ -77,6 +97,7 @@ public static class SharedAnchorLoader
                 $"- Note that if anchor owners are inactive, tasked-out, or doffed," +
                 $" then they cannot re-share their anchors until they return to the app."
             );
+            completion = Task.FromResult(0);
             return;
         }
 
@@ -93,14 +114,14 @@ public static class SharedAnchorLoader
         if (nIgnored > 0)
             Sampleton.Log($"  - (ignored {nIgnored} anchors)");
 
-        RetrieveAnchorsFromCloud(sharedAnchors);
+        completion = RetrieveAnchorsFromCloud(sharedAnchors);
     }
 
 
     //
     // impl.
 
-    static async void RetrieveAnchorsFromLocalThenCloud(ICollection<Guid> anchorIds)
+    static async Task<int> RetrieveAnchorsFromLocalThenCloud(ICollection<Guid> anchorIds)
     {
         Sampleton.Log($"--> {nameof(OVRSpatialAnchor.LoadUnboundAnchorsAsync)}:");
 
@@ -113,17 +134,17 @@ public static class SharedAnchorLoader
         if (!loadResult.TryGetValue(out var unboundAnchors))
         {
             Sampleton.Log($"  - {loggedResult} (attempt to load from local)\n  + Checking shared...");
-            RetrieveAnchorsFromCloud(anchorIds);
-            return;
+            return await RetrieveAnchorsFromCloud(anchorIds);
         }
 
         Sampleton.Log($"  + Load Success! {loggedResult}\n  + {unboundAnchors.Count} unbound spatial anchors");
 
+        int nBound = 0;
         if (unboundAnchors.Count > 0)
-            BindAnchorsAsync(unboundAnchors);
+            nBound += await BindAnchorsAsync(unboundAnchors, fromCloud: false);
 
         if (unboundAnchors.Count >= anchorIds.Count)
-            return;
+            return nBound;
 
         Sampleton.Log(
             $"  *** Not all requested anchors could load!\n" +
@@ -133,10 +154,10 @@ public static class SharedAnchorLoader
         foreach (var uuid in unboundAnchors.Select(unb => unb.Uuid))
             anchorIds.Remove(uuid);
 
-        RetrieveAnchorsFromCloud(anchorIds);
+        return nBound + await RetrieveAnchorsFromCloud(anchorIds);
     }
 
-    static async void RetrieveAnchorsFromCloud(ICollection<Guid> anchorIds)
+    static async Task<int> RetrieveAnchorsFromCloud(ICollection<Guid> anchorIds)
     {
         Sampleton.Log($"--> {nameof(OVRSpatialAnchor.LoadUnboundSharedAnchorsAsync)}:");
 
@@ -157,37 +178,33 @@ public static class SharedAnchorLoader
                     LogType.Warning
                 );
             }
-            return;
+            return 0;
         }
 
         Sampleton.Log($"  + Load Success! {loggedResult}\n+ {unboundAnchors.Count} unbound spatial anchors");
 
-        if (unboundAnchors.Count > 0)
-            BindAnchorsAsync(unboundAnchors);
+        if (unboundAnchors.Count == 0)
+            return 0;
+
+        int nBound = await BindAnchorsAsync(unboundAnchors, fromCloud: true);
+
+        return nBound;
     }
 
 
-    static async void BindAnchorsAsync(List<OVRSpatialAnchor.UnboundAnchor> unboundAnchors)
+    static async Task<int> BindAnchorsAsync(List<OVRSpatialAnchor.UnboundAnchor> unboundAnchors, bool fromCloud)
     {
         var areCreated = new OVRTask<bool>[unboundAnchors.Count];
         int i = 0;
         while (i < unboundAnchors.Count)
         {
             var uuid = unboundAnchors[i].Uuid;
-            bool wasSaved = LocallySaved.AnchorIsRemembered(uuid, out bool isMine);
 
-            var spatialAnchor = InstantiateAnchorForBinding(wasSaved, out var sharedAnchor);
+            var spatialAnchor = InstantiateAnchorForBinding(uuid, fromCloud);
             if (!spatialAnchor)
             {
                 Sampleton.LogError($"  - {nameof(InstantiateAnchorForBinding)} FAILED!");
-                return; // because we most likely can't be instantiating anything anymore
-            }
-
-            if (sharedAnchor)
-            {
-                sharedAnchor.Source =
-                    wasSaved ? AnchorSource.FromSave(uuid, isMine: isMine)
-                             : AnchorSource.FromSpaceUserShare(uuid, isMine: isMine);
+                return 0; // because we most likely can't be instantiating anything anymore
             }
 
             try
@@ -215,20 +232,26 @@ public static class SharedAnchorLoader
         // wait for all creations to finish simultaneously:
         var creationResults = await OVRTask.WhenAll(areCreated);
 
+        int nBound = 0;
         while (i-- > 0)
         {
             var uuid = unboundAnchors[i].Uuid;
-            if (!creationResults[i])
+            if (creationResults[i])
+            {
+                ++nBound;
+                Sampleton.Log($"  + spatial anchor created and bound to {uuid.Brief()}");
+            }
+            else
             {
                 Sampleton.LogError($"  - creation FAILED for {uuid.Brief()}");
-                continue;
+                unboundAnchors.RemoveAt(i);
             }
-
-            Sampleton.Log($"  + spatial anchor created and bound to {uuid.Brief()}");
         }
+
+        return nBound;
     }
 
-    static OVRSpatialAnchor InstantiateAnchorForBinding(bool wasSaved, out SharedAnchor sharedAnchor)
+    static OVRSpatialAnchor InstantiateAnchorForBinding(Guid uuid, bool fromCloud)
     {
         Assert.IsNotNull(SampleController.Instance, "SampleController.Instance");
         Assert.IsNotNull(SampleController.Instance.anchorPrefab, "SampleController.anchorPrefab");
@@ -242,10 +265,13 @@ public static class SharedAnchorLoader
         // entirely new anchor, with a new Uuid, and it will likely be positioned at the world origin
         // (unless your code moved it).
 
-        if (spatialAnchor.TryGetComponent(out sharedAnchor))
-        {
-            sharedAnchor.IsSaved = wasSaved;
-        }
+        if (!spatialAnchor.TryGetComponent(out SharedAnchor sharedAnchor))
+            return spatialAnchor;
+
+        bool isMine = LocallySaved.AnchorIsMine(uuid);
+
+        sharedAnchor.Source = fromCloud ? AnchorSource.FromSpaceUserShare(uuid, isMine)
+                                        : AnchorSource.FromSave(uuid, isMine);
 
         return spatialAnchor;
     }

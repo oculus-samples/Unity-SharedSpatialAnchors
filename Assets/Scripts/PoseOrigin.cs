@@ -20,6 +20,7 @@ public class PoseOrigin : MonoBehaviour
         Undirected = 0,
         Directed = 1,
         Coords = 2,
+        Manual = 3,
     }
 
 
@@ -49,6 +50,11 @@ public class PoseOrigin : MonoBehaviour
         get => m_Mode;
         set
         {
+            m_Mode = value;
+
+            if (m_Mode == DisplayMode.Manual)
+                return;
+
             // these will throw warnings from OnValidate, but it's fine.
             m_X.enabled = value == DisplayMode.Directed;
             m_Y.enabled = value == DisplayMode.Directed;
@@ -56,8 +62,6 @@ public class PoseOrigin : MonoBehaviour
             m_XCoords.enabled = value == DisplayMode.Coords;
             m_YCoords.enabled = value == DisplayMode.Coords;
             m_ZCoords.enabled = value == DisplayMode.Coords;
-
-            m_Mode = value;
         }
     }
 

@@ -125,12 +125,11 @@ public class SampleController : MonoBehaviour
 
     void Update()
     {
-        var rayInteractorHoveringUI = !_rayInteractor || (_rayInteractor && !_rayInteractor.Candidate);
-        var shouldPlaceNewAnchor = m_IsPlacementMode && OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger) && rayInteractorHoveringUI;
+        bool canPlaceAnchor = m_IsPlacementMode && !(_rayInteractor && _rayInteractor.Candidate);
 
-        if (shouldPlaceNewAnchor)
+        if (canPlaceAnchor && OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger))
         {
-            PlaceAnchorAtRoot();
+            _ = Instantiate(anchorPrefab, placementRoot.position, placementRoot.rotation);
         }
     }
 
@@ -150,13 +149,6 @@ public class SampleController : MonoBehaviour
     public void TogglePlacementMode()
     {
         placementPreview.SetActive(m_IsPlacementMode = !m_IsPlacementMode);
-    }
-
-    public void PlaceAnchorAtRoot()
-    {
-        Log($"{nameof(PlaceAnchorAtRoot)}: {placementRoot.ToOVRPose().ToPosef()}");
-
-        _ = Instantiate(anchorPrefab, placementRoot.position, placementRoot.rotation);
     }
 
 

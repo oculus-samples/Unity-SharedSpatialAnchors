@@ -38,9 +38,6 @@ public class ColoDiscoAnchor : OVRSpatialAnchor
     //
     // Public API:
 
-    public static ColoDiscoAnchor Alignment { get; private set; } // TODO refactor
-
-
     // instance
 
     public bool IsSaved { get; set; }
@@ -66,9 +63,11 @@ public class ColoDiscoAnchor : OVRSpatialAnchor
 
     public void UpdateUI()
     {
-        m_UuidLabel.text = $"{Uuid}\n{nameof(Source)}: {m_Source}";
+        gameObject.name = $"{Source}:{Uuid:N}";
 
-        if (Alignment == this)
+        m_UuidLabel.text = $"{Uuid}\n{nameof(Source)}: {Source}";
+
+        if (Alignment.OriginAnchor == this)
         {
             m_AlignIcon.color = SampleColors.Green;
             m_AlignBtn.interactable = false;
@@ -185,16 +184,9 @@ public class ColoDiscoAnchor : OVRSpatialAnchor
     {
         Sampleton.Log($"{nameof(SetAsAlignmentAnchor)}: {gameObject.name}");
 
-        var previous = Alignment;
+        var realignObjects = ColoDiscoMan.CurrentNonAnchoredObjects;
 
-        Alignment = this;
-
-        ColoDiscoMan.NotifyAnchorAlignment(this, previous);
-
-        if (previous)
-            previous.UpdateUI();
-
-        UpdateUI();
+        Alignment.SetOrigin(this, realignObjects);
     }
 
     public async void ToggleRememberUuid()
@@ -315,7 +307,7 @@ public class ColoDiscoAnchor : OVRSpatialAnchor
     {
         var canvas = GetComponentInChildren<Canvas>();
         if (canvas)
-            canvas.gameObject.SetActive(false); // don't render controls until creation & localization is complete
+            canvas.enabled = false; // don't render controls until creation & localization is complete
 
         // handy API: instance OVRSpatialAnchor.WhenCreatedAsync()
         if (await WhenCreatedAsync())
@@ -333,12 +325,10 @@ public class ColoDiscoAnchor : OVRSpatialAnchor
 
         Sampleton.Log($"+ Uuid: {uuid}");
 
-        if (!m_Source.IsSet)
-            m_Source = AnchorSource.New(uuid);
+        if (!Source.IsSet)
+            Source = AnchorSource.New(uuid);
 
-        gameObject.name =
-            m_Source.Origin == AnchorSource.Type.FromGroupShare ? $"anchor:{uuid:N}-SHARED"
-                                                                : $"anchor:{uuid:N}";
+        gameObject.name = $"{Source}:{Uuid:N}";
 
         // handy API: instance OVRSpatialAnchor.WhenLocalizedAsync()
         if (!await WhenLocalizedAsync())
@@ -348,15 +338,13 @@ public class ColoDiscoAnchor : OVRSpatialAnchor
             return;
         }
 
-        Sampleton.Log($"+ Loaded spatial anchor {uuid.Brief()}; bound and localized! ({m_Source.Origin})");
-
-        if (!Alignment)
-            SetAsAlignmentAnchor();
-
-        UpdateUI();
+        Sampleton.Log($"+ Loaded spatial anchor {uuid.Brief()}; bound and localized! ({Source.Origin})");
 
         if (canvas)
-            canvas.gameObject.SetActive(true);
+        {
+            UpdateUI();
+            canvas.enabled = true;
+        }
 
         ColoDiscoMan.NotifyAnchorLocalized(this);
     }

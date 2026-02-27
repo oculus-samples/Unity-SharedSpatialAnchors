@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using UnityEngine;
+using UnityEngine.Assertions;
 
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Sampleton = SampleController; // only transitional
@@ -72,37 +73,155 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     public static void PublishAnchorToUsers(Guid oneAnchor, IReadOnlyCollection<ulong> userIds)
     {
-        if (!s_Instance || !PhotonNetwork.InRoom)
+        if (!PhotonNetwork.InRoom)
             return;
 
-        s_Instance.PublishAnchorsToUsers(new HashSet<Guid> { oneAnchor }, userIds);
+        PublishAnchorsToUsers(new HashSet<Guid> { oneAnchor }, userIds);
     }
 
     public static void PublishAnchorsToUsers(IEnumerable<Guid> anchorUuids, IReadOnlyCollection<ulong> userIds)
     {
-        if (!s_Instance || !PhotonNetwork.InRoom)
+        if (!PhotonNetwork.InRoom)
             return;
 
         if (anchorUuids is not HashSet<Guid> uuidSet)
             uuidSet = new HashSet<Guid>(anchorUuids);
 
-        s_Instance.PublishAnchorsToUsers(uuidSet, userIds);
+        PublishAnchorsToUsers(uuidSet, userIds);
+    }
+
+    public static void PublishAlignmentAnchor(Guid anchorUuid, Pose anchorPoseOnHost)
+    {
+        if (!PhotonNetwork.InRoom)
+            return;
+
+        PrepareRoomPropertyUpdate(out var room, out var newProps, out var expected);
+
+        newProps[k_PropKeyAlignId] = anchorUuid;
+        newProps[k_PropKeyHostOff] = anchorPoseOnHost;
+
+        if (!room.SetCustomProperties(newProps, expected))
+            Sampleton.LogError("- ERR: room.SetCustomProperties failed! (possible concurrency failure)");
+    }
+
+    public static bool CheckIsAlignmentAnchor(SharedAnchor anchor, out Pose anchorPoseOnHost)
+    {
+        anchorPoseOnHost = default;
+
+        if (!anchor || anchor.Uuid == Guid.Empty || PhotonNetwork.CurrentRoom is null)
+            return false;
+
+        var props = PhotonNetwork.CurrentRoom.CustomProperties;
+        if (!props.TryGetValue(k_PropKeyAlignId, out var box) || box is not Guid alignId ||
+            alignId != anchor.Uuid ||
+            !props.TryGetValue(k_PropKeyHostOff, out box) || box is not Pose poseOnHost)
+        {
+            return false;
+        }
+
+        anchorPoseOnHost = poseOnHost;
+        // let caller call Alignment.SetMRUKOrigin(...)
+        return true;
     }
 
 
     // static impl.
 
-    static PhotonAnchorManager s_Instance;
-
     const string k_PropKeyVersion = "ver";
+    const string k_PropKeySender = "src";
     const string k_PropPrefixUser = "u:";
+    const string k_PropKeyAlignId = "aa";
+    const string k_PropKeyHostOff = "ho";
 
     // Keeping this block to illustrate each user's contribution to the Room.CustomProperties layout:
     // static readonly Hashtable s_RoomPropLayout = new()
     // {
     //     [k_PropKeyVersion] = 0,                              // increments with each successful [re]share to the room
+    //     [k_PropKeySender]  = "#01 'userface'",               // unique sender name of the last property update
     //     [$"{k_PropPrefixUser}{ocid}"] = Array.Empty<Guid>(), // ocid = Platform User ID, vals = loadable anchor IDs
+    //     [k_PropKeyAlignId] = Guid.Empty,                     // alignment anchor uuid
+    //     [k_PropKeyHostOff] = Pose.identity,                  // alignment anchor pose in the host's space
     // };
+
+
+    static void PrepareRoomPropertyUpdate(out Room room, out Hashtable newProps, out Hashtable expectedProps)
+    {
+        room = PhotonNetwork.CurrentRoom;
+        Assert.IsNotNull(room, "PhotonNetwork.CurrentRoom");
+
+        expectedProps = null;
+
+        int currentVersion = 0;
+        if (room.CustomProperties.TryGetValue(k_PropKeyVersion, out var box) && box is int v)
+        {
+            expectedProps = new Hashtable
+            {
+                [k_PropKeyVersion] = currentVersion = v,
+            };
+        }
+
+        newProps = new Hashtable
+        {
+            [k_PropKeyVersion] = currentVersion + 1,
+            [k_PropKeySender] = $"{PhotonNetwork.LocalPlayer}",
+        };
+    }
+
+    static void PublishAnchorsToUsers(HashSet<Guid> uuidSet, IReadOnlyCollection<ulong> userIds)
+    {
+        PrepareRoomPropertyUpdate(out var room, out var newProps, out var expected);
+
+        var curProps = room.CustomProperties;
+        var uuidArr = uuidSet.ToArray();
+        var scratchUuidSet = new HashSet<Guid>(uuidSet.Count);
+        foreach (ulong uid in userIds)
+        {
+            string key = $"{k_PropPrefixUser}{uid}";
+
+            // (note: setting Guid[] values directly only works here thanks to our PhotonExtensions.cs)
+            if (curProps.TryGetValue(key, out var box) && box is Guid[] alreadyShared)
+            {
+                scratchUuidSet.Clear();
+                scratchUuidSet.UnionWith(alreadyShared);
+                int precount = scratchUuidSet.Count;
+                scratchUuidSet.UnionWith(uuidSet);
+                if (scratchUuidSet.Count > precount)
+                    newProps[key] = scratchUuidSet.ToArray();
+            }
+            else
+            {
+                newProps[key] = uuidArr;
+            }
+        }
+
+        if (!room.SetCustomProperties(newProps, expected))
+            Sampleton.LogError("- ERR: room.SetCustomProperties failed! (possible concurrency failure)");
+    }
+
+    static void SynchronizeRoomAlignment(Hashtable roomProperties)
+    {
+        object box;
+        if (!roomProperties.TryGetValue(k_PropKeyAlignId, out box) || box is not Guid alignId ||
+            !roomProperties.TryGetValue(k_PropKeyHostOff, out box) || box is not Pose anchorPoseOnHost)
+        {
+            Sampleton.Log("  ~ room alignment unchanged.");
+            return;
+        }
+
+        if (!SharedAnchor.Find(alignId, out var alignmentAnchor))
+        {
+            Sampleton.Log($"  ~ deferring alignment; anchor {alignId.Brief()} not ready.");
+            return;
+        }
+
+        Alignment.SetMRUKOrigin(alignmentAnchor, anchorPoseOnHost);
+    }
+
+    static IEnumerator DelayCall(Action call, float sec)
+    {
+        yield return new WaitForSecondsRealtime(sec);
+        call();
+    }
 
 
     //
@@ -111,23 +230,10 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     [SerializeField]
     SharedAnchorControlPanel controlPanel;
 
-
     Coroutine m_OnDisconnectDelayCall;
 
 
     #region [Monobehaviour Methods]
-
-    public override void OnEnable()
-    {
-        if (s_Instance && s_Instance != this)
-        {
-            Destroy(this);
-            return;
-        }
-
-        s_Instance = this;
-        base.OnEnable();
-    }
 
     IEnumerator Start()
     {
@@ -309,25 +415,33 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         var room = PhotonNetwork.CurrentRoom;
         Sampleton.Log($"Photon::OnJoinedRoom: \"{room.Name}\"");
 
-        if (PhotonNetwork.LocalPlayer.TryGetPlatformID(out ulong uid) &&
-            room.CustomProperties.TryGetValue($"{k_PropPrefixUser}{uid}", out var box) &&
-            box is Guid[] preSharedAnchors)
-        {
-            SharedAnchorLoader.LoadSharedAnchors(preSharedAnchors);
-        }
-
         if (controlPanel)
+        {
             controlPanel.SetRoomText($"Photon Room: {room.Name}");
 
-        UpdateUserListUI();
+            UpdateUserListUI();
 
-        if (controlPanel)
             controlPanel.DisplayMenuPanel();
+        }
     }
 
     public override void OnLeftRoom()
     {
         Sampleton.Log($"Photon::OnLeftRoom");
+
+        if (Alignment.IsSet)
+            Alignment.ResetMRUKOrigin();
+
+        foreach (var anchor in SharedAnchor.All)
+        {
+            if (!anchor)
+                continue;
+
+            Sampleton.Log($"  - unloading {anchor.Uuid.Brief()}");
+
+            Destroy(anchor.gameObject);
+        }
+
         if (controlPanel)
             controlPanel.DisplayLobbyPanel();
     }
@@ -371,18 +485,43 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     public override void OnRoomPropertiesUpdate(Hashtable changedProps)
     {
-        Sampleton.Log($"Photon::OnRoomPropertiesUpdate: n={changedProps.Count}");
+        var keysForLogging = changedProps.Keys
+            .Select(k => k.ToString())
+            .Where(k => k != k_PropKeyVersion && k != k_PropKeySender);
+
+        Sampleton.Log($"Photon::OnRoomPropertiesUpdate: {string.Join(", ", keysForLogging)}");
 
         var player = PhotonNetwork.LocalPlayer;
+
+        if (changedProps.TryGetValue(k_PropKeySender, out var box) && box is string sender)
+        {
+            if (sender == $"{player}")
+            {
+                Sampleton.Log("  x skipped (you are the sender)");
+                return;
+            }
+
+            Sampleton.Log($"  + sender: '{sender}'");
+        }
+
+        /* update alignment anchor (iff it's already loaded and done w/ Awake) */
+
+        SynchronizeRoomAlignment(changedProps);
+        // note: We do want to call this before loading any new anchors, since new anchors will check themselves if
+        //       they are the alignment anchor asynchronously (in SharedAnchor::Awake).  This is the way because
+        //       it isn't a good idea to align to an anchor before it has finished asynchronously localizing.
+
+        /* update & load anchors */
+
         if (!player.TryGetPlatformID(out ulong ocid))
         {
-            Sampleton.Log("  - SKIPPED: not logged in to Platform.");
+            Sampleton.Log("  - WARN: not logged in to Platform.", LogType.Warning);
             return;
         }
 
-        if (!changedProps.TryGetValue($"{k_PropPrefixUser}{ocid}", out var box))
+        if (!changedProps.TryGetValue($"{k_PropPrefixUser}{ocid}", out box))
         {
-            // nothing new for us.
+            Sampleton.Log("  ~ no new anchors to load;");
             return;
         }
 
@@ -476,60 +615,6 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     #endregion
 
-    #region [Send and read room data]
-
-    void PublishAnchorsToUsers(HashSet<Guid> uuidSet, IReadOnlyCollection<ulong> userIds)
-    {
-        var room = PhotonNetwork.CurrentRoom;
-        var curProps = room.CustomProperties;
-
-        Hashtable expected; // allows us to rule out possible concurrent modification errors
-        if (curProps.TryGetValue(k_PropKeyVersion, out var box) && box is int version)
-        {
-            expected = new Hashtable
-            {
-                [k_PropKeyVersion] = version,
-            };
-        }
-        else
-        {
-            expected = null;
-            version = 0;
-        }
-
-        var newProps = new Hashtable
-        {
-            [k_PropKeyVersion] = version + 1,
-        };
-
-        var uuidArr = uuidSet.ToArray();
-        var scratchUuidSet = new HashSet<Guid>(uuidSet.Count);
-        foreach (ulong uid in userIds)
-        {
-            string key = $"{k_PropPrefixUser}{uid}";
-
-            // (note: setting Guid[] values directly only works here thanks to our PhotonExtensions.cs)
-            if (curProps.TryGetValue(key, out box) && box is Guid[] alreadyShared)
-            {
-                scratchUuidSet.Clear();
-                scratchUuidSet.UnionWith(alreadyShared);
-                int precount = scratchUuidSet.Count;
-                scratchUuidSet.UnionWith(uuidSet);
-                if (scratchUuidSet.Count > precount)
-                    newProps[key] = scratchUuidSet.ToArray();
-            }
-            else
-            {
-                newProps[key] = uuidArr;
-            }
-        }
-
-        if (!room.SetCustomProperties(newProps, expected))
-            Sampleton.LogError("- ERR: room.SetCustomProperties failed! (possible concurrency failure)");
-    }
-
-    #endregion
-
     #region [User list state handling]
 
     void UpdateUserListUI()
@@ -554,12 +639,5 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
     }
 
     #endregion
-
-
-    static IEnumerator DelayCall(Action call, float sec)
-    {
-        yield return new WaitForSecondsRealtime(sec);
-        call();
-    }
 
 }
