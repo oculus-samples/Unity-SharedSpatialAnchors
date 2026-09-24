@@ -168,3 +168,9 @@ Some scenes in this sample project use Photon Realtime to share anchor data and 
 [//]: # (Sample App Architecture: https://developer.oculus.com/documentation/unity/unity-ssa-sf/)
 [//]: # (Scene Sharing: https://developer.oculus.com/documentation/unity/unity-shared-scene-sample/)
 [//]: # (Health & Safety: https://developer.oculus.com/resources/unity-ssa-hs-app/)
+
+## AI coding agents
+
+This repo is wired up for AI coding agents — `AGENTS.md`, `.vscode/extensions.json`, `.mcp.json`, `.cursor/rules/`, and a few client-specific dotfiles surface the **Meta Horizon** VS Code/Cursor extension, the `hzdb` MCP server, and the Meta Quest skill set automatically.
+
+Full toolchain, including Unity skills and per-client install instructions: [github.com/meta-quest/agentic-tools](https://github.com/meta-quest/agentic-tools).

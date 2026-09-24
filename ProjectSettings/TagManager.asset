@@ -24,11 +24,11 @@ TagManager:
   - QDSUITextInputField
   - SamplesInfoPanel
   - QDSUIBackplate
-  - PassThroughButton
-  - PassThrough
   - Locomotion
   - LocoButton
   - LocoText
+  - PassThroughButton
+  - PassThrough
   - QDSUILineDrawing
   - QDSUIToggleThumbnail
   layers:

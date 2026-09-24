@@ -242,19 +242,6 @@ public class SharedAnchor : MonoBehaviour
         LocallySaved.CommitToDisk();
     }
 
-    public void OnHideButtonPressed()
-    {
-        var uuid = Uuid;
-        Sampleton.Log($"{nameof(OnHideButtonPressed)}: {uuid.Brief()}");
-
-        Destroy(gameObject);
-
-        // NOTE: "Destroy" == "Hide" for anchors only if they have been saved locally or shared.
-        // Otherwise, this is a proper deletion as far as your app is concerned; even if you saved its Uuid prior to
-        // destroying the anchor, there is no guarantee you'll be able to load it back (although it isn't guaranteed
-        // that you *can't* load it back, either.. better safe than ???!)
-    }
-
     public async void OnEraseButtonPressed()
     {
         if (!SpatialAnchor)
