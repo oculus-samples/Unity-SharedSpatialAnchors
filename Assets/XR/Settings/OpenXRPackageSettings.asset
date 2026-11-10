@@ -86,7 +86,7 @@ MonoBehaviour:
   openxrExtensionStrings: XR_META_detached_controllers
   company: Meta
   priority: 0
-  targetOpenXRApiVersion: 1.1.45
+  targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
 --- !u!114 &-7110281701061037288
@@ -121,7 +121,6 @@ MonoBehaviour:
   - {fileID: 688425904249833021}
   - {fileID: -2759712221884614942}
   - {fileID: -6912731710415117485}
-  - {fileID: -6950842757426815793}
   - {fileID: -8315616649668547327}
   - {fileID: 3357940469336249969}
   - {fileID: -1087388061282251786}
@@ -159,28 +158,6 @@ MonoBehaviour:
   featureIdInternal: com.unity.openxr.feature.input.khrsimpleprofile
   openxrExtensionStrings: 
   company: Unity
-  priority: 0
-  targetOpenXRApiVersion: 
-  required: 0
-  customRuntimeLoaderName: 
---- !u!114 &-6950842757426815793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 694e0427ee714c52ae28bdcd4d4e5f67, type: 3}
-  m_Name: MetaXRSwiftlet Android
-  m_EditorClassIdentifier: 
-  m_enabled: 0
-  nameUi: Meta XR Swiftlet
-  version: 0.0.1
-  featureIdInternal: com.meta.openxr.feature.swiftlet
-  openxrExtensionStrings: XR_METAX5_extension232_interaction
-  company: Meta
   priority: 0
   targetOpenXRApiVersion: 
   required: 0
@@ -248,7 +225,7 @@ MonoBehaviour:
   openxrExtensionStrings: XR_META_detached_controllers
   company: Meta
   priority: 0
-  targetOpenXRApiVersion: 1.1.45
+  targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
 --- !u!114 &-5789950599645377055
@@ -463,7 +440,6 @@ MonoBehaviour:
   - {fileID: 495058090932786188}
   - {fileID: -6757550923643198672}
   - {fileID: 5476420984033089228}
-  - {fileID: 6255787229263878461}
   - {fileID: 6497567076828017150}
   - {fileID: 2874265601574811313}
   - {fileID: -5388114272173341757}
@@ -659,7 +635,7 @@ MonoBehaviour:
   openxrExtensionStrings: XR_META_detached_controllers
   company: Meta
   priority: 0
-  targetOpenXRApiVersion: 1.1.45
+  targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
 --- !u!114 &-35211941645948551
@@ -790,30 +766,24 @@ MonoBehaviour:
     XR_META_passthrough_color_lut XR_META_passthrough_preferences XR_OCULUS_audio_device_guid
     XR_FB_common_events XR_FB_hand_tracking_capsules XR_FB_hand_tracking_mesh XR_FB_hand_tracking_aim
     XR_FB_touch_controller_pro XR_FB_touch_controller_proximity XR_FB_composition_layer_depth_test
-    XR_FB_haptic_amplitude_envelope XR_FB_haptic_pcm XR_EXTX1_haptic_parametric XR_META_local_dimming
+    XR_FB_haptic_amplitude_envelope XR_FB_haptic_pcm XR_EXT_haptic_parametric XR_META_local_dimming
     XR_META_hand_tracking_wide_motion_mode XR_EXT_hand_tracking_data_source XR_EXT_hand_joints_motion_range
     XR_META_touch_controller_plus XR_META_simultaneous_hands_and_controllers XR_MSFT_hand_interaction
     XR_EXT_hand_interaction XR_FB_hand_tracking_confidence XR_META_detached_controllers
     XR_LOGITECH_mx_ink_stylus_interaction XR_META_colocation_discovery XR_META_spatial_entity_sharing
-    XR_META_spatial_entity_group_sharing XR_EXT_debug_utils XR_FBI_system_application_internal
-    XR_FB_device_settings XR_METAX1_hand_tracking_joint_visibility XR_META_dynamic_object_tracker
-    XR_META_dynamic_object_keyboard XR_META_feature_fidelity XR_METAX1_local_group
-    XR_META_hand_tracking_microgestures XR_META_spatial_entity_persistence XR_META_spatial_entity_discovery
-    XR_METAX1_room_entity_info XR_META_spatial_entity_room_mesh XR_META_boundary_visibility
-    XR_FBX1_plane XR_FBX1_plane_private XR_METAX1_scene_object_private XR_METAI_scene_reconstruction_private
-    XR_META_face_tracking_visemes XR_METAX1_performance_modes XR_META_headset_id
-    XR_FB_composition_layer_settings XR_META_automatic_layer_filter XR_FB_composition_layer_secure_content
-    XR_METAX1_lighting_estimation XR_METAI_assisted_scene_capture XR_METAX1_spatial_entity_marker
+    XR_META_spatial_entity_group_sharing XR_EXT_debug_utils XR_META_dynamic_object_tracker
+    XR_META_dynamic_object_keyboard XR_META_hand_tracking_microgestures XR_META_spatial_entity_persistence
+    XR_META_spatial_entity_discovery XR_META_spatial_entity_room_mesh XR_META_boundary_visibility
+    XR_META_face_tracking_visemes XR_META_headset_id XR_FB_composition_layer_settings
+    XR_META_automatic_layer_filter XR_FB_composition_layer_secure_content XR_METAX1_spatial_entity_marker
     XR_EXT_spatial_entity XR_EXT_spatial_marker_tracking XR_META_environment_raycast
     XR_EXT_future XR_METAX2_debug_utils_region_profiling XR_METAX3_debug_utils_region_profiling
-    XR_METAX2_colocation XR_METAX1_instant_functional_surfaces XR_EXTX2_stationary_reference_space
-    XR_META_recommended_layer_resolution XR_EXT_local_floor XR_METAX1_virtual_reference_space
-    XR_METAX1_virtual_reference_space_id XR_METAX1_dynamic_performance_scaling XR_METAX1_dynamic_performance_scaling_id
+    XR_EXTX2_stationary_reference_space XR_META_recommended_layer_resolution XR_EXT_local_floor
     XR_METAX1_passthrough_camera_data XR_META_hand_tracking_frequency_hint XR_META_hand_tracking_unextrapolated_poses
     XR_META_hand_tracking_wide_motion_mode2 XR_METAX1_agentic_external_tool
   company: Meta
   priority: 0
-  targetOpenXRApiVersion: 1.1.45
+  targetOpenXRApiVersion: 1.1.54
   required: 0
   customRuntimeLoaderName: 
 --- !u!114 &688425904249833021
@@ -964,30 +934,24 @@ MonoBehaviour:
     XR_META_passthrough_color_lut XR_META_passthrough_preferences XR_OCULUS_audio_device_guid
     XR_FB_common_events XR_FB_hand_tracking_capsules XR_FB_hand_tracking_mesh XR_FB_hand_tracking_aim
     XR_FB_touch_controller_pro XR_FB_touch_controller_proximity XR_FB_composition_layer_depth_test
-    XR_FB_haptic_amplitude_envelope XR_FB_haptic_pcm XR_EXTX1_haptic_parametric XR_META_local_dimming
+    XR_FB_haptic_amplitude_envelope XR_FB_haptic_pcm XR_EXT_haptic_parametric XR_META_local_dimming
     XR_META_hand_tracking_wide_motion_mode XR_EXT_hand_tracking_data_source XR_EXT_hand_joints_motion_range
     XR_META_touch_controller_plus XR_META_simultaneous_hands_and_controllers XR_MSFT_hand_interaction
     XR_EXT_hand_interaction XR_FB_hand_tracking_confidence XR_META_detached_controllers
     XR_LOGITECH_mx_ink_stylus_interaction XR_META_colocation_discovery XR_META_spatial_entity_sharing
-    XR_META_spatial_entity_group_sharing XR_EXT_debug_utils XR_FBI_system_application_internal
-    XR_FB_device_settings XR_METAX1_hand_tracking_joint_visibility XR_META_dynamic_object_tracker
-    XR_META_dynamic_object_keyboard XR_META_feature_fidelity XR_METAX1_local_group
-    XR_META_hand_tracking_microgestures XR_META_spatial_entity_persistence XR_META_spatial_entity_discovery
-    XR_METAX1_room_entity_info XR_META_spatial_entity_room_mesh XR_META_boundary_visibility
-    XR_FBX1_plane XR_FBX1_plane_private XR_METAX1_scene_object_private XR_METAI_scene_reconstruction_private
-    XR_META_face_tracking_visemes XR_METAX1_performance_modes XR_META_headset_id
-    XR_FB_composition_layer_settings XR_META_automatic_layer_filter XR_FB_composition_layer_secure_content
-    XR_METAX1_lighting_estimation XR_METAI_assisted_scene_capture XR_METAX1_spatial_entity_marker
+    XR_META_spatial_entity_group_sharing XR_EXT_debug_utils XR_META_dynamic_object_tracker
+    XR_META_dynamic_object_keyboard XR_META_hand_tracking_microgestures XR_META_spatial_entity_persistence
+    XR_META_spatial_entity_discovery XR_META_spatial_entity_room_mesh XR_META_boundary_visibility
+    XR_META_face_tracking_visemes XR_META_headset_id XR_FB_composition_layer_settings
+    XR_META_automatic_layer_filter XR_FB_composition_layer_secure_content XR_METAX1_spatial_entity_marker
     XR_EXT_spatial_entity XR_EXT_spatial_marker_tracking XR_META_environment_raycast
     XR_EXT_future XR_METAX2_debug_utils_region_profiling XR_METAX3_debug_utils_region_profiling
-    XR_METAX2_colocation XR_METAX1_instant_functional_surfaces XR_EXTX2_stationary_reference_space
-    XR_META_recommended_layer_resolution XR_EXT_local_floor XR_METAX1_virtual_reference_space
-    XR_METAX1_virtual_reference_space_id XR_METAX1_dynamic_performance_scaling XR_METAX1_dynamic_performance_scaling_id
+    XR_EXTX2_stationary_reference_space XR_META_recommended_layer_resolution XR_EXT_local_floor
     XR_METAX1_passthrough_camera_data XR_META_hand_tracking_frequency_hint XR_META_hand_tracking_unextrapolated_poses
     XR_META_hand_tracking_wide_motion_mode2 XR_METAX1_agentic_external_tool
   company: Meta
   priority: 0
-  targetOpenXRApiVersion: 1.1.45
+  targetOpenXRApiVersion: 1.1.54
   required: 0
   customRuntimeLoaderName: 
 --- !u!114 &1780612601463497918
@@ -1192,7 +1156,7 @@ MonoBehaviour:
   openxrExtensionStrings: XR_META_detached_controllers
   company: Meta
   priority: 0
-  targetOpenXRApiVersion: 1.1.45
+  targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
 --- !u!114 &5315690754201376880
@@ -1280,7 +1244,7 @@ MonoBehaviour:
   openxrExtensionStrings: XR_META_detached_controllers
   company: Meta
   priority: 0
-  targetOpenXRApiVersion: 1.1.45
+  targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
 --- !u!114 &5887942619879708600
@@ -1300,28 +1264,6 @@ MonoBehaviour:
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.input.metaquestpro.detached
   openxrExtensionStrings: XR_META_detached_controllers
-  company: Meta
-  priority: 0
-  targetOpenXRApiVersion: 1.1.45
-  required: 0
-  customRuntimeLoaderName: 
---- !u!114 &6255787229263878461
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 694e0427ee714c52ae28bdcd4d4e5f67, type: 3}
-  m_Name: MetaXRSwiftlet Standalone
-  m_EditorClassIdentifier: 
-  m_enabled: 0
-  nameUi: Meta XR Swiftlet
-  version: 0.0.1
-  featureIdInternal: com.meta.openxr.feature.swiftlet
-  openxrExtensionStrings: XR_METAX5_extension232_interaction
   company: Meta
   priority: 0
   targetOpenXRApiVersion: 

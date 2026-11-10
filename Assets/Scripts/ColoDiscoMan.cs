@@ -552,13 +552,24 @@ public class ColoDiscoMan : MonoBehaviour
             // API call: static Oculus.Platform.Users.GetLoggedInUser()
             Users.GetLoggedInUser().OnComplete(ReceivedLoggedInUser);
         }
-        catch (UnityException e)
+        catch (Exception e)
         {
             // "UnityException: Update your app id by selecting 'Meta' > 'Platform' > 'Edit Settings'"
+            // "HorizonUnauthorizedException: Error: Unauthorized access. Context: Initialize."
             Sampleton.Log(
                 $"Oculus.Platform.Core.Initialize FAILED: {e.Message}",
                 m_RequireLoggedInUser ? LogType.Exception : LogType.Warning
             );
+
+            // Initialize() threw, so GetLoggedInUser() was never called and
+            // ReceivedLoggedInUser will never run to re-enable these.
+            if (!m_RequireLoggedInUser)
+            {
+                foreach (var uiThing in m_DisabledWithoutValidUser)
+                {
+                    uiThing.interactable = true;
+                }
+            }
         }
 
         // KEY API CALL: static event OVRColocationSession.ColocationSessionDiscovered

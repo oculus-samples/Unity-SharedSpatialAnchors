@@ -64,6 +64,7 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
             // reject the request (-1006 Failure_OperationFailed), and surfaces as
             // "Can't share, there is no guest to share with" in the sample UI.
             var localPlayer = PhotonNetwork.LocalPlayer;
+
             foreach (var player in room.Players.Values)
             {
                 if (localPlayer != null && player.ActorNumber == localPlayer.ActorNumber)
@@ -238,6 +239,18 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     Coroutine m_OnDisconnectDelayCall;
 
+    // Over PC Link, Oculus.Platform.Users.GetLoggedInUser() can be slow/flaky or transiently fail
+    // before entitlement is ready. Without a retry that leaves our ocid unpublished, which drops us
+    // from every peer's RoomUserIds and breaks user-based anchor sharing. Retry a bounded number of
+    // times so the platform id eventually propagates.
+    // Budget: entitlement over PC Link "may take upwards of several minutes" (see the sibling call in
+    // ColoDiscoMan.Start), so the ceiling must comfortably outlast that -- 30 x 10s = 5 min.
+    const int k_MaxGetLoggedInUserRetries = 30;
+    const float k_GetLoggedInUserRetryDelaySec = 10f;
+
+    Coroutine m_GetLoggedInUserRetryCall;
+    int m_GetLoggedInUserAttempts;
+
 
     #region [Monobehaviour Methods]
 
@@ -263,7 +276,7 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         if (Core.IsInitialized())
         {
             // (maybe a) KEY API CALL: static Oculus.Platform.Users.GetLoggedInUser()
-            Users.GetLoggedInUser().OnComplete(GetLoggedInUserCallback);
+            RequestLoggedInUser();
         }
 
         // ^ only key calls iff your app employs user-based anchor sharing instead of group-based.
@@ -297,6 +310,35 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
 
     #endregion
 
+    void RequestLoggedInUser()
+    {
+        ++m_GetLoggedInUserAttempts;
+        // KEY API CALL: static Oculus.Platform.Users.GetLoggedInUser()
+        Users.GetLoggedInUser().OnComplete(GetLoggedInUserCallback);
+    }
+
+    bool TryScheduleLoggedInUserRetry(string why)
+    {
+        if (m_GetLoggedInUserAttempts >= k_MaxGetLoggedInUserRetries)
+        {
+            Sampleton.LogError(
+                $"{nameof(GetLoggedInUserCallback)}: giving up after {m_GetLoggedInUserAttempts} attempt(s) ({why})."
+            );
+            return false;
+        }
+
+        Sampleton.Log(
+            $"{nameof(GetLoggedInUserCallback)}: {why}; retrying GetLoggedInUser in {k_GetLoggedInUserRetryDelaySec:0}s " +
+            $"(attempt {m_GetLoggedInUserAttempts}/{k_MaxGetLoggedInUserRetries})...",
+            LogType.Warning
+        );
+
+        if (m_GetLoggedInUserRetryCall is not null)
+            StopCoroutine(m_GetLoggedInUserRetryCall);
+        m_GetLoggedInUserRetryCall = StartCoroutine(DelayCall(RequestLoggedInUser, k_GetLoggedInUserRetryDelaySec));
+        return true;
+    }
+
     void GetLoggedInUserCallback(Message msg)
     {
         if (msg.IsError)
@@ -319,6 +361,7 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
                 Sampleton.Log("- Did you remember to enter your test user credentials into the OculusPlatformSettings asset?");
             }
 #endif
+            TryScheduleLoggedInUserRetry(codeStr);
             return;
         }
 
@@ -328,17 +371,25 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         Sampleton.Log($"  + oculus user name: '{username}'");
         Sampleton.Log($"  + oculus id: {ocid}");
 
-        PhotonNetwork.LocalPlayer.SetPlatformID(ocid);
-
         if (ocid == 0)
         {
+            // Not yet authenticated over PC Link -- retry rather than publishing a 0 ocid, which
+            // RoomUserIds would drop anyway, keeping us invisible to every peer until we give up.
+            if (TryScheduleLoggedInUserRetry("ocid == 0 (not yet authenticated over PC Link)"))
+                return;
+
+            PhotonNetwork.LocalPlayer.SetPlatformID(ocid);
             Sampleton.LogError(
                 "You are not authenticated to use this app. User-based anchor sharing in this sample scene will not work."
             );
             return;
         }
 
+        PhotonNetwork.LocalPlayer.SetPlatformID(ocid);
         PhotonNetwork.NickName = username;
+        Sampleton.Log(
+            $"{nameof(GetLoggedInUserCallback)}: authenticated; published ocid={ocid} to Photon"
+        );
     }
 
     #region [Photon Callbacks]
@@ -461,9 +512,12 @@ public class PhotonAnchorManager : MonoBehaviourPunCallbacks
         {
             Sampleton.Log("  * (auto-sharing your pre-shared anchors to them...)");
 
-            // reshareOnly:false so anchors created while the host was alone (which therefore could never
-            // have been "successfully shared" yet) are still shared to the newly-joined guest.
-            SharedAnchor.ShareAllMineTo(ocid, reshareOnly: false);
+            // Auto-share only the anchors the host explicitly opted to share (ShareRequested), NOT every
+            // owned/saved anchor. This still covers the host-first workflow -- anchors the host pressed
+            // Share on while alone couldn't reach anyone yet, but recorded consent, so they reach this
+            // newly-joined guest -- while respecting anchors the host merely Saved, which must never be
+            // shared without an explicit Share press.
+            SharedAnchor.ShareAllMineTo(ocid);
         }
         else
         {

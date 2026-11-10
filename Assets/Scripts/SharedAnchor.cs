@@ -52,9 +52,11 @@ public class SharedAnchor : MonoBehaviour
             return;
         }
 
+        // Only auto-share anchors the host explicitly opted to share (ShareRequested). Anchors that were
+        // merely saved locally must never be shared without an explicit Share press.
         var anchors = (
             from a in AllMine
-            where !reshareOnly || a.ShareSucceeded
+            where a.ShareRequested && (!reshareOnly || a.ShareSucceeded)
             select a
         ).ToList();
 
@@ -93,9 +95,11 @@ public class SharedAnchor : MonoBehaviour
     {
         Sampleton.Log($"{nameof(ShareAllMineTo)}:");
 
+        // Only auto-share anchors the host explicitly opted to share (ShareRequested). Anchors that were
+        // merely saved locally must never be shared without an explicit Share press.
         var anchors = (
             from a in AllMine
-            where !reshareOnly || a.ShareSucceeded
+            where a.ShareRequested && (!reshareOnly || a.ShareSucceeded)
             select a
         ).ToList();
 
@@ -181,6 +185,14 @@ public class SharedAnchor : MonoBehaviour
     }
     bool m_ShareAttempted;
     bool m_ShareSucceeded;
+
+    // True once the host has explicitly requested to share this anchor by pressing "Share"
+    // (see ShareWithRoom) -- even if there were no guests in the room to receive it yet.
+    // This is the host-consent signal that gates auto-sharing to guests as they join: anchors
+    // the host merely *saved* locally (IsSaved) but never chose to share are NOT auto-shared.
+    // It is intentionally session-scoped (not persisted): in a later session the host must
+    // press Share again before its saved anchors are auto-shared to newcomers.
+    public bool ShareRequested { get; private set; }
 
     public AnchorSource Source
     {
@@ -313,6 +325,27 @@ public class SharedAnchor : MonoBehaviour
             return;
 
         // (note: Photon won't have any valid IDs if your app hasn't gone through the DUC & Horizon store entitlement steps yet!)
+
+        // Record explicit host consent to share this anchor. This is the signal that distinguishes
+        // "the host chose to share this" from "the host merely saved this locally," and it must be
+        // recorded even when there are no guests yet so that the deferred auto-share on guest join
+        // (PhotonAnchorManager.OnPlayerEnteredRoom -> ShareAllMineTo) only ever targets anchors the
+        // host actually opted to share.
+        ShareRequested = true;
+
+        if (userIds.Count == 0)
+        {
+            // Host-first workflow: there are no guests in the room yet, so a user-based ShareAsync(users)
+            // has no target to aim at *right now*. This is NOT an error -- because we recorded ShareRequested
+            // above, this anchor will be auto-shared to each guest as they join (see
+            // PhotonAnchorManager.OnPlayerEnteredRoom, which calls ShareAllMineTo). Anchors the host only
+            // *saved* (never pressed Share) are deliberately excluded from that auto-share.
+            Sampleton.Log(
+                "- No guests in the room yet; this anchor will be shared automatically when a guest joins.",
+                LogType.Warning
+            );
+            return;
+        }
 
         ShareToUsers(userIds);
     }
@@ -468,7 +501,7 @@ public class SharedAnchor : MonoBehaviour
 
     bool IsReadyToShare(out IReadOnlyCollection<ulong> userIds, bool printReason = true)
     {
-        userIds = null;
+        userIds = Array.Empty<ulong>();
 
         if (!SpatialAnchor)
         {
@@ -484,13 +517,10 @@ public class SharedAnchor : MonoBehaviour
             return false;
         }
 
-        userIds = PhotonAnchorManager.RoomUserIds;
-        if (userIds is null || userIds.Count == 0)
-        {
-            if (printReason)
-                Sampleton.LogError("- Can't share - no users to share with or can't get user list from Photon");
-            return false;
-        }
+        // May be empty when the host is alone in the room (the local player is intentionally excluded --
+        // see PhotonAnchorManager.RoomUserIds). An empty list is a valid host-first state, not a failure,
+        // so callers (ShareWithRoom) decide how to handle "nobody to share with yet".
+        userIds = PhotonAnchorManager.RoomUserIds ?? Array.Empty<ulong>();
 
         return true;
     }

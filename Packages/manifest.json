@@ -1,10 +1,10 @@
 {
   "dependencies": {
-    "com.meta.xr.mrutilitykit": "207.0.0",
-    "com.meta.xr.sdk.core": "207.0.0",
-    "com.meta.xr.sdk.interaction": "207.0.0",
-    "com.meta.xr.sdk.interaction.ovr": "207.0.0",
-    "com.meta.xr.sdk.platform": "207.0.0",
+    "com.meta.xr.mrutilitykit": "209.0.0",
+    "com.meta.xr.sdk.core": "209.0.0",
+    "com.meta.xr.sdk.interaction": "209.0.0",
+    "com.meta.xr.sdk.interaction.ovr": "209.0.0",
+    "com.meta.xr.sdk.platform": "209.0.0",
     "com.unity.ide.rider": "3.0.39",
     "com.unity.ide.visualstudio": "2.0.27",
     "com.unity.mobile.android-logcat": "1.4.7",
